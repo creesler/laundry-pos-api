@@ -25,6 +25,9 @@ import { blue, green, red, yellow, grey } from '@mui/material/colors'
 import * as XLSX from 'xlsx'
 import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email as EmailIcon } from '@mui/icons-material'
 import { LineChart, BarChart } from '@mui/x-charts'
+import { DateRangePicker } from '@mui/x-date-pickers-pro'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
 
@@ -224,25 +227,15 @@ export default function Home() {
     setViewType('year')
   }
 
-  // Update getAvailableYears function with proper typing
-  const getAvailableYears = (): number[] => {
-    const years = new Set<number>()
+  // Get available years from data
+  const getAvailableYears = () => {
+    const years = new Set()
     savedData.forEach(row => {
       const year = new Date(row.Date.split(' ')[0]).getFullYear()
       years.add(year)
     })
-    return Array.from(years).sort((a: number, b: number) => b - a) // Sort descending
+    return Array.from(years).sort((a, b) => b - a) // Sort descending
   }
-
-  // Update year selection menu
-  const yearItems = getAvailableYears().map((year: number) => (
-    <MenuItem
-      key={year.toString()}
-      onClick={() => handleYearSelect(year)}
-    >
-      {year}
-    </MenuItem>
-  ))
 
   // Handle numpad input
   const handleNumpadClick = (value: string) => {
@@ -294,31 +287,19 @@ export default function Home() {
     setEditingIndex(index)
   }
 
-  // Update handleSave to properly handle new entries
+  // Update handleSave to use IndexedDB
   const handleSave = async () => {
     try {
-      const dateTimeString = editingIndex !== null
-        ? `${inputValues.Date} ${timeIn}`  // Use existing date for edits
-        : `${new Date().toLocaleDateString()} ${timeIn}`  // Use current date for new entries
-
       const newEntry = {
-        Date: dateTimeString,
-        Coin: inputValues.Coin || '',
-        Hopper: inputValues.Hopper || '',
-        Soap: inputValues.Soap || '',
-        Vending: inputValues.Vending || '',
-        'Drop Off Amount 1': inputValues['Drop Off Amount 1'] || '',
-        'Drop Off Code': inputValues['Drop Off Code'] || '',
-        'Drop Off Amount 2': inputValues['Drop Off Amount 2'] || ''
+        Date: `${currentFormDate} ${timeIn}`,
+        ...inputValues
       }
 
       let updatedData
       if (editingIndex !== null) {
-        // Update existing entry
         updatedData = [...savedData]
         updatedData[editingIndex] = newEntry
       } else {
-        // Add new entry at the beginning
         updatedData = [newEntry, ...savedData]
       }
 
@@ -556,105 +537,38 @@ export default function Home() {
     handleShareClose()
   }
 
-  // Update chart components with proper typing
-  const renderChart = () => {
-    const chartData = calculateDailyTotals()
-    
-    const commonProps = {
-      dataset: chartData,
-      height: 150,
-      margin: { 
-        left: 65,
-        right: 15,
-        top: 5,
-        bottom: 35
-      }
-    }
+  // Update chart configurations
+  const lineChartProps = {
+    xAxis: [{
+      data: [], // Your x-axis data here
+      scaleType: 'band',
+      tickLabels: { style: { fontSize: 10 } }
+    }],
+    yAxis: [{
+      min: 0,
+      tickCount: 6
+    }],
+    series: [{
+      type: 'line',
+      data: [], // Your y-axis data here
+      curve: 'linear'
+    }]
+  }
 
-    const commonAxisProps = {
-      tickLabelStyle: {
-        fontSize: 12,
-        fill: '#666666'
-      },
-      valueFormatter: (value: number) => `$${(value / 50).toFixed(2)}`,
-      tickInterval: 'auto' as const
-    }
-
-    if (chartType === 'line') {
-      return (
-        <LineChart
-          {...commonProps}
-          xAxis={[{
-            scaleType: 'point' as const,
-            dataKey: 'date',
-            tickLabelStyle: {
-              fontSize: 10,
-              fill: '#666666'
-            },
-            position: 'bottom',
-            tickSize: 0
-          }]}
-          yAxis={[{
-            scaleType: 'linear' as const,
-            min: 0,
-            position: 'left',
-            ...commonAxisProps
-          }]}
-          series={[{
-            dataKey: 'total',
-            color: blue[600],
-            valueFormatter: (value) => `$${(value / 50).toFixed(2)}`,
-            area: false,
-            showMark: true,
-            connectNulls: false,
-            curve: "linear"
-          }]}
-          slotProps={{
-            legend: {
-              hidden: true
-            }
-          }}
-          sx={{
-            '.MuiLineElement-root': {
-              strokeWidth: 2
-            },
-            '.MuiMarkElement-root': {
-              stroke: blue[600],
-              fill: 'white',
-              strokeWidth: 2,
-              r: 4
-            }
-          }}
-        />
-      )
-    } else {
-      return (
-        <BarChart
-          {...commonProps}
-          xAxis={[{
-            scaleType: 'band' as const,
-            dataKey: 'date',
-            tickLabelStyle: {
-              fontSize: 10,
-              fill: '#666666'
-            },
-            position: 'bottom',
-            tickSize: 0
-          }]}
-          yAxis={[{
-            scaleType: 'linear' as const,
-            min: 0,
-            position: 'left',
-            ...commonAxisProps
-          }]}
-          series={[{
-            dataKey: 'total',
-            color: blue[600],
-            valueFormatter: (value) => `$${(value / 50).toFixed(2)}`
-          }]}
-        />
-      )
-    }
+  const barChartProps = {
+    xAxis: [{
+      data: [], // Your x-axis data here
+      scaleType: 'band',
+      tickLabels: { style: { fontSize: 10 } }
+    }],
+    yAxis: [{
+      min: 0,
+      tickCount: 6
+    }],
+    series: [{
+      type: 'bar',
+      data: [] // Your y-axis data here
+    }]
   }
 
   return (
@@ -702,7 +616,7 @@ export default function Home() {
           },
           gridTemplateRows: {
             xs: 'auto auto auto auto auto',
-            md: 'auto 1fr 200px 100px'
+            md: 'auto minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(100px, 0.9fr)'
           },
           gap: '1vh',
           maxWidth: '100%',
@@ -1222,7 +1136,19 @@ export default function Home() {
                     open={Boolean(yearAnchorEl)}
                     onClose={handleYearClose}
                   >
-                    {yearItems}
+                    {getAvailableYears().map((year) => (
+                      <MenuItem 
+                        key={year} 
+                        onClick={() => {
+                          setViewType('year')
+                          setSelectedYear(year)
+                          handleYearClose()
+                        }}
+                        selected={selectedYear === year && viewType === 'year'}
+                      >
+                        {year}
+                      </MenuItem>
+                    ))}
                   </Menu>
                 </Box>
                 <ToggleButtonGroup
@@ -1276,10 +1202,132 @@ export default function Home() {
                   }}>
                     {/* Chart */}
                     <Box sx={{
-                      height: '150px',
+                      height: '120px',
                       width: '100%'
                     }}>
-                      {renderChart()}
+                      {chartType === 'line' ? (
+                        <LineChart
+                          dataset={calculateDailyTotals()}
+                          xAxis={[{
+                            scaleType: 'point',
+                            dataKey: 'date',
+                            tickLabelStyle: {
+                              fontSize: 10,
+                              fill: '#666666'
+                            },
+                            position: 'bottom',
+                            tickSize: 0,
+                            axisLine: { strokeWidth: 0 }
+                          }]}
+                          yAxis={[{
+                            scaleType: 'linear',
+                            min: 0,
+                            position: 'left',
+                            tickCount: 6,
+                            tickLabelStyle: {
+                              fontSize: 12,
+                              fill: '#666666'
+                            },
+                            valueFormatter: (value) => `$${(value / 50).toFixed(2)}`,
+                            axisLine: { strokeWidth: 1, stroke: '#e5e7eb' }
+                          }]}
+                          series={[{
+                            dataKey: 'total',
+                            color: blue[600],
+                            valueFormatter: (value) => `$${(value / 50).toFixed(2)}`,
+                            area: false,
+                            showMark: true,
+                            lineWidth: 2,
+                            connectNulls: false,
+                            curve: "linear",
+                            markerPosition: 'bottom'
+                          }]}
+                          slotProps={{
+                            legend: {
+                              hidden: true
+                            }
+                          }}
+                          height={120}
+                          margin={{ 
+                            left: 65,
+                            right: 15,
+                            top: 5,
+                            bottom: 35
+                          }}
+                          sx={{
+                            '.MuiLineElement-root': {
+                              strokeWidth: 2
+                            },
+                            '.MuiMarkElement-root': {
+                              stroke: blue[600],
+                              fill: 'white',
+                              strokeWidth: 2,
+                              r: 6
+                            }
+                          }}
+                          slots={{
+                            grid: {
+                              horizontal: true,
+                              vertical: false,
+                              strokeDasharray: '3 3',
+                              stroke: '#e5e7eb',
+                              strokeWidth: 1
+                            }
+                          }}
+                        />
+                      ) : (
+                        <BarChart
+                          dataset={calculateDailyTotals()}
+                          xAxis={[{
+                            scaleType: 'band',
+                            dataKey: 'date',
+                            tickLabelStyle: {
+                              fontSize: 10,
+                              fill: '#666666'
+                            },
+                            position: 'bottom',
+                            tickSize: 0,
+                            axisLine: { strokeWidth: 0 }
+                          }]}
+                          yAxis={[{
+                            scaleType: 'linear',
+                            min: 0,
+                            position: 'left',
+                            tickCount: 6,
+                            tickLabelStyle: {
+                              fontSize: 12,
+                              fill: '#666666'
+                            },
+                            valueFormatter: (value) => `$${(value / 50).toFixed(2)}`,
+                            axisLine: { strokeWidth: 1, stroke: '#e5e7eb' }
+                          }]}
+                          series={[{
+                            dataKey: 'total',
+                            color: blue[600],
+                            valueFormatter: (value) => `$${(value / 50).toFixed(2)}`,
+                            highlightScope: {
+                              highlighted: 'point',
+                              faded: 'global'
+                            }
+                          }]}
+                          height={120}
+                          margin={{ 
+                            left: 65,
+                            right: 15,
+                            top: 5,
+                            bottom: 35
+                          }}
+                          slots={{
+                            grid: {
+                              horizontal: true,
+                              vertical: false,
+                              strokeDasharray: '3 3',
+                              stroke: '#e5e7eb',
+                              strokeWidth: 1
+                            }
+                          }}
+                        />
+                      )}
                     </Box>
                   </Box>
                 </Box>

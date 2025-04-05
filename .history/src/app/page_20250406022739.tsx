@@ -25,6 +25,9 @@ import { blue, green, red, yellow, grey } from '@mui/material/colors'
 import * as XLSX from 'xlsx'
 import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email as EmailIcon } from '@mui/icons-material'
 import { LineChart, BarChart } from '@mui/x-charts'
+import { DateRangePicker } from '@mui/x-date-pickers-pro'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
 
@@ -294,31 +297,19 @@ export default function Home() {
     setEditingIndex(index)
   }
 
-  // Update handleSave to properly handle new entries
+  // Update handleSave to use IndexedDB
   const handleSave = async () => {
     try {
-      const dateTimeString = editingIndex !== null
-        ? `${inputValues.Date} ${timeIn}`  // Use existing date for edits
-        : `${new Date().toLocaleDateString()} ${timeIn}`  // Use current date for new entries
-
       const newEntry = {
-        Date: dateTimeString,
-        Coin: inputValues.Coin || '',
-        Hopper: inputValues.Hopper || '',
-        Soap: inputValues.Soap || '',
-        Vending: inputValues.Vending || '',
-        'Drop Off Amount 1': inputValues['Drop Off Amount 1'] || '',
-        'Drop Off Code': inputValues['Drop Off Code'] || '',
-        'Drop Off Amount 2': inputValues['Drop Off Amount 2'] || ''
+        Date: `${currentFormDate} ${timeIn}`,
+        ...inputValues
       }
 
       let updatedData
       if (editingIndex !== null) {
-        // Update existing entry
         updatedData = [...savedData]
         updatedData[editingIndex] = newEntry
       } else {
-        // Add new entry at the beginning
         updatedData = [newEntry, ...savedData]
       }
 
@@ -556,105 +547,63 @@ export default function Home() {
     handleShareClose()
   }
 
-  // Update chart components with proper typing
+  // Update chart configurations to match MUI X-Charts API
+  const chartCommonProps = {
+    margin: { top: 20, right: 20, bottom: 30, left: 40 },
+    height: 300
+  }
+
+  const lineChartProps = {
+    ...chartCommonProps,
+    xAxis: [{
+      data: [], // Your x-axis data here
+      scaleType: 'band'
+    }],
+    yAxis: [{
+      min: 0
+    }],
+    series: [{
+      type: 'line' as const,
+      data: [], // Your y-axis data here
+      showMark: true
+    }]
+  }
+
+  const barChartProps = {
+    ...chartCommonProps,
+    xAxis: [{
+      data: [], // Your x-axis data here
+      scaleType: 'band'
+    }],
+    yAxis: [{
+      min: 0
+    }],
+    series: [{
+      type: 'bar' as const,
+      data: [] // Your y-axis data here
+    }]
+  }
+
+  // Update chart components
   const renderChart = () => {
-    const chartData = calculateDailyTotals()
-    
-    const commonProps = {
-      dataset: chartData,
-      height: 150,
-      margin: { 
-        left: 65,
-        right: 15,
-        top: 5,
-        bottom: 35
-      }
-    }
-
-    const commonAxisProps = {
-      tickLabelStyle: {
-        fontSize: 12,
-        fill: '#666666'
-      },
-      valueFormatter: (value: number) => `$${(value / 50).toFixed(2)}`,
-      tickInterval: 'auto' as const
-    }
-
-    if (chartType === 'line') {
-      return (
-        <LineChart
-          {...commonProps}
-          xAxis={[{
-            scaleType: 'point' as const,
-            dataKey: 'date',
-            tickLabelStyle: {
-              fontSize: 10,
-              fill: '#666666'
-            },
-            position: 'bottom',
-            tickSize: 0
-          }]}
-          yAxis={[{
-            scaleType: 'linear' as const,
-            min: 0,
-            position: 'left',
-            ...commonAxisProps
-          }]}
-          series={[{
-            dataKey: 'total',
-            color: blue[600],
-            valueFormatter: (value) => `$${(value / 50).toFixed(2)}`,
-            area: false,
-            showMark: true,
-            connectNulls: false,
-            curve: "linear"
-          }]}
-          slotProps={{
-            legend: {
-              hidden: true
-            }
-          }}
-          sx={{
-            '.MuiLineElement-root': {
-              strokeWidth: 2
-            },
-            '.MuiMarkElement-root': {
-              stroke: blue[600],
-              fill: 'white',
-              strokeWidth: 2,
-              r: 4
-            }
-          }}
-        />
-      )
-    } else {
-      return (
-        <BarChart
-          {...commonProps}
-          xAxis={[{
-            scaleType: 'band' as const,
-            dataKey: 'date',
-            tickLabelStyle: {
-              fontSize: 10,
-              fill: '#666666'
-            },
-            position: 'bottom',
-            tickSize: 0
-          }]}
-          yAxis={[{
-            scaleType: 'linear' as const,
-            min: 0,
-            position: 'left',
-            ...commonAxisProps
-          }]}
-          series={[{
-            dataKey: 'total',
-            color: blue[600],
-            valueFormatter: (value) => `$${(value / 50).toFixed(2)}`
-          }]}
-        />
-      )
-    }
+    const props = chartType === 'line' ? lineChartProps : barChartProps
+    return chartType === 'line' ? (
+      <LineChart
+        {...props}
+        sx={{
+          '.MuiChartsAxis-line': { strokeWidth: 0 },
+          '.MuiChartsAxis-tick': { strokeWidth: 0.5 }
+        }}
+      />
+    ) : (
+      <BarChart
+        {...props}
+        sx={{
+          '.MuiChartsAxis-line': { strokeWidth: 0 },
+          '.MuiChartsAxis-tick': { strokeWidth: 0.5 }
+        }}
+      />
+    )
   }
 
   return (
@@ -702,7 +651,7 @@ export default function Home() {
           },
           gridTemplateRows: {
             xs: 'auto auto auto auto auto',
-            md: 'auto 1fr 200px 100px'
+            md: 'auto minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(100px, 0.9fr)'
           },
           gap: '1vh',
           maxWidth: '100%',
@@ -1276,7 +1225,7 @@ export default function Home() {
                   }}>
                     {/* Chart */}
                     <Box sx={{
-                      height: '150px',
+                      height: '120px',
                       width: '100%'
                     }}>
                       {renderChart()}

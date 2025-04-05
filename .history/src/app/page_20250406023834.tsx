@@ -25,6 +25,9 @@ import { blue, green, red, yellow, grey } from '@mui/material/colors'
 import * as XLSX from 'xlsx'
 import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email as EmailIcon } from '@mui/icons-material'
 import { LineChart, BarChart } from '@mui/x-charts'
+import { DateRangePicker } from '@mui/x-date-pickers-pro'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
 
@@ -567,7 +570,7 @@ export default function Home() {
         left: 65,
         right: 15,
         top: 5,
-        bottom: 35
+        bottom: 45
       }
     }
 
@@ -702,7 +705,7 @@ export default function Home() {
           },
           gridTemplateRows: {
             xs: 'auto auto auto auto auto',
-            md: 'auto 1fr 200px 100px'
+            md: 'auto minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(100px, 0.9fr)'
           },
           gap: '1vh',
           maxWidth: '100%',

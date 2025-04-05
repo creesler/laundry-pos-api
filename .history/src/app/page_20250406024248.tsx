@@ -25,6 +25,9 @@ import { blue, green, red, yellow, grey } from '@mui/material/colors'
 import * as XLSX from 'xlsx'
 import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email as EmailIcon } from '@mui/icons-material'
 import { LineChart, BarChart } from '@mui/x-charts'
+import { DateRangePicker } from '@mui/x-date-pickers-pro'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
 
@@ -562,7 +565,7 @@ export default function Home() {
     
     const commonProps = {
       dataset: chartData,
-      height: 150,
+      height: 180,
       margin: { 
         left: 65,
         right: 15,
@@ -1276,7 +1279,7 @@ export default function Home() {
                   }}>
                     {/* Chart */}
                     <Box sx={{
-                      height: '150px',
+                      height: '180px',
                       width: '100%'
                     }}>
                       {renderChart()}

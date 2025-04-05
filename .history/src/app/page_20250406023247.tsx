@@ -25,6 +25,9 @@ import { blue, green, red, yellow, grey } from '@mui/material/colors'
 import * as XLSX from 'xlsx'
 import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email as EmailIcon } from '@mui/icons-material'
 import { LineChart, BarChart } from '@mui/x-charts'
+import { DateRangePicker } from '@mui/x-date-pickers-pro'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
 
@@ -556,28 +559,25 @@ export default function Home() {
     handleShareClose()
   }
 
+  // Update chart configurations with proper typing
+  const chartCommonProps = {
+    margin: { top: 20, right: 20, bottom: 30, left: 40 },
+    height: 300
+  }
+
   // Update chart components with proper typing
   const renderChart = () => {
     const chartData = calculateDailyTotals()
     
     const commonProps = {
       dataset: chartData,
-      height: 150,
+      height: 120,
       margin: { 
         left: 65,
         right: 15,
         top: 5,
         bottom: 35
       }
-    }
-
-    const commonAxisProps = {
-      tickLabelStyle: {
-        fontSize: 12,
-        fill: '#666666'
-      },
-      valueFormatter: (value: number) => `$${(value / 50).toFixed(2)}`,
-      tickInterval: 'auto' as const
     }
 
     if (chartType === 'line') {
@@ -598,7 +598,12 @@ export default function Home() {
             scaleType: 'linear' as const,
             min: 0,
             position: 'left',
-            ...commonAxisProps
+            tickCount: 6,
+            tickLabelStyle: {
+              fontSize: 12,
+              fill: '#666666'
+            },
+            valueFormatter: (value) => `$${(value / 50).toFixed(2)}`
           }]}
           series={[{
             dataKey: 'total',
@@ -645,7 +650,12 @@ export default function Home() {
             scaleType: 'linear' as const,
             min: 0,
             position: 'left',
-            ...commonAxisProps
+            tickCount: 6,
+            tickLabelStyle: {
+              fontSize: 12,
+              fill: '#666666'
+            },
+            valueFormatter: (value) => `$${(value / 50).toFixed(2)}`
           }]}
           series={[{
             dataKey: 'total',
@@ -702,7 +712,7 @@ export default function Home() {
           },
           gridTemplateRows: {
             xs: 'auto auto auto auto auto',
-            md: 'auto 1fr 200px 100px'
+            md: 'auto minmax(180px, 1.6fr) minmax(140px, 1.2fr) minmax(100px, 0.9fr)'
           },
           gap: '1vh',
           maxWidth: '100%',
@@ -1276,7 +1286,7 @@ export default function Home() {
                   }}>
                     {/* Chart */}
                     <Box sx={{
-                      height: '150px',
+                      height: '120px',
                       width: '100%'
                     }}>
                       {renderChart()}
