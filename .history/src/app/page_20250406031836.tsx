@@ -28,9 +28,6 @@ import { LineChart, BarChart } from '@mui/x-charts'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
 
-// Initialize EmailJS
-emailjs.init('your_public_key') // Replace with your EmailJS public key
-
 // Add helper function to generate random amount
 function generateRandomAmount(min: number, max: number) {
   return (Math.random() * (max - min) + min).toFixed(2)
@@ -506,62 +503,37 @@ export default function Home() {
   const sendEmailWithCSV = () => {
     try {
       // Generate CSV content
-      const csvHeader = 'Date,Coin,Hopper,Soap,Vending,Drop Off Amount 1,Drop Off Code,Drop Off Amount 2\n';
-      const csvRows = savedData.map(item => 
-        `${item.Date},${item.Coin},${item.Hopper},${item.Soap},${item.Vending},${item['Drop Off Amount 1']},${item['Drop Off Code']},${item['Drop Off Amount 2']}`
+      const csvHeader = 'Date,Service,Quantity,Price,Total\n';
+      const csvRows = calculateDailyTotals().map(item => 
+        `${item.date},${item.total}`
       ).join('\n');
       const csvContent = csvHeader + csvRows;
 
-      // Calculate total sales
-      const totalSales = savedData.reduce((sum, item) => {
-        const itemTotal = [
-          parseFloat(item.Coin) || 0,
-          parseFloat(item.Hopper) || 0,
-          parseFloat(item.Soap) || 0,
-          parseFloat(item.Vending) || 0,
-          parseFloat(item['Drop Off Amount 1']) || 0,
-          parseFloat(item['Drop Off Amount 2']) || 0
-        ].reduce((sum, val) => sum + val, 0);
-        return sum + itemTotal;
-      }, 0);
-      const formattedTotal = totalSales.toFixed(2);
-
-      // Create CSV file for download
+      // Create blob and URL for CSV file
       const blob = new Blob([csvContent], { type: 'text/csv' });
-      const fileName = `laundry_sales_${new Date().toLocaleDateString().replace(/\//g, '-')}.csv`;
-      const downloadUrl = URL.createObjectURL(blob);
-      const downloadLink = document.createElement('a');
-      downloadLink.href = downloadUrl;
-      downloadLink.download = fileName;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(downloadUrl);
+      const csvUrl = URL.createObjectURL(blob);
+
+      // Calculate total sales
+      const totalSales = calculateDailyTotals().reduce((sum, item) => sum + item.total, 0);
+      const formattedTotal = totalSales.toFixed(2);
 
       // Create email content
       const subject = `Laundry Sales Report - ${new Date().toLocaleDateString()}`;
-      const body = `Daily Sales Report\n\nTotal Sales: $${formattedTotal}\n\nNote: Please attach the downloaded CSV file (${fileName}) to this email.`;
+      const body = `Daily Sales Report\n\nTotal Sales: $${formattedTotal}\n\nPlease find the detailed sales data in the attached CSV file.`;
       
-      // Open email client
-      const emailLink = document.createElement('a');
-      emailLink.href = `mailto:creesler@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      document.body.appendChild(emailLink);
-      emailLink.click();
-      document.body.removeChild(emailLink);
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = `mailto:creesler@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&attachment=${csvUrl}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(csvUrl);
 
-      setSnackbar({ 
-        open: true, 
-        message: 'CSV file downloaded. Please attach it to the email that opens.', 
-        severity: 'info' 
-      });
+      setSnackbar({ open: true, message: 'Opening email client...', severity: 'success' });
       handleShareClose();
     } catch (error) {
       console.error('Error preparing email:', error);
-      setSnackbar({ 
-        open: true, 
-        message: 'Failed to prepare email and CSV', 
-        severity: 'error' 
-      });
+      setSnackbar({ open: true, message: 'Failed to prepare email', severity: 'error' });
     }
   };
 

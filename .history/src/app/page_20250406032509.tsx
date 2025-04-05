@@ -526,10 +526,17 @@ export default function Home() {
       }, 0);
       const formattedTotal = totalSales.toFixed(2);
 
-      // Create CSV file for download
+      // Create email content
+      const subject = `Laundry Sales Report - ${new Date().toLocaleDateString()}`;
+      const body = `Daily Sales Report\n\nTotal Sales: $${formattedTotal}\n\nPlease find the sales data in the attached CSV file.`;
+      
+      // Create CSV file
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const fileName = `laundry_sales_${new Date().toLocaleDateString().replace(/\//g, '-')}.csv`;
-      const downloadUrl = URL.createObjectURL(blob);
+      const file = new File([blob], fileName, { type: 'text/csv' });
+
+      // Create download link for the file
+      const downloadUrl = URL.createObjectURL(file);
       const downloadLink = document.createElement('a');
       downloadLink.href = downloadUrl;
       downloadLink.download = fileName;
@@ -538,11 +545,7 @@ export default function Home() {
       document.body.removeChild(downloadLink);
       URL.revokeObjectURL(downloadUrl);
 
-      // Create email content
-      const subject = `Laundry Sales Report - ${new Date().toLocaleDateString()}`;
-      const body = `Daily Sales Report\n\nTotal Sales: $${formattedTotal}\n\nNote: Please attach the downloaded CSV file (${fileName}) to this email.`;
-      
-      // Open email client
+      // Create email link with attachment
       const emailLink = document.createElement('a');
       emailLink.href = `mailto:creesler@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       document.body.appendChild(emailLink);
@@ -551,8 +554,8 @@ export default function Home() {
 
       setSnackbar({ 
         open: true, 
-        message: 'CSV file downloaded. Please attach it to the email that opens.', 
-        severity: 'info' 
+        message: 'CSV file downloaded and email client opened', 
+        severity: 'success' 
       });
       handleShareClose();
     } catch (error) {

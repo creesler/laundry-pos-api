@@ -505,14 +505,7 @@ export default function Home() {
   // Update email sending function to generate CSV on demand
   const sendEmailWithCSV = () => {
     try {
-      // Generate CSV content
-      const csvHeader = 'Date,Coin,Hopper,Soap,Vending,Drop Off Amount 1,Drop Off Code,Drop Off Amount 2\n';
-      const csvRows = savedData.map(item => 
-        `${item.Date},${item.Coin},${item.Hopper},${item.Soap},${item.Vending},${item['Drop Off Amount 1']},${item['Drop Off Code']},${item['Drop Off Amount 2']}`
-      ).join('\n');
-      const csvContent = csvHeader + csvRows;
-
-      // Calculate total sales
+      // Calculate total sales from savedData
       const totalSales = savedData.reduce((sum, item) => {
         const itemTotal = [
           parseFloat(item.Coin) || 0,
@@ -526,42 +519,28 @@ export default function Home() {
       }, 0);
       const formattedTotal = totalSales.toFixed(2);
 
-      // Create CSV file for download
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const fileName = `laundry_sales_${new Date().toLocaleDateString().replace(/\//g, '-')}.csv`;
-      const downloadUrl = URL.createObjectURL(blob);
-      const downloadLink = document.createElement('a');
-      downloadLink.href = downloadUrl;
-      downloadLink.download = fileName;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(downloadUrl);
+      // Format the data as a table in the email body
+      const tableHeader = 'Date\tCoin\tHopper\tSoap\tVending\tDrop Off 1\tCode\tDrop Off 2\n';
+      const tableRows = savedData.map(item => 
+        `${item.Date}\t${item.Coin}\t${item.Hopper}\t${item.Soap}\t${item.Vending}\t${item['Drop Off Amount 1']}\t${item['Drop Off Code']}\t${item['Drop Off Amount 2']}`
+      ).join('\n');
 
       // Create email content
       const subject = `Laundry Sales Report - ${new Date().toLocaleDateString()}`;
-      const body = `Daily Sales Report\n\nTotal Sales: $${formattedTotal}\n\nNote: Please attach the downloaded CSV file (${fileName}) to this email.`;
+      const body = `Daily Sales Report\n\nTotal Sales: $${formattedTotal}\n\n${tableHeader}${tableRows}`;
       
-      // Open email client
-      const emailLink = document.createElement('a');
-      emailLink.href = `mailto:creesler@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      document.body.appendChild(emailLink);
-      emailLink.click();
-      document.body.removeChild(emailLink);
+      // Create and click a temporary link to launch email client
+      const link = document.createElement('a');
+      link.href = `mailto:creesler@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-      setSnackbar({ 
-        open: true, 
-        message: 'CSV file downloaded. Please attach it to the email that opens.', 
-        severity: 'info' 
-      });
+      setSnackbar({ open: true, message: 'Opening email client...', severity: 'success' });
       handleShareClose();
     } catch (error) {
       console.error('Error preparing email:', error);
-      setSnackbar({ 
-        open: true, 
-        message: 'Failed to prepare email and CSV', 
-        severity: 'error' 
-      });
+      setSnackbar({ open: true, message: 'Failed to prepare email', severity: 'error' });
     }
   };
 
