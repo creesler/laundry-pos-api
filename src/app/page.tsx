@@ -38,7 +38,7 @@ import { LineChart, BarChart } from '@mui/x-charts'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
 import { config } from './config'
-import { Header } from './components/Header'
+import Header from './components/Header'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
@@ -1331,7 +1331,7 @@ export default function Home() {
             maxHeight: '100%',
             overflow: 'hidden'
           }}>
-            <HeaderComponent 
+            <Header 
               onShareClick={handleShareClick}
               onOpenTimesheet={handleOpenTimesheet}
               employeeTimeData={employeeTimeData}
