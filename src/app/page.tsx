@@ -37,7 +37,8 @@ import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email
 import { LineChart, BarChart } from '@mui/x-charts'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
-import { GOOGLE_SHEETS_CONFIG, APP_CONFIG } from './config'
+import { config } from './config'
+import { Header } from './components/Header'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
@@ -47,7 +48,7 @@ import { TimesheetRecord, EmployeeTimeEntry } from './types/timesheet'
 import { DBData } from './types/db'
 
 // Import Header with no SSR
-const Header = dynamic(() => import('./components/Header'), { ssr: false })
+const HeaderComponent = dynamic(() => import('./components/Header'), { ssr: false })
 
 // Initialize EmailJS
 emailjs.init('your_public_key') // Replace with your EmailJS public key
@@ -111,7 +112,7 @@ export default function Home() {
               window.gapi.load('client', async () => {
                 try {
                   await window.gapi.client.init({
-                    apiKey: GOOGLE_SHEETS_CONFIG.API_KEY,
+                    apiKey: config.GOOGLE_SHEETS_CONFIG.API_KEY,
                     discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
                   });
                   resolve(null);
@@ -133,7 +134,7 @@ export default function Home() {
 
           // Get data from Google Sheets
           const response = await window.gapi.client.sheets.spreadsheets.values.get({
-            spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID,
+            spreadsheetId: config.GOOGLE_SHEETS_CONFIG.SHEET_ID,
             range: 'Sheet1!A:H'
           });
 
@@ -585,7 +586,7 @@ export default function Home() {
 
       // Initialize the tokenClient
       const tokenClient = window.google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_SHEETS_CONFIG.CLIENT_ID,
+        client_id: config.GOOGLE_SHEETS_CONFIG.CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/spreadsheets',
         callback: async (tokenResponse) => {
           if (tokenResponse.error) {
@@ -599,7 +600,7 @@ export default function Home() {
                 window.gapi.load('client', async () => {
                   try {
                     await window.gapi.client.init({
-                      apiKey: GOOGLE_SHEETS_CONFIG.API_KEY,
+                      apiKey: config.GOOGLE_SHEETS_CONFIG.API_KEY,
                     });
                     await window.gapi.client.load('sheets', 'v4');
                     resolve(null);
@@ -645,7 +646,7 @@ export default function Home() {
 
                 try {
                   const dailyResult = await window.gapi.client.sheets.spreadsheets.values.append({
-                    spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID,
+                    spreadsheetId: config.GOOGLE_SHEETS_CONFIG.SHEET_ID,
                     range: 'Sheet1!A:H',
                     valueInputOption: 'USER_ENTERED',
                     insertDataOption: 'INSERT_ROWS',
@@ -724,7 +725,7 @@ export default function Home() {
                   if (timeEntryPairs.length > 0) {
                     try {
                       const timeResult = await window.gapi.client.sheets.spreadsheets.values.append({
-                        spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID,
+                        spreadsheetId: config.GOOGLE_SHEETS_CONFIG.SHEET_ID,
                         range: `${employeeName}!A:F`,
                         valueInputOption: 'USER_ENTERED',
                         insertDataOption: 'INSERT_ROWS',
@@ -833,7 +834,7 @@ export default function Home() {
       
       // Open email client
       const emailLink = document.createElement('a');
-      emailLink.href = `mailto:${APP_CONFIG.EMAIL_RECIPIENT}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      emailLink.href = `mailto:${config.APP_CONFIG.EMAIL_RECIPIENT}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       document.body.appendChild(emailLink);
       emailLink.click();
       document.body.removeChild(emailLink);
@@ -1131,7 +1132,7 @@ export default function Home() {
             window.gapi.load('client', async () => {
               try {
                 await window.gapi.client.init({
-                  apiKey: GOOGLE_SHEETS_CONFIG.API_KEY,
+                  apiKey: config.GOOGLE_SHEETS_CONFIG.API_KEY,
                   discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
                 })
                 resolve(null)
@@ -1147,7 +1148,7 @@ export default function Home() {
 
       // Get the spreadsheet metadata
       const response = await window.gapi.client.sheets.spreadsheets.get({
-        spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID
+        spreadsheetId: config.GOOGLE_SHEETS_CONFIG.SHEET_ID
       })
 
       // Filter out Sheet1 and get employee names
@@ -1330,7 +1331,7 @@ export default function Home() {
             maxHeight: '100%',
             overflow: 'hidden'
           }}>
-            <Header 
+            <HeaderComponent 
               onShareClick={handleShareClick}
               onOpenTimesheet={handleOpenTimesheet}
               employeeTimeData={employeeTimeData}
