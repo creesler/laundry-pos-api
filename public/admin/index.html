@@ -43,6 +43,13 @@
             max-width: 300px;
             width: 100%;
         }
+        /* Section visibility control */
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
         @media (max-width: 991px) {
             .navbar-collapse {
                 margin-top: 1rem;
@@ -104,35 +111,32 @@
         </nav>
 
         <div class="container mt-4">
-            <div class="controls-container">
-                <div class="period-controls">
-                    <div class="control-group period-select-group">
-                        <label for="periodFilter">Time Period</label>
-                        <div class="period-select-wrapper">
-                            <select id="periodFilter" class="form-select">
-                                <option value="day">Today</option>
-                                <option value="week">This Week</option>
-                                <option value="month">This Month</option>
-                                <option value="year">This Year</option>
-                                <option value="custom">Custom Range</option>
-                                <option value="all">All Time</option>
-                            </select>
-                            <div class="period-navigation">
-                                <button class="btn btn-outline-primary" id="prevPeriod" title="Previous Period">
-                                    <i class="fas fa-chevron-left"></i>
-                                </button>
-                                <button class="btn btn-outline-primary" id="nextPeriod" title="Next Period">
-                                    <i class="fas fa-chevron-right"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <main class="content">
                 <section id="dashboard" class="section active">
                     <div class="controls-container">
+                        <div class="period-controls">
+                            <div class="control-group period-select-group">
+                                <label for="periodFilter">Time Period</label>
+                                <div class="period-select-wrapper">
+                                    <select id="periodFilter" class="form-select">
+                                        <option value="day">Today</option>
+                                        <option value="week">This Week</option>
+                                        <option value="month">This Month</option>
+                                        <option value="year">This Year</option>
+                                        <option value="custom">Custom Range</option>
+                                        <option value="all">All Time</option>
+                                    </select>
+                                    <div class="period-navigation">
+                                        <button class="btn btn-outline-primary" id="prevPeriod" title="Previous Period">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                        <button class="btn btn-outline-primary" id="nextPeriod" title="Next Period">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div id="dateControls" class="date-controls" style="display: none;">
                             <div class="control-group">
                                 <label for="startDate">Start Date</label>
@@ -245,7 +249,7 @@
                     </div>
                 </section>
 
-                <section id="timesheet" class="section">
+                <section id="timesheets" class="section">
                     <div class="section-header">
                         <h2>Timesheet</h2>
                     </div>
@@ -363,12 +367,21 @@
             window.location.href = '/admin/login.html';
         }
 
-        // Add active class to current section
+        // Add active class to current section and handle period filter visibility
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
+                
+                // Show/hide sections
+                const targetSection = this.getAttribute('data-section');
+                document.querySelectorAll('.section').forEach(section => {
+                    section.classList.remove('active');
+                    if (section.id === targetSection) {
+                        section.classList.add('active');
+                    }
+                });
             });
         });
     </script>
