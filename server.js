@@ -6,7 +6,7 @@ import cors from 'cors';
 import inventoryRoutes from './routes/inventory.js';
 import salesRoutes from './routes/sales.js';
 import employeesRoutes from './routes/employees.js';
-import timeRoutes from './routes/time.js';
+import timesheetRoutes from './routes/timesheets.js';
 import syncRoutes from './routes/sync.js';
 
 const app = express();
@@ -20,7 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/employees', employeesRoutes);
-app.use('/api/time', timeRoutes);
+app.use('/api/timesheet', timesheetRoutes);
 app.use('/api/sync', syncRoutes);
 
 // Health check endpoint
