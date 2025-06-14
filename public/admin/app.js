@@ -1,8 +1,10 @@
 // Create a global namespace for our app
 window.LaundryAdmin = {};
 
-// API URL constant
-const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render deployment URL
+// API URL constant - automatically detect environment
+const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'  // Development
+    : 'https://laundry-pos-api.onrender.com/api';  // Production
 
 // Wait for all functions to be defined before initializing
 (function(app) {
@@ -354,7 +356,7 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
 
     async function fetchAllData() {
         try {
-            const response = await fetch('/api/sales');
+            const response = await fetch(`${API_URL}/sales`);
             
             if (!response.ok) {
                 throw new Error('Failed to fetch sales data');
@@ -660,7 +662,7 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
         }
         
         try {
-            const response = await fetch('/api/timesheets/bulk', {
+            const response = await fetch(`${API_URL}/timesheets/bulk`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -688,7 +690,7 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
     async function fetchEmployees() {
         console.log('👥 ADMIN: Fetching employees...');
         try {
-            const response = await fetch('/api/employees');
+            const response = await fetch(`${API_URL}/employees`);
             if (!response.ok) throw new Error('Failed to fetch employees');
             const data = await response.json();
             console.log('📋 ADMIN: Received employee data:', data);
@@ -751,7 +753,7 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
     async function deleteEmployee(id) {
         if (confirm('Are you sure you want to delete this employee?')) {
             try {
-                const response = await fetch(`${API_URL}/api/employees/${id}`, {
+                const response = await fetch(`${API_URL}/employees/${id}`, {
                     method: 'DELETE'
                 });
                 if (response.ok) {
@@ -906,7 +908,27 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
         try {
             console.log(`🔍 ADMIN: Fetching timesheets for ${selectedEmployee} from ${timesheetStartDate.value} to ${timesheetEndDate.value}`);
             const response = await fetch(
-                `/api/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetStartDate.value}&endDate=${timesheetEndDate.value}`
+                `${API_URL}/timesheets/bulk`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        employeeName: selectedEmployee,
+                        entries: [
+                            {
+                                date: timesheetStartDate.value,
+                                duration: formatDuration(timesheetData.totalHours * 60)
+                            },
+                            {
+                                date: timesheetEndDate.value,
+                                duration: formatDuration(timesheetData.totalHours * 60)
+                            }
+                        ],
+                        totalHours: timesheetData.totalHours
+                    })
+                }
             );
             
             console.log('📥 ADMIN: Timesheet API response status:', response.status);
@@ -1016,7 +1038,7 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
 
     async function fetchInventoryData() {
         try {
-            const response = await fetch(`${API_URL}/api/inventory`);
+            const response = await fetch(`${API_URL}/inventory`);
             if (!response.ok) {
                 throw new Error('Failed to fetch inventory data');
             }
@@ -1040,7 +1062,7 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
         }
 
         try {
-            const response = await fetch(`${API_URL}/api/inventory/logs?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+            const response = await fetch(`${API_URL}/inventory/logs?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch inventory logs');
             }

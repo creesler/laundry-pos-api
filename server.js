@@ -1,13 +1,8 @@
-import 'dotenv/config';
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-
-import inventoryRoutes from './routes/inventory.js';
-import salesRoutes from './routes/sales.js';
-import employeesRoutes from './routes/employees.js';
-import timesheetRoutes from './routes/timesheets.js';
-import syncRoutes from './routes/sync.js';
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
@@ -16,12 +11,20 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Routes
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/sales', salesRoutes);
-app.use('/api/employees', employeesRoutes);
-app.use('/api/timesheet', timesheetRoutes);
-app.use('/api/sync', syncRoutes);
+app.use('/api/inventory', require('./routes/inventory'));
+app.use('/api/sales', require('./routes/sales'));
+app.use('/api/employees', require('./routes/employees'));
+app.use('/api/time', require('./routes/time'));
+app.use('/api/sync', require('./routes/sync'));
+
+// Serve admin interface
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
