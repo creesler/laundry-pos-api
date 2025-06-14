@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Box,
   Button,
@@ -37,27 +37,70 @@ import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email
 import { LineChart, BarChart } from '@mui/x-charts'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
-import { config } from './config'
-import Header from './components/Header'
+import { GOOGLE_SHEETS_CONFIG, APP_CONFIG } from '@/app/config'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
-import { TimesheetRecord, EmployeeTimeEntry } from './types/timesheet'
-import { DBData } from './types/db'
+import DailyTracker from './components/DailyTracker'
+import SalesForm from './components/SalesForm'
+import SalesChart from './components/SalesChart'
+import InventoryTracker from './components/InventoryTracker'
+import TimesheetModal from './components/TimesheetModal'
+import ShareMenu from './components/ShareMenu'
+import AppSnackbar from './components/Snackbar'
+import { SnackbarState, InputValues, InventoryItem, InventoryUpdateLog } from './types'
+import { calculateDailyTotals, calculateChartWidth, calculateDuration, clearAllFields } from './utils/helpers'
 
 // Import Header with no SSR
-const HeaderComponent = dynamic(() => import('./components/Header'), { ssr: false })
+const Header = dynamic(() => import('./components/Header'), { ssr: false })
 
 // Initialize EmailJS
 emailjs.init('your_public_key') // Replace with your EmailJS public key
 
-// Add proper type for snackbar state
-interface SnackbarState {
-  open: boolean;
-  message: string;
-  severity: AlertColor;
+// Add type declarations for window.gapi and window.google at the top
+declare global {
+  interface Window {
+    gapi: any;
+    google: any;
+  }
+}
+
+// Add type for time entry
+interface TimeEntry {
+  date: string;
+  time: string;
+  action: 'in' | 'out';
+  employeeName: string;
+  isSaved: boolean;
+}
+
+interface FormattedTimeEntry {
+  date: string;
+  duration: string;
+  employeeName: string;
+}
+
+// Add TimesheetRecord interface
+interface TimesheetRecord {
+  date: string;
+  timeIn: string;
+  timeOut: string;
+  duration: string;
+  status: 'Completed' | 'Pending';
+  employeeName: string;
+  isSaved: boolean;
+}
+
+// Add interface for employee data
+interface Employee {
+  _id: string;
+  name: string;
+  status: string;
+  contactNumber?: string;
+  address?: string;
+  role?: string;
 }
 
 export default function Home() {
@@ -65,8 +108,11 @@ export default function Home() {
   const [employees, setEmployees] = useState<Array<{name: string; contactNumber?: string; address?: string}>>([])
   const [timeIn, setTimeIn] = useState<string>('--')
   const [timeOut, setTimeOut] = useState<string>('--')
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine)
+  const [isOnline, setIsOnline] = useState<boolean>(true)
   const [employeeList, setEmployeeList] = useState<string[]>([])
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
+  const [inventoryLogs, setInventoryLogs] = useState<InventoryUpdateLog[]>([])
+  const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'info' })
   const theme = useTheme()
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'))
 
@@ -76,125 +122,106 @@ export default function Home() {
   // Add state for local CSV file path
   const [localCsvPath, setLocalCsvPath] = useState<string>('')
 
-  // Load or generate data on component mount
+  // Single initialization effect to load all data from IndexedDB
   useEffect(() => {
-    const loadData = async () => {
+    const initializeFromIndexedDB = async () => {
       try {
-        // First try to get cached data from IndexedDB for immediate display
-        const indexedDBData = await getFromIndexedDB()
-        if (indexedDBData?.data) {
-          // Filter data for the last month
-          const oneMonthAgo = new Date();
-          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        console.log('[INIT] Loading data from IndexedDB');
+        const indexedDBData = await getFromIndexedDB() || {};
+
+        // Set employee data and selection first
+        if (indexedDBData.employeeList) {
+          console.log('👥 Found employee list in IndexedDB:', indexedDBData.employeeList);
+          setEmployeeList(indexedDBData.employeeList);
           
-          const filteredData = indexedDBData.data.filter(item => {
-            const itemDate = new Date(item.Date.split(' ')[0]);
-            return itemDate >= oneMonthAgo;
-          });
-          
-          // Sort data by date (newest first)
-          const sortedData = filteredData.sort((a, b) => {
-            const dateA = new Date(a.Date.split(' ')[0]);
-            const dateB = new Date(b.Date.split(' ')[0]);
-            return dateB.getTime() - dateA.getTime();
-          });
-          
-          setSavedData(sortedData);
-        }
-
-        // If online, try to fetch from Google Sheets
-        if (isOnline) {
-          // Load the Google API client
-          await new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = 'https://apis.google.com/js/api.js';
-            script.onload = () => {
-              window.gapi.load('client', async () => {
-                try {
-                  await window.gapi.client.init({
-                    apiKey: config.GOOGLE_SHEETS_CONFIG.API_KEY,
-                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
-                  });
-                  resolve(null);
-                } catch (error) {
-                  console.error('Error initializing Google API client:', error);
-                  reject(error);
-                }
-              });
-            };
-            script.onerror = () => {
-              console.error('Failed to load Google API script');
-              reject(new Error('Failed to load Google API'));
-            };
-            document.body.appendChild(script);
-          });
-
-          // Wait for client to be ready
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          // Get data from Google Sheets
-          const response = await window.gapi.client.sheets.spreadsheets.values.get({
-            spreadsheetId: config.GOOGLE_SHEETS_CONFIG.SHEET_ID,
-            range: 'Sheet1!A:H'
-          });
-
-          if (response.result.values) {
-            // Convert sheet data to our format
-            const sheetData = response.result.values
-              .slice(1) // Skip header row
-              .map(row => ({
-                Date: row[0],
-                Coin: row[1] || '',
-                Hopper: row[2] || '',
-                Soap: row[3] || '',
-                Vending: row[4] || '',
-                'Drop Off Amount 1': row[5] || '',
-                'Drop Off Code': row[6] || '',
-                'Drop Off Amount 2': row[7] || '',
-                isSaved: true
-              }));
-
-            // Filter for last month
-            const oneMonthAgo = new Date();
-            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-            
-            const filteredSheetData = sheetData.filter(item => {
-              const itemDate = new Date(item.Date.split(' ')[0]);
-              return itemDate >= oneMonthAgo;
-            });
-
-            // Merge with any unsaved local data
-            const unsavedLocalData = savedData.filter(item => !item.isSaved);
-            const mergedData = [...filteredSheetData, ...unsavedLocalData].sort((a, b) => {
-              const dateA = new Date(a.Date.split(' ')[0]);
-              const dateB = new Date(b.Date.split(' ')[0]);
-              return dateB.getTime() - dateA.getTime();
-            });
-
-            // Update state and IndexedDB
-            setSavedData(mergedData);
-            await saveToIndexedDB({
-              ...indexedDBData,
-              data: mergedData,
-              lastSynced: new Date().toISOString()
-            });
+          // Restore last selected employee if valid
+          const lastSelectedEmployee = localStorage.getItem('selectedEmployee');
+          if (lastSelectedEmployee && indexedDBData.employeeList.includes(lastSelectedEmployee)) {
+            console.log('👤 Restoring last selected employee:', lastSelectedEmployee);
+            setSelectedEmployee(lastSelectedEmployee);
+          } else if (indexedDBData.employeeList.length > 0) {
+            const firstEmployee = indexedDBData.employeeList[0];
+            console.log('👤 Selecting first available employee:', firstEmployee);
+            setSelectedEmployee(firstEmployee);
+            localStorage.setItem('selectedEmployee', firstEmployee);
           }
+        } else {
+          console.log('⚠️ No employee list found in IndexedDB');
         }
+
+        // Set employee time data
+        if (indexedDBData.employeeTimeData) {
+          console.log('⏰ Found employee time data in IndexedDB');
+          setEmployeeTimeData(indexedDBData.employeeTimeData);
+        }
+
+        // Set sales data
+        if (indexedDBData.data) {
+          console.log('💰 Found sales data in IndexedDB');
+          setSavedData(indexedDBData.data);
+        }
+
+        // Set inventory data
+        if (indexedDBData.inventory) {
+          console.log('📦 Found inventory data in IndexedDB');
+          setInventoryItems(indexedDBData.inventory);
+        } else {
+          // Initialize with default items if none exist
+          console.log('📦 Initializing default inventory items');
+          const defaultItems: InventoryItem[] = [
+            {
+              id: 'soap-1',
+              name: 'Laundry Soap',
+              currentStock: 0,
+              maxStock: 0,
+              minStock: 0,
+              unit: 'bottles',
+              lastUpdated: new Date().toISOString(),
+              isDeleted: false
+            },
+            {
+              id: 'detergent-1',
+              name: 'Detergent',
+              currentStock: 0,
+              maxStock: 0,
+              minStock: 0,
+              unit: 'boxes',
+              lastUpdated: new Date().toISOString(),
+              isDeleted: false
+            }
+          ];
+          setInventoryItems(defaultItems);
+          indexedDBData.inventory = defaultItems;
+        }
+
+        // Set inventory logs
+        if (indexedDBData.inventoryLogs) {
+          console.log('📝 Found inventory logs in IndexedDB');
+          setInventoryLogs(indexedDBData.inventoryLogs);
+        }
+
+        // Save any default data if it was created
+        if (!indexedDBData.inventory) {
+          console.log('💾 Saving default data to IndexedDB');
+          await saveToIndexedDB(indexedDBData);
+        }
+
       } catch (error) {
-        console.error('Error loading data:', error);
-        // If error and no data loaded yet, initialize with empty array
-        if (!savedData.length) {
-          setSavedData([]);
-        }
+        console.error('[INIT] Error loading data:', error);
+        setSnackbar({
+          open: true,
+          message: 'Error loading saved data',
+          severity: 'error'
+        });
       }
     };
 
-    loadData();
-  }, [isOnline]); // Add isOnline to dependencies to reload when connection status changes
+    initializeFromIndexedDB();
+  }, []); // Only run once on mount
 
   // Add states for input fields
   const [selectedField, setSelectedField] = useState<string>('')
-  const [inputValues, setInputValues] = useState({
+  const [inputValues, setInputValues] = useState<InputValues>({
     Date: new Date().toLocaleDateString(),
     Coin: '',
     Hopper: '',
@@ -282,7 +309,7 @@ export default function Home() {
     if (!selectedField) return
 
     if (value === 'Clr') {
-      clearAllFields()
+      clearAllFields(setInputValues, setSelectedField, setEditingIndex)
       return
     }
 
@@ -331,21 +358,20 @@ export default function Home() {
   const handleSave = async () => {
     try {
       const now = new Date();
-      // Format time with milliseconds but keep display format user-friendly
       const displayTime = now.toLocaleTimeString([], { 
         hour: '2-digit', 
         minute: '2-digit',
         second: '2-digit',
         hour12: true 
       });
-      // Add milliseconds to the stored timestamp for precise sorting
-      const sortableTime = now.toISOString().split('T')[1].split('.')[0] + '.' + now.getMilliseconds().toString().padStart(3, '0');
       const currentDate = now.toLocaleDateString();
+      
+      // For edited entries, preserve the original date but update the time
       const dateTimeString = editingIndex !== null
-        ? `${inputValues.Date} ${displayTime}|${sortableTime}`  // Store both display time and sortable time
-        : `${currentDate} ${displayTime}|${sortableTime}`  // Store both display time and sortable time
+        ? `${inputValues.Date} ${displayTime}`  // Keep original date for edits
+        : `${currentDate} ${displayTime}`;  // Use current date for new entries
 
-      const newEntry = {
+      const newRecord = {
         Date: dateTimeString,
         Coin: inputValues.Coin || '',
         Hopper: inputValues.Hopper || '',
@@ -355,34 +381,16 @@ export default function Home() {
         'Drop Off Code': inputValues['Drop Off Code'] || '',
         'Drop Off Amount 2': inputValues['Drop Off Amount 2'] || '',
         isSaved: false
-      }
+      };
 
       let updatedData;
       if (editingIndex !== null) {
-        // Update existing entry
+        // Update existing entry while preserving its position
         updatedData = [...savedData];
-        updatedData[editingIndex] = newEntry;
-        
-        // Sort all entries by date and time
-        updatedData.sort((a, b) => {
-          const dateA = new Date(a.Date);
-          const dateB = new Date(b.Date);
-          return dateB.getTime() - dateA.getTime();
-        });
+        updatedData[editingIndex] = newRecord;
       } else {
-        // For new entries, separate today's entries from older ones
-        const todayEntries = savedData.filter(entry => entry.Date.split(' ')[0] === currentDate);
-        const olderEntries = savedData.filter(entry => entry.Date.split(' ')[0] !== currentDate);
-        
-        // Sort older entries by date and time
-        olderEntries.sort((a, b) => {
-          const dateA = new Date(a.Date);
-          const dateB = new Date(b.Date);
-          return dateB.getTime() - dateA.getTime();
-        });
-        
-        // Add new entry at the top, followed by other today's entries, then older entries
-        updatedData = [newEntry, ...todayEntries, ...olderEntries];
+        // For new entries, add to the beginning
+        updatedData = [newRecord, ...savedData];
       }
 
       // Save to IndexedDB
@@ -390,7 +398,7 @@ export default function Home() {
       await saveToIndexedDB({
         ...existingData,
         data: updatedData,
-        employeeTimeData: (existingData as DBData)?.employeeTimeData || []
+        employeeTimeData: existingData.employeeTimeData || []
       });
       
       // Update local state
@@ -398,7 +406,7 @@ export default function Home() {
       
       // Clear form
       setEditingIndex(null);
-      clearAllFields();
+      clearAllFields(setInputValues, setSelectedField, setEditingIndex);
       
       // Show success message
       setSnackbar({
@@ -416,113 +424,8 @@ export default function Home() {
     }
   }
 
-  // Update clearAllFields to also clear editing state
-  const clearAllFields = () => {
-    const emptyInputs = {
-      Date: new Date().toLocaleDateString(),
-      Coin: '',
-      Hopper: '',
-      Soap: '',
-      Vending: '',
-      'Drop Off Amount 1': '',
-      'Drop Off Code': '',
-      'Drop Off Amount 2': '',
-    }
-    setInputValues(emptyInputs)
-    setSelectedField('')
-    setEditingIndex(null)
-  }
-
-  // Update calculateDailyTotals for month and year views
-  const calculateDailyTotals = () => {
-    const dailyTotals = new Map()
-    
-    let start, end
-    
-    if (viewType === 'month') {
-      // Set to selected month
-      start = new Date(selectedYear, selectedMonth, 1)
-      end = new Date(selectedYear, selectedMonth + 1, 0) // Last day of month
-    } else {
-      // Set to selected year
-      start = new Date(selectedYear, 0, 1)
-      end = new Date(selectedYear, 11, 31)
-    }
-
-    // Process each row in savedData first
-    savedData.forEach(row => {
-      const rowDate = new Date(row.Date.split(' ')[0])
-      if (rowDate >= start && rowDate <= end) {
-        let datePart
-        if (viewType === 'year') {
-          // For year view, group by month
-          const month = rowDate.getMonth()
-          datePart = month.toString() // 0-11 for months
-        } else {
-          // For month view, use day of month
-          datePart = rowDate.getDate().toString() // 1-31 for days
-        }
-        
-        const rowTotal = [
-          parseFloat(row.Coin) || 0,
-          parseFloat(row.Hopper) || 0,
-          parseFloat(row.Soap) || 0,
-          parseFloat(row.Vending) || 0,
-          parseFloat(row['Drop Off Amount 1']) || 0,
-          parseFloat(row['Drop Off Amount 2']) || 0
-        ].reduce((sum, val) => sum + val, 0)
-
-        if (dailyTotals.has(datePart)) {
-          dailyTotals.set(datePart, dailyTotals.get(datePart) + rowTotal)
-        } else {
-          dailyTotals.set(datePart, rowTotal)
-        }
-      }
-    })
-
-    // Fill in missing dates with zero
-    if (viewType === 'year') {
-      // Fill in all months (0-11)
-      for (let month = 0; month < 12; month++) {
-        if (!dailyTotals.has(month.toString())) {
-          dailyTotals.set(month.toString(), 0.001)
-        }
-      }
-    } else {
-      // Fill in all days of the month
-      const lastDay = new Date(selectedYear, selectedMonth + 1, 0).getDate()
-      for (let day = 1; day <= lastDay; day++) {
-        if (!dailyTotals.has(day.toString())) {
-          dailyTotals.set(day.toString(), 0.001)
-        }
-      }
-    }
-
-    // Convert to array and sort
-    const sortedEntries = Array.from(dailyTotals.entries())
-      .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-      .map(([date, total]) => {
-        let displayDate
-        if (viewType === 'year') {
-          // Convert month number to name
-          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-          displayDate = monthNames[parseInt(date)]
-        } else {
-          // Use day number for month view
-          displayDate = date
-        }
-        
-        return {
-          date: displayDate,
-          total: total === 0 ? 0.001 : parseFloat(total.toFixed(2))
-        }
-      })
-
-    return sortedEntries
-  }
-
   // Add function to calculate chart width
-  const calculateChartWidth = () => {
+  const calculateChartWidth = (viewType: string, calculateDailyTotals: () => any[]) => {
     if (viewType !== 'year') return '100%'
     
     const data = calculateDailyTotals()
@@ -545,15 +448,7 @@ export default function Home() {
   }
 
   // Add handlers for share menu
-  const handleShareClick = (event: React.MouseEvent<HTMLElement>) => setShareAnchorEl(event.currentTarget)
-  const handleShareClose = () => setShareAnchorEl(null)
-
-  // Add state for snackbar
-  const [snackbar, setSnackbar] = useState<SnackbarState>({
-    open: false,
-    message: '',
-    severity: 'info'
-  })
+  const handleShareClick = () => setShareAnchorEl(null)
 
   // Add state for Google API
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
@@ -586,9 +481,9 @@ export default function Home() {
 
       // Initialize the tokenClient
       const tokenClient = window.google.accounts.oauth2.initTokenClient({
-        client_id: config.GOOGLE_SHEETS_CONFIG.CLIENT_ID,
+        client_id: GOOGLE_SHEETS_CONFIG.CLIENT_ID,
         scope: 'https://www.googleapis.com/auth/spreadsheets',
-        callback: async (tokenResponse) => {
+        callback: async (tokenResponse: any) => {
           if (tokenResponse.error) {
             throw new Error(`Authentication failed: ${tokenResponse.error}`);
           }
@@ -600,7 +495,7 @@ export default function Home() {
                 window.gapi.load('client', async () => {
                   try {
                     await window.gapi.client.init({
-                      apiKey: config.GOOGLE_SHEETS_CONFIG.API_KEY,
+                      apiKey: GOOGLE_SHEETS_CONFIG.API_KEY,
                     });
                     await window.gapi.client.load('sheets', 'v4');
                     resolve(null);
@@ -620,7 +515,7 @@ export default function Home() {
               const unsavedDailyRecords = savedData.filter(item => !item.isSaved);
               
               // Sort records by date
-              const sortedUnsavedRecords = unsavedDailyRecords.sort((a, b) => {
+              const sortedUnsavedRecords = unsavedDailyRecords.sort((a: any, b: any) => {
                 const dateA = new Date(a.Date.split('|')[0]);
                 const dateB = new Date(b.Date.split('|')[0]);
                 return dateA.getTime() - dateB.getTime();
@@ -646,7 +541,7 @@ export default function Home() {
 
                 try {
                   const dailyResult = await window.gapi.client.sheets.spreadsheets.values.append({
-                    spreadsheetId: config.GOOGLE_SHEETS_CONFIG.SHEET_ID,
+                    spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID,
                     range: 'Sheet1!A:H',
                     valueInputOption: 'USER_ENTERED',
                     insertDataOption: 'INSERT_ROWS',
@@ -667,13 +562,13 @@ export default function Home() {
               // Process and save timesheet entries if any exist
               if (unsavedTimeEntries.length > 0) {
                 // Group entries by employee
-                const entriesByEmployee = new Map();
+                const entriesByEmployee = new Map<string, any[]>();
                 
                 for (const entry of unsavedTimeEntries) {
                   if (!entriesByEmployee.has(entry.employeeName)) {
                     entriesByEmployee.set(entry.employeeName, []);
                   }
-                  entriesByEmployee.get(entry.employeeName).push(entry);
+                  entriesByEmployee.get(entry.employeeName)!.push(entry);
                 }
 
                 // Process and save entries for each employee
@@ -685,10 +580,10 @@ export default function Home() {
                     const entry = entries[i];
                     if (entry.action === 'in') {
                       // Find matching clock out
-                      const clockOut = entries.find((e, index) => 
+                      const clockOut = entries.slice(i + 1).find((e: any, index: number) => 
                         index > i && 
                         e.action === 'out' &&
-                        e.date === entry.date
+                        e.date === entries[i].date
                       );
 
                       // Format date as M/D/YYYY
@@ -725,7 +620,7 @@ export default function Home() {
                   if (timeEntryPairs.length > 0) {
                     try {
                       const timeResult = await window.gapi.client.sheets.spreadsheets.values.append({
-                        spreadsheetId: config.GOOGLE_SHEETS_CONFIG.SHEET_ID,
+                        spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID,
                         range: `${employeeName}!A:F`,
                         valueInputOption: 'USER_ENTERED',
                         insertDataOption: 'INSERT_ROWS',
@@ -771,7 +666,7 @@ export default function Home() {
                 severity: 'success'
               });
 
-              handleShareClose();
+              handleShareClick();
             } catch (error) {
               console.error('Error in save operation:', error);
               throw error;
@@ -786,7 +681,7 @@ export default function Home() {
       console.error('Error in Google Sheets integration:', error);
       setSnackbar({
         open: true,
-        message: error.message || 'Failed to save to Google Sheets',
+        message: error instanceof Error ? error.message : 'Failed to save to Google Sheets',
         severity: 'error'
       });
     }
@@ -834,7 +729,7 @@ export default function Home() {
       
       // Open email client
       const emailLink = document.createElement('a');
-      emailLink.href = `mailto:${config.APP_CONFIG.EMAIL_RECIPIENT}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      emailLink.href = `mailto:${APP_CONFIG.EMAIL_RECIPIENT}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       document.body.appendChild(emailLink);
       emailLink.click();
       document.body.removeChild(emailLink);
@@ -844,7 +739,7 @@ export default function Home() {
         message: 'CSV file downloaded. Please attach it to the email that opens.', 
         severity: 'info' 
       });
-      handleShareClose();
+      handleShareClick();
     } catch (error) {
       console.error('Error preparing email:', error);
       setSnackbar({ 
@@ -869,12 +764,12 @@ export default function Home() {
   const handleBluetoothShare = () => {
     // Implement Bluetooth sharing logic here
     alert('Bluetooth sharing feature coming soon!')
-    handleShareClose()
+    handleShareClick()
   }
 
   // Update chart components with proper typing
   const renderChart = () => {
-    const chartData = calculateDailyTotals()
+    const chartData = calculateDailyTotals(savedData, viewType === 'week' ? 'month' : viewType, selectedMonth, selectedYear)
     
     const commonProps = {
       dataset: chartData,
@@ -976,23 +871,8 @@ export default function Home() {
     )
   }
 
-  // Add state for employee time data
-  const [employeeTimeData, setEmployeeTimeData] = useState<EmployeeTimeEntry[]>([])
-
-  // Load initial time data from IndexedDB
-  useEffect(() => {
-    const loadTimeData = async () => {
-      try {
-        const data = await getFromIndexedDB()
-        if (data?.employeeTimeData) {
-          setEmployeeTimeData(data.employeeTimeData)
-        }
-      } catch (error) {
-        console.error('Error loading time data:', error)
-      }
-    }
-    loadTimeData()
-  }, [])
+  // Update employeeTimeData state
+  const [employeeTimeData, setEmployeeTimeData] = useState<TimeEntry[]>([])
 
   // Add state for timesheet modal
   const [timesheetOpen, setTimesheetOpen] = useState(false)
@@ -1006,6 +886,10 @@ export default function Home() {
   }
 
   const handleEmployeeSelect = () => {
+    console.log('🔄 handleEmployeeSelect called:', {
+      selectedEmployee,
+      employeeList
+    });
     if (selectedEmployee) {
       setActiveEmployee(selectedEmployee)
       setSnackbar({
@@ -1016,29 +900,71 @@ export default function Home() {
     }
   }
 
-  // Add function to format duration
-  const calculateDuration = (timeIn: string, timeOut: string) => {
-    if (!timeIn || !timeOut || timeOut === '--') return '--'
+  const handleEmployeeChange = (value: string) => {
+    console.log('👤 handleEmployeeChange called:', {
+      previous: selectedEmployee,
+      new: value,
+      employeeList
+    });
+    setSelectedEmployee(value);
+    localStorage.setItem('selectedEmployee', value);
+  };
+
+  // Add a useCallback to memoize the handler
+  const memoizedHandleEmployeeChange = useCallback(handleEmployeeChange, []);
+
+  // Add useEffect to handle employee list updates
+  useEffect(() => {
+    const updateEmployeeList = async () => {
+      try {
+        const indexedDBData = await getFromIndexedDB();
+        if (indexedDBData?.employeeList) {
+          console.log('📋 Updating employee list from IndexedDB:', indexedDBData.employeeList);
+          setEmployeeList(indexedDBData.employeeList);
+        }
+      } catch (error) {
+        console.error('❌ Error updating employee list:', error);
+      }
+    };
+
+    updateEmployeeList();
+  }, []); // Only run once on mount
+
+  // Helper function to convert 12-hour time to 24-hour format
+  const convertTo24Hour = (time12h: string) => {
+    const [time, modifier] = time12h.split(' ');
+    let [hours, minutes] = time.split(':');
     
-    try {
-      const [inTime, inPeriod] = timeIn.split(' ')
-      const [outTime, outPeriod] = timeOut.split(' ')
-      
-      const inDate = new Date(`2000/01/01 ${inTime} ${inPeriod}`)
-      const outDate = new Date(`2000/01/01 ${outTime} ${outPeriod}`)
-      
-      if (isNaN(inDate.getTime()) || isNaN(outDate.getTime())) return '--'
-      
-      const diff = outDate.getTime() - inDate.getTime()
-      const hours = Math.floor(diff / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      
-      return `${hours}h ${minutes}m`
-    } catch (error) {
-      console.error('Error calculating duration:', error)
-      return '--'
+    if (hours === '12') {
+      hours = '00';
     }
-  }
+    
+    if (modifier === 'PM') {
+      hours = (parseInt(hours, 10) + 12).toString();
+    }
+    
+    return `${hours.padStart(2, '0')}:${minutes}`;
+  };
+
+  // Helper function to calculate duration between two times
+  const calculateDuration = (timeIn: string, timeOut: string) => {
+    if (timeOut === '--') return '--';
+
+    // Convert times to 24-hour format
+    const time24In = convertTo24Hour(timeIn);
+    const time24Out = convertTo24Hour(timeOut);
+
+    const [inHours, inMinutes] = time24In.split(':').map(Number);
+    const [outHours, outMinutes] = time24Out.split(':').map(Number);
+    
+    let totalMinutes = (outHours * 60 + outMinutes) - (inHours * 60 + inMinutes);
+    if (totalMinutes < 0) totalMinutes += 24 * 60; // Handle overnight shifts
+    
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    return `${hours}h ${minutes}m`;
+  };
 
   // Add state for current time display
   const [currentTime, setCurrentTime] = useState<string>('')
@@ -1059,127 +985,24 @@ export default function Home() {
   // Add online/offline detection
   useEffect(() => {
     const handleOnline = () => {
-      setIsOnline(true)
-      // When we come back online, try to fetch fresh data
-      fetchEmployeeList()
+      setIsOnline(true);
     }
     
     const handleOffline = () => {
-      setIsOnline(false)
-      // When offline, try to load from cache
-      loadFromCache()
+      setIsOnline(false);
     }
 
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     // Initial check
-    checkConnectivityAndLoad()
+    setIsOnline(navigator.onLine);
 
     return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     }
-  }, [])
-
-  const checkConnectivityAndLoad = async () => {
-    try {
-      // Try to fetch a small resource to check real connectivity
-      const response = await fetch('https://www.google.com/favicon.ico', {
-        mode: 'no-cors',
-        cache: 'no-cache'
-      })
-      setIsOnline(true)
-      fetchEmployeeList()
-    } catch (error) {
-      setIsOnline(false)
-      loadFromCache()
-    }
-  }
-
-  const loadFromCache = async () => {
-    try {
-      // Try to get employee list from IndexedDB
-      const data = await getFromIndexedDB()
-      if (data?.employeeList) {
-        setEmployeeList(data.employeeList)
-        if (data.employeeList.length > 0) {
-          // If there's a previously selected employee, use that
-          const lastSelectedEmployee = localStorage.getItem('selectedEmployee')
-          if (lastSelectedEmployee && data.employeeList.includes(lastSelectedEmployee)) {
-            setSelectedEmployee(lastSelectedEmployee)
-          } else {
-            setSelectedEmployee(data.employeeList[0])
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error loading from cache:', error)
-    }
-  }
-
-  const fetchEmployeeList = async () => {
-    try {
-      // Try to get from cache first for immediate display
-      await loadFromCache()
-
-      // Then try to fetch fresh data
-      if (!window.gapi?.client?.sheets) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script')
-          script.src = 'https://apis.google.com/js/api.js'
-          script.onload = () => {
-            window.gapi.load('client', async () => {
-              try {
-                await window.gapi.client.init({
-                  apiKey: config.GOOGLE_SHEETS_CONFIG.API_KEY,
-                  discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-                })
-                resolve(null)
-              } catch (error) {
-                reject(error)
-              }
-            })
-          }
-          script.onerror = () => reject(new Error('Failed to load Google API'))
-          document.body.appendChild(script)
-        })
-      }
-
-      // Get the spreadsheet metadata
-      const response = await window.gapi.client.sheets.spreadsheets.get({
-        spreadsheetId: config.GOOGLE_SHEETS_CONFIG.SHEET_ID
-      })
-
-      // Filter out Sheet1 and get employee names
-      const employees = response.result.sheets
-        ?.filter(sheet => sheet.properties?.title !== 'Sheet1')
-        .map(sheet => sheet.properties?.title || '')
-        .filter(title => title !== '') || []
-
-      // Update state and cache
-      setEmployeeList(employees)
-      if (employees.length > 0) {
-        const lastSelectedEmployee = localStorage.getItem('selectedEmployee')
-        if (lastSelectedEmployee && employees.includes(lastSelectedEmployee)) {
-          setSelectedEmployee(lastSelectedEmployee)
-        } else {
-          setSelectedEmployee(employees[0])
-        }
-      }
-
-      // Save to IndexedDB
-      const existingData = await getFromIndexedDB() || {}
-      await saveToIndexedDB({
-        ...existingData,
-        employeeList: employees
-      })
-    } catch (error) {
-      console.error('Error fetching employee list:', error)
-      // If online fetch fails, ensure we're using cached data
-      await loadFromCache()
-    }
-  }
+  }, []);
 
   // Save selected employee to localStorage when it changes
   useEffect(() => {
@@ -1193,90 +1016,592 @@ export default function Home() {
     endDate: endOfMonth(new Date())
   })
   const [isLoadingTimesheet, setIsLoadingTimesheet] = useState(false)
-  const [timesheetData, setTimesheetData] = useState<TimesheetRecord[]>([])
+  const [timesheetData, setTimesheetData] = useState<Array<{
+    date: string;
+    timeIn: string;
+    timeOut: string;
+    duration: string;
+    status: string;
+    employeeName: string;
+    isSaved: boolean;
+  }>>([])
 
-  // Function to fetch timesheet data
+  // Function to fetch timesheet data from IndexedDB only
   const fetchTimesheetData = async () => {
-    setIsLoadingTimesheet(true)
+    setIsLoadingTimesheet(true);
     try {
-      // Get all time entries for the selected employee
-      const employeeEntries = employeeTimeData
-        .filter(entry => entry.employeeName === selectedEmployee)
-        .sort((a, b) => new Date(a.date + ' ' + a.time).getTime() - new Date(b.date + ' ' + b.time).getTime());
+      const localData = await getFromIndexedDB();
+      if (localData?.employeeTimeData) {
+        const entries = localData.employeeTimeData
+          .filter((entry: any) => entry.employeeName === selectedEmployee)
+          .sort((a: any, b: any) => {
+            const dateA = new Date(a.date + ' ' + a.time);
+            const dateB = new Date(b.date + ' ' + b.time);
+            return dateA.getTime() - dateB.getTime();
+          });
 
-      // Group entries by date
-      const entriesByDate = {};
-      employeeEntries.forEach(entry => {
-        if (!entriesByDate[entry.date]) {
-          entriesByDate[entry.date] = [];
-        }
-        entriesByDate[entry.date].push(entry);
-      });
+        const formattedEntries = [];
+        let currentClockIn = null;
 
-      // Create timesheet records
-      const records = [];
-      Object.entries(entriesByDate).forEach(([date, entries]: [string, any[]]) => {
-        // Sort entries by time for each date
-        entries.sort((a, b) => new Date(a.date + ' ' + a.time).getTime() - new Date(b.date + ' ' + b.time).getTime());
-        
-        // Find pairs of in/out entries
-        for (let i = 0; i < entries.length; i++) {
-          if (entries[i].action === 'in') {
-            const clockIn = entries[i];
-            // Look for next 'out' entry
-            const clockOut = entries.slice(i + 1).find(e => e.action === 'out');
-            
-            records.push({
-              date: clockIn.date,
-              timeIn: clockIn.time,
-              timeOut: clockOut ? clockOut.time : '--',
-              duration: clockOut ? calculateDuration(clockIn.time, clockOut.time) : '--',
-              status: clockOut ? 'Completed' : 'Pending',
-              employeeName: clockIn.employeeName,
-              isSaved: clockIn.isSaved && (clockOut ? clockOut.isSaved : false)
+        for (const entry of entries) {
+          if (entry.action === 'in') {
+            currentClockIn = entry;
+          } else if (entry.action === 'out' && currentClockIn) {
+            formattedEntries.push({
+              date: currentClockIn.date,
+              timeIn: currentClockIn.time,
+              timeOut: entry.time,
+              duration: calculateDuration(currentClockIn.time, entry.time),
+              status: 'Completed',
+              employeeName: currentClockIn.employeeName,
+              isSaved: currentClockIn.isSaved && entry.isSaved
             });
-
-            // Skip the out entry we just used
-            if (clockOut) {
-              i = entries.indexOf(clockOut);
-            }
+            currentClockIn = null;
           }
         }
-      });
 
-      // Filter records by date range
-      const filteredRecords = records.filter(record => {
-        const recordDate = new Date(record.date);
-        return isWithinInterval(recordDate, {
-          start: timesheetDateRange.startDate,
-          end: timesheetDateRange.endDate
-        });
-      });
+        // Add pending clock-in if exists
+        if (currentClockIn) {
+          formattedEntries.push({
+            date: currentClockIn.date,
+            timeIn: currentClockIn.time,
+            timeOut: '--',
+            duration: '--',
+            status: 'Pending',
+            employeeName: currentClockIn.employeeName,
+            isSaved: currentClockIn.isSaved
+          });
+        }
 
-      // Sort records by date and time
-      const sortedRecords = filteredRecords.sort((a, b) => {
-        const dateA = new Date(a.date + ' ' + a.timeIn);
-        const dateB = new Date(b.date + ' ' + b.timeIn);
-        return dateB.getTime() - dateA.getTime();
-      });
-
-      setTimesheetData(sortedRecords);
+        setTimesheetData(formattedEntries);
+      }
     } catch (error) {
-      console.error('Error fetching timesheet data:', error);
-      setSnackbar({
-        open: true,
-        message: 'Error loading timesheet data',
-        severity: 'error'
-      });
+      console.error('Error loading local timesheet data:', error);
+      setTimesheetData([]);
     } finally {
       setIsLoadingTimesheet(false);
     }
   };
 
-  // Add useEffect hooks for data fetching
+  // Load timesheet data when modal opens or employee changes
   useEffect(() => {
-    fetchTimesheetData()
-  }, [timesheetDateRange, selectedEmployee, timesheetOpen])
+    if (selectedEmployee && timesheetOpen) {
+      fetchTimesheetData();
+    }
+  }, [selectedEmployee, timesheetOpen]);
+
+  // Function to fetch online timesheet data (used by Request Data button)
+  const fetchOnlineTimesheetData = async () => {
+    if (!selectedEmployee || !isOnline) return;
+    
+    setIsLoadingTimesheet(true);
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetDateRange.startDate.toISOString().split('T')[0]}&endDate=${timesheetDateRange.endDate.toISOString().split('T')[0]}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch timesheet data');
+      }
+
+      const data = await response.json();
+      
+      // Format the data to match the expected structure
+      const formattedData = data.map((entry: any) => ({
+        date: format(new Date(entry.date), 'yyyy-MM-dd'),
+        timeIn: format(new Date(entry.clockIn), 'hh:mm a'),
+        timeOut: entry.clockOut ? format(new Date(entry.clockOut), 'hh:mm a') : '--',
+        duration: entry.duration ? `${Math.floor(entry.duration / 60)}h ${entry.duration % 60}m` : '--',
+        status: entry.status === 'completed' ? 'Completed' : 'Pending',
+        employeeName: entry.employeeName,
+        isSaved: true
+      }));
+
+      // Return the formatted data instead of setting it directly
+      return formattedData;
+    } catch (error) {
+      console.error('Error fetching timesheet data:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to fetch online timesheet data',
+        severity: 'error'
+      });
+      return [];
+    } finally {
+      setIsLoadingTimesheet(false);
+    }
+  };
+
+  // Add handler for closing share menu
+  const handleShareClose = () => setShareAnchorEl(null);
+
+  // Add handler for updating inventory
+  const handleUpdateInventory = async (
+    itemId: string,
+    newStock: number,
+    updateType: 'restock' | 'usage' | 'adjustment',
+    notes?: string
+  ) => {
+    try {
+      console.log('[INVENTORY UPDATE START]', {
+        caller: notes || 'unknown',
+        itemId,
+        newStock: Number(newStock),
+        updateType,
+        currentState: inventoryItems
+      });
+
+      // Get existing data from IndexedDB first
+      const existingData = await getFromIndexedDB() || {};
+      console.log('[INDEXEDDB READ]', {
+        caller: notes || 'unknown',
+        existingInventory: existingData.inventory
+      });
+
+      const currentInventory = existingData.inventory || [];
+
+      // Find the current item
+      const currentItem = currentInventory.find((item: InventoryItem) => item.id === itemId);
+      if (!currentItem) {
+        console.error('Item not found:', itemId);
+        throw new Error('Item not found');
+      }
+
+      console.log('[CURRENT ITEM STATE]', {
+        caller: notes || 'unknown',
+        item: currentItem
+      });
+
+      // Create updated items array with new values
+      const updatedItems = currentInventory.map((item: InventoryItem) => {
+        if (item.id === itemId) {
+          if (updateType === 'usage') {
+            // For usage, add to currentStock (since currentStock tracks used amount)
+            const updatedCurrentStock = Number(item.currentStock) + Number(newStock);
+            // Validate that we don't exceed maxStock
+            if (updatedCurrentStock > item.maxStock) {
+              throw new Error(`Cannot use ${newStock} ${item.unit}. Only ${item.maxStock - item.currentStock} available.`);
+            }
+            console.log('[UPDATING USAGE]', {
+              caller: notes || 'unknown',
+              itemId: item.id,
+              itemName: item.name,
+              previousStock: item.currentStock,
+              usage: newStock,
+              newTotal: updatedCurrentStock,
+              maxStock: item.maxStock
+            });
+            return {
+              ...item,
+              currentStock: updatedCurrentStock,
+              lastUpdated: new Date().toISOString(),
+              isSaved: false // Mark as unsaved
+            };
+          } else if (updateType === 'restock') {
+            // For restock, set new maxStock and reset currentStock to 0
+            return {
+              ...item,
+              maxStock: Number(newStock),
+              currentStock: 0,
+              lastUpdated: new Date().toISOString(),
+              isSaved: false // Mark as unsaved
+            };
+          } else { // adjustment
+            // For direct adjustment, set the currentStock to the new value
+            if (Number(newStock) > item.maxStock) {
+              throw new Error(`Cannot set usage to ${newStock} ${item.unit}. Maximum is ${item.maxStock}.`);
+            }
+            return {
+              ...item,
+              currentStock: Number(newStock),
+              lastUpdated: new Date().toISOString(),
+              isSaved: false // Mark as unsaved
+            };
+          }
+        }
+        return item;
+      });
+
+      console.log('[UPDATED ITEMS]', {
+        caller: notes || 'unknown',
+        updatedItems
+      });
+
+      // Create update log
+      const updateLog: InventoryUpdateLog = {
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        itemId,
+        previousStock: currentItem.currentStock,
+        newStock: updateType === 'usage' 
+          ? Number(currentItem.currentStock) + Number(newStock)
+          : Number(newStock),
+        updateType,
+        timestamp: new Date().toISOString(),
+        updatedBy: selectedEmployee || 'unknown',
+        notes,
+        isSaved: false
+      };
+
+      console.log('[SAVING TO INDEXEDDB]', {
+        caller: notes || 'unknown',
+        inventory: updatedItems,
+        log: updateLog
+      });
+
+      // Save to IndexedDB with both updated inventory and new log
+      await saveToIndexedDB({
+        ...existingData,
+        inventory: updatedItems,
+        inventoryLogs: [...(existingData.inventoryLogs || []), updateLog]
+      });
+
+      console.log('[UPDATING STATE]', {
+        caller: notes || 'unknown',
+        newInventory: updatedItems,
+        newLog: updateLog
+      });
+
+      // Update state with new array references
+      setInventoryItems(updatedItems);
+      setInventoryLogs(prev => [...(prev || []), updateLog]);
+
+      // Return a promise that resolves after the state is updated
+      return new Promise<void>(resolve => {
+        setTimeout(() => {
+          console.log('[STATE UPDATE COMPLETE]', {
+            caller: notes || 'unknown',
+            finalState: updatedItems
+          });
+          resolve();
+        }, 50);
+      });
+
+    } catch (error) {
+      console.error('[INVENTORY UPDATE ERROR]', {
+        caller: notes || 'unknown',
+        error
+      });
+      setSnackbar({
+        open: true,
+        message: error instanceof Error ? error.message : 'Error updating inventory',
+        severity: 'error'
+      });
+      
+      // Reload inventory data from IndexedDB to ensure UI is in sync
+      const data = await getFromIndexedDB();
+      if (data?.inventory) {
+        console.log('[RELOADING FROM INDEXEDDB]', {
+          caller: notes || 'unknown',
+          inventory: data.inventory
+        });
+        setInventoryItems(data.inventory);
+      }
+      throw error;
+    }
+  };
+
+  // Add handler for adding new inventory items
+  const handleAddInventoryItem = async (newItem: Omit<InventoryItem, 'id' | 'lastUpdated'>) => {
+    try {
+      // Create new item with proper structure
+      const newItemWithId: InventoryItem = {
+        ...newItem,
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        lastUpdated: new Date().toISOString(),
+        currentStock: 0, // Initialize with 0 current stock
+        maxStock: Number(newItem.maxStock), // Ensure maxStock is a number
+        minStock: Number(newItem.minStock), // Ensure minStock is a number
+        isDeleted: false,
+        isSaved: false // Mark as unsaved
+      };
+
+      console.log('Adding new inventory item:', newItemWithId);
+
+      // Create new array reference to trigger re-render
+      const updatedItems = [...inventoryItems, newItemWithId];
+      
+      // Update state first
+      setInventoryItems(updatedItems);
+
+      // Then save to IndexedDB
+      const existingData = await getFromIndexedDB() || {};
+      await saveToIndexedDB({
+        ...existingData,
+        inventory: updatedItems
+      });
+
+      setSnackbar({
+        open: true,
+        message: 'New inventory item added successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error adding inventory item:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error adding inventory item',
+        severity: 'error'
+      });
+    }
+  };
+
+  // Add handler for deleting inventory items
+  const handleDeleteInventoryItem = async (itemName: string) => {
+    try {
+      // Mark the item as deleted in the inventory array
+      const updatedItems = inventoryItems.map(item =>
+        item.name === itemName ? { ...item, isDeleted: true } : item
+      );
+      
+      // Update state
+      setInventoryItems(updatedItems);
+
+      // Create deletion log
+      const itemToDelete = inventoryItems.find(item => item.name === itemName);
+      if (itemToDelete) {
+        const deleteLog: InventoryUpdateLog = {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          itemId: itemName,
+          previousStock: itemToDelete.currentStock,
+          newStock: 0,
+          updateType: 'adjustment',
+          timestamp: new Date().toISOString(),
+          updatedBy: selectedEmployee || 'unknown',
+          notes: 'Item deleted',
+          isSaved: false
+        };
+
+        // Update logs state
+        setInventoryLogs(prev => [...(prev || []), deleteLog]);
+
+        // Save to IndexedDB
+        const existingData = await getFromIndexedDB() || {};
+        await saveToIndexedDB({
+          ...existingData,
+          inventory: updatedItems,
+          inventoryLogs: [...(existingData.inventoryLogs || []), deleteLog]
+        });
+      }
+
+      setSnackbar({
+        open: true,
+        message: 'Item marked for deletion. Changes will be saved when you click "Save to Server".',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error marking item for deletion:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error marking item for deletion',
+        severity: 'error'
+      });
+    }
+  };
+
+  // Remove the automatic sync useEffect and modify syncEmployeeList to be more explicit
+  const syncEmployeeList = async () => {
+    try {
+      if (!isOnline) {
+        console.log('❌ Cannot sync while offline');
+        return false;
+      }
+
+      console.log('🔄 Syncing employee list with MongoDB...');
+      
+      // First get current data from IndexedDB
+      const indexedDBData = await getFromIndexedDB() || {};
+      const localEmployeeList = indexedDBData.employeeList || [];
+      
+      // Fetch active employees from MongoDB
+      const response = await fetch('http://localhost:5000/api/employees');
+      if (!response.ok) {
+        throw new Error('Failed to fetch employee data from server');
+      }
+      
+      const serverEmployees: Employee[] = await response.json();
+      console.log('📋 Server employees:', serverEmployees.map(emp => `${emp.name} (${emp.status})`));
+      
+      // Filter active employees and get their names
+      const activeEmployees = serverEmployees
+        .filter(emp => emp.status === 'active')
+        .map(emp => emp.name);
+      
+      console.log('👥 Active employees:', activeEmployees);
+      console.log('📝 Current local list:', localEmployeeList);
+      
+      // Update state and localStorage
+      setEmployeeList(activeEmployees);
+      localStorage.setItem('employeeList', JSON.stringify(activeEmployees));
+      
+      // Handle selected employee changes
+      if (selectedEmployee && !activeEmployees.includes(selectedEmployee)) {
+        console.log('⚠️ Currently selected employee not found in active list');
+        const newSelected = activeEmployees.length > 0 ? activeEmployees[0] : '';
+        console.log(`- Changing selection from "${selectedEmployee}" to "${newSelected}"`);
+        setSelectedEmployee(newSelected);
+        localStorage.setItem('selectedEmployee', newSelected);
+      } else if (!selectedEmployee && activeEmployees.length > 0) {
+        const newSelected = activeEmployees[0];
+        console.log('👤 No employee selected, selecting first available:', newSelected);
+        setSelectedEmployee(newSelected);
+        localStorage.setItem('selectedEmployee', newSelected);
+      }
+      
+      // Update IndexedDB
+      await saveToIndexedDB({
+        ...indexedDBData,
+        employeeList: activeEmployees
+      });
+      
+      console.log('✅ Employee list sync complete');
+      return true;
+    } catch (error) {
+      console.error('❌ Error syncing employee list:', error);
+      return false;
+    }
+  };
+
+  // Modify saveToServer function to handle all syncing
+  const saveToServer = async () => {
+    try {
+      console.log('🔄 Starting server sync...');
+      console.log('Current inventory state:', inventoryItems);
+      
+      if (!isOnline) {
+        setSnackbar({
+          open: true,
+          message: 'Cannot save to server while offline',
+          severity: 'warning'
+        });
+        return;
+      }
+
+      // First sync employee list
+      const employeeSync = await syncEmployeeList();
+      if (!employeeSync) {
+        throw new Error('Failed to sync employee list');
+      }
+
+      // Get unsaved entries
+      const unsavedTimesheetEntries = employeeTimeData.filter(entry => !entry.isSaved);
+      const unsavedSalesEntries = savedData.filter(entry => !entry.isSaved);
+      const unsavedInventoryItems = inventoryItems.filter(item => !item.isSaved || item.isDeleted);
+      const unsavedInventoryLogs = inventoryLogs?.filter(log => !log.isSaved) || [];
+
+      console.log('Inventory sync details:', {
+        totalItems: inventoryItems.length,
+        unsavedItems: unsavedInventoryItems.length,
+        unsavedItemDetails: unsavedInventoryItems,
+        totalLogs: inventoryLogs?.length || 0,
+        unsavedLogs: unsavedInventoryLogs.length,
+        unsavedLogDetails: unsavedInventoryLogs
+      });
+
+      if (unsavedTimesheetEntries.length === 0 && 
+          unsavedSalesEntries.length === 0 && 
+          unsavedInventoryItems.length === 0 && 
+          unsavedInventoryLogs.length === 0) {
+        setSnackbar({
+          open: true,
+          message: 'No new entries to save',
+          severity: 'info'
+        });
+        return;
+      }
+
+      console.log('📤 Uploading unsaved data to server...');
+      console.log('- Timesheet entries:', unsavedTimesheetEntries.length);
+      console.log('- Sales entries:', unsavedSalesEntries.length);
+      console.log('- Inventory items:', unsavedInventoryItems.length);
+      console.log('- Inventory logs:', unsavedInventoryLogs.length);
+
+      // Upload all data in one sync request
+      const syncData = {
+        timesheet: unsavedTimesheetEntries,
+        sales: unsavedSalesEntries,
+        inventory: unsavedInventoryItems,
+        inventoryLogs: unsavedInventoryLogs
+      };
+      console.log('Sync request payload:', JSON.stringify(syncData, null, 2));
+
+      const syncResponse = await fetch('http://localhost:5000/api/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(syncData),
+      });
+
+      if (!syncResponse.ok) {
+        const errorData = await syncResponse.json();
+        throw new Error(`Failed to sync data: ${errorData.message || syncResponse.statusText}`);
+      }
+
+      const syncResult = await syncResponse.json();
+      console.log('✅ Sync response:', syncResult);
+
+      // Mark all entries as saved in state and IndexedDB
+      const updatedTimeData = employeeTimeData.map(entry => 
+        !entry.isSaved ? { ...entry, isSaved: true } : entry
+      );
+      const updatedSalesData = savedData.map(entry => 
+        !entry.isSaved ? { ...entry, isSaved: true } : entry
+      );
+      const updatedInventoryItems = inventoryItems
+        .filter(item => !item.isDeleted)
+        .map(item => ({ ...item, isSaved: true }));
+      const updatedInventoryLogs = inventoryLogs?.map(log => 
+        !log.isSaved ? { ...log, isSaved: true } : log
+      ) || [];
+
+      console.log('Updated inventory state:', {
+        before: inventoryItems,
+        after: updatedInventoryItems
+      });
+
+      // Update state
+      setEmployeeTimeData(updatedTimeData);
+      setSavedData(updatedSalesData);
+      setInventoryItems(updatedInventoryItems);
+      setInventoryLogs(updatedInventoryLogs);
+
+      // Update IndexedDB
+      const existingData = await getFromIndexedDB() || {};
+      await saveToIndexedDB({
+        ...existingData,
+        data: updatedSalesData,
+        employeeTimeData: updatedTimeData,
+        inventory: updatedInventoryItems,
+        inventoryLogs: updatedInventoryLogs,
+        lastSynced: new Date().toISOString()
+      });
+
+      console.log('✅ All data synced successfully');
+      setSnackbar({
+        open: true,
+        message: 'All data synced with server successfully!',
+        severity: 'success'
+      });
+
+    } catch (error: unknown) {
+      console.error('❌ Error during sync:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error syncing with server: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        severity: 'error'
+      });
+    }
+  };
+
+  // Add a useEffect to log employee list changes
+  useEffect(() => {
+    console.log('👥 Employee list updated:', employeeList);
+  }, [employeeList]);
+
+  // Add a useEffect to log selected employee changes
+  useEffect(() => {
+    console.log('👤 Selected employee updated:', selectedEmployee);
+  }, [selectedEmployee]);
 
   return (
     <>
@@ -1308,14 +1633,13 @@ export default function Home() {
                 "header"
                 "tracker"
                 "form"
-                "sales"
+                "overview"
                 "inventory"
               `,
               md: `
                 "header header"
                 "tracker form"
-                "sales form"
-                "inventory form"
+                "overview inventory"
               `
             },
             gridTemplateColumns: {
@@ -1324,757 +1648,130 @@ export default function Home() {
             },
             gridTemplateRows: {
               xs: 'auto auto auto auto auto',
-              md: 'auto 1fr 200px 100px'
+              md: 'auto 1fr 200px' // Increased from 150px to 200px for the bottom row
             },
-            gap: '1vh',
+            gap: '0.8vh', // Reduced gap
             maxWidth: '100%',
             maxHeight: '100%',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            '& > *': { // Add this to ensure all grid items have no bottom margin
+              mb: 0,
+              pb: 0
+            }
           }}>
             <Header 
               onShareClick={handleShareClick}
               onOpenTimesheet={handleOpenTimesheet}
+              onSaveToServer={saveToServer}
               employeeTimeData={employeeTimeData}
               setEmployeeTimeData={setEmployeeTimeData}
-              activeEmployee={activeEmployee}
-              setActiveEmployee={setActiveEmployee}
+              activeEmployee={selectedEmployee}
+              setActiveEmployee={setSelectedEmployee}
+              onUpdateInventory={handleUpdateInventory}
+              inventory={inventoryItems}
+              setInventoryItems={setInventoryItems}
+              setInventoryLogs={setInventoryLogs}
+              savedData={savedData}
+              setSavedData={setSavedData}
             />
+            
             {/* Daily Tracker */}
-            <Paper sx={{ 
-              gridArea: 'tracker',
-              p: '1.5vh',
-              display: 'flex',
-              flexDirection: 'column',
-              borderRadius: '8px',
-              border: '1px solid #e5e7eb',
-              minHeight: 0,
-              overflow: 'hidden',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-            }}>
-              <Typography fontSize="2.2vh" fontWeight="medium" mb="1.5vh">Daily Tracker</Typography>
-              <Box component="div" sx={{
-                flex: 1,
-                minHeight: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                '& table': {
-                  width: '100%',
-                  height: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: '11px',
-                  border: '1px solid #e5e7eb',
-                  tableLayout: 'fixed'
-                },
-                '& thead': {
-                  position: 'sticky',
-                  top: 0,
-                  zIndex: 1,
-                  backgroundColor: '#f8fafc',
-                  display: 'table',
-                  width: '100%',
-                  tableLayout: 'fixed'
-                },
-                '& tbody': {
-                  display: 'block',
-                  overflowY: 'auto',
-                  overflowX: 'hidden',
-                  height: 'calc(100% - 30px)', // Adjust for header height
-                  '& tr': {
-                    display: 'table',
-                    width: '100%',
-                    tableLayout: 'fixed'
-                  }
-                },
-                '& th, & td': {
-                  border: '1px solid #e5e7eb',
-                  padding: '2px 6px',
-                  textAlign: 'center',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  height: '15px',
-                  lineHeight: '15px'
-                },
-                '& th': {
-                  backgroundColor: '#f8fafc',
-                  fontWeight: 500
-                },
-                '& td': {
-                  backgroundColor: 'white'
-                },
-                '& thead tr:first-of-type th:last-child': {
-                  borderBottom: '2px solid #e5e7eb'
-                },
-                '& td:not(:first-of-type):not(:last-of-type)': {
-                  textAlign: 'center'
-                },
-                '& td:first-of-type': {
-                  width: '19%',
-                  minWidth: '140px',
-                  textAlign: 'left',
-                  paddingLeft: '8px'
-                },
-                '& td:last-child': {
-                  padding: 0,
-                  width: '5%'
-                },
-                '& th:last-child': {
-                  width: '5%'
-                },
-                overflow: 'hidden'
-              }}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date/Time</th>
-                      <th style={{ width: '10%' }}>Coin</th>
-                      <th style={{ width: '10%' }}>Hopper</th>
-                      <th style={{ width: '10%' }}>Soap</th>
-                      <th style={{ width: '10%' }}>Vending</th>
-                      <th colSpan={3} style={{ width: '36%' }}>Drop Off</th>
-                      <th></th>
-                    </tr>
-                    <tr>
-                      <th></th>
-                      <th style={{ width: '10%' }}></th>
-                      <th style={{ width: '10%' }}></th>
-                      <th style={{ width: '10%' }}></th>
-                      <th style={{ width: '10%' }}></th>
-                      <th style={{ width: '12%' }}>Amount</th>
-                      <th style={{ width: '12%' }}>Code</th>
-                      <th style={{ width: '12%' }}>Amount</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {savedData.map((row, index) => (
-                      <tr key={index}>
-                        <td>{row.Date.split('|')[0]}</td>
-                        <td style={{ width: '10%' }}>{row.Coin}</td>
-                        <td style={{ width: '10%' }}>{row.Hopper}</td>
-                        <td style={{ width: '10%' }}>{row.Soap}</td>
-                        <td style={{ width: '10%' }}>{row.Vending}</td>
-                        <td style={{ width: '12%' }}>{row['Drop Off Amount 1']}</td>
-                        <td style={{ width: '12%' }}>{row['Drop Off Code']}</td>
-                        <td style={{ width: '12%' }}>{row['Drop Off Amount 2']}</td>
-                        <td>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEdit(index)}
-                            sx={{
-                              padding: '2px',
-                              bgcolor: editingIndex === index ? blue[100] : 'transparent',
-                              '&:hover': { bgcolor: blue[50] },
-                              width: '100%',
-                              height: '100%',
-                              borderRadius: 0
-                            }}
-                          >
-                            <EditIcon sx={{ fontSize: '12px', color: blue[700] }} />
-                          </IconButton>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Box>
-            </Paper>
+            <DailyTracker
+              sx={{ gridArea: 'tracker', overflow: 'auto' }}
+              savedData={savedData}
+              editingIndex={editingIndex}
+              onEdit={handleEdit}
+            />
 
             {/* Form Section */}
-            <Paper sx={{ 
-              gridArea: 'form',
-              p: '1.5vh',
+            <SalesForm
+              sx={{ gridArea: 'form' }}
+              currentFormDate={currentFormDate}
+              selectedEmployee={selectedEmployee}
+              employeeList={employeeList}
+              isOnline={isOnline}
+              selectedField={selectedField}
+              inputValues={inputValues}
+              editingIndex={editingIndex}
+              onFieldSelect={setSelectedField}
+              onNumpadClick={handleNumpadClick}
+              onSave={handleSave}
+              onEmployeeSelect={handleEmployeeSelect}
+              onEmployeeChange={memoizedHandleEmployeeChange}
+            />
+
+            {/* Sales Overview */}
+            <SalesChart
+              sx={{ 
+                gridArea: 'overview',
+                height: '100%', // Changed from fixed height
               display: 'flex',
               flexDirection: 'column',
-              borderRadius: '8px',
-              border: '1px solid #e5e7eb',
-              minHeight: 0,
-              overflow: 'hidden',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-            }}>
-              <Box sx={{ 
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 2
-              }}>
-                <Typography variant="h6" component="div">
-                  {currentFormDate}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Select
-                    value={selectedEmployee}
-                    onChange={(e) => setSelectedEmployee(e.target.value)}
-                    size="small"
-                    sx={{ 
-                      minWidth: 120,
-                      height: '32px',
-                      '.MuiSelect-select': { 
-                        py: 0.5,
-                        color: grey[600]
-                      }
-                    }}
-                  >
-                    {employeeList.map((name) => (
-                      <MenuItem key={name} value={name}>
-                        {name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <Button
-                    variant="contained"
-                    onClick={handleEmployeeSelect}
-                    size="small"
-                    sx={{
-                      fontSize: '0.875rem',
-                      py: 0.5,
-                      px: 2,
-                      minWidth: 'auto'
-                    }}
-                  >
-                    Select
-                  </Button>
-                  {!isOnline && (
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        color: 'warning.main',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5
-                      }}
-                    >
-                      (Offline Mode)
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-              <Box sx={{ 
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '1.5vh',
-                mb: '1.5vh'
-              }}>
-                {['Coin', 'Hopper', 'Soap', 'Vending'].map((label) => (
-                  <TextField
-                    key={label}
-                    size="small"
-                    placeholder={label}
-                    value={inputValues[label]}
-                    onClick={() => setSelectedField(label)}
-                    inputProps={{ 
-                      style: { fontSize: '1.8vh' },
-                      readOnly: true
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        height: '4vh',
-                        borderRadius: '6px',
-                        bgcolor: selectedField === label ? '#e8f0fe' : 'transparent',
-                        '& fieldset': {
-                          borderColor: selectedField === label ? blue[500] : '#e5e7eb'
-                        }
-                      }
-                    }}
-                  />
-                ))}
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1vh', gridColumn: 'span 2' }}>
-                  <TextField
-                    size="small"
-                    placeholder="Drop Off Amount"
-                    value={inputValues['Drop Off Amount 1']}
-                    onClick={() => setSelectedField('Drop Off Amount 1')}
-                    inputProps={{ 
-                      style: { fontSize: '1.8vh' },
-                      readOnly: true
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        height: '4vh',
-                        borderRadius: '6px',
-                        bgcolor: selectedField === 'Drop Off Amount 1' ? '#e8f0fe' : 'transparent',
-                        '& fieldset': {
-                          borderColor: selectedField === 'Drop Off Amount 1' ? blue[500] : '#e5e7eb'
-                        }
-                      }
-                    }}
-                  />
-                  <TextField
-                    size="small"
-                    placeholder="Code"
-                    value={inputValues['Drop Off Code']}
-                    onClick={() => setSelectedField('Drop Off Code')}
-                    inputProps={{ 
-                      style: { fontSize: '1.8vh' },
-                      readOnly: true
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        height: '4vh',
-                        borderRadius: '6px',
-                        bgcolor: selectedField === 'Drop Off Code' ? '#e8f0fe' : 'transparent',
-                        '& fieldset': {
-                          borderColor: selectedField === 'Drop Off Code' ? blue[500] : '#e5e7eb'
-                        }
-                      }
-                    }}
-                  />
-                  <TextField
-                    size="small"
-                    placeholder="Drop Off Amount"
-                    value={inputValues['Drop Off Amount 2']}
-                    onClick={() => setSelectedField('Drop Off Amount 2')}
-                    inputProps={{ 
-                      style: { fontSize: '1.8vh' },
-                      readOnly: true
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        height: '4vh',
-                        borderRadius: '6px',
-                        bgcolor: selectedField === 'Drop Off Amount 2' ? '#e8f0fe' : 'transparent',
-                        '& fieldset': {
-                          borderColor: selectedField === 'Drop Off Amount 2' ? blue[500] : '#e5e7eb'
-                        }
-                      }
-                    }}
-                  />
-                </Box>
-              </Box>
-              <Box sx={{ 
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '1vh',
-                flex: 1,
-                '& .MuiButton-root': {
-                  fontSize: '2.2vh',
-                  minHeight: '5vh'
-                }
-              }}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                  <Button
-                    key={num}
-                    variant="contained"
-                    onClick={() => handleNumpadClick(num.toString())}
-                    sx={{
-                      bgcolor: grey[200],
-                      color: 'black',
-                      '&:hover': { bgcolor: grey[300] }
-                    }}
-                  >
-                    {num}
-                  </Button>
-                ))}
-                <Button
-                  variant="contained"
-                  onClick={() => handleNumpadClick('0')}
-                  sx={{
-                    bgcolor: green[500],
-                    color: 'white',
-                    '&:hover': { bgcolor: green[600] }
-                  }}
-                >
-                  0
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => handleNumpadClick('.')}
-                  sx={{
-                    bgcolor: yellow[500],
-                    color: 'black',
-                    '&:hover': { bgcolor: yellow[600] }
-                  }}
-                >
-                  •
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => handleNumpadClick('Del')}
-                  sx={{
-                    bgcolor: red[500],
-                    color: 'white',
-                    '&:hover': { bgcolor: red[600] }
-                  }}
-                >
-                  Del
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => handleNumpadClick('Clr')}
-                  sx={{
-                    bgcolor: blue[500],
-                    color: 'white',
-                    '&:hover': { bgcolor: blue[600] }
-                  }}
-                >
-                  Clr
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleSave}
-                  sx={{
-                    gridColumn: 'span 3',
-                    bgcolor: blue[600],
-                    color: 'white',
-                    '&:hover': { bgcolor: blue[800] }
-                  }}
-                >
-                  {editingIndex !== null ? 'Update' : 'Save'}
-                </Button>
-              </Box>
-            </Paper>
-
-            {/* Monthly Sales */}
-            <Paper sx={{ 
-              gridArea: 'sales',
-              p: '1.5vh',
-              display: 'flex',
-              flexDirection: 'column',
-              borderRadius: '8px',
-              border: '1px solid #e5e7eb',
-              minHeight: 0,
-              overflow: 'hidden',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-            }}>
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                mb: '1.5vh'
-              }}>
-                <Typography fontSize="2.2vh" fontWeight="medium">
-                  Sales Overview
-                </Typography>
-                <Box sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center',
-                  mx: '2vh'
-                }}>
-                  <Typography fontSize="1.8vh" color="text.secondary">
-                    Total Sales
-                  </Typography>
-                  <Typography fontSize="2.2vh" color={blue[600]} fontWeight="medium">
-                    ${calculateDailyTotals().reduce((sum, day) => sum + (day.total / 50), 0).toFixed(2)}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', gap: '1vh', alignItems: 'center' }}>
-                  <Box sx={{ display: 'flex', gap: '1vh' }}>
-                    <ButtonGroup size="small" sx={{ height: '3vh' }}>
-                      <Button
-                        onClick={handleMonthClick}
-                        variant={viewType === 'month' ? 'contained' : 'outlined'}
-                        sx={{ fontSize: '1.4vh', py: 0 }}
-                      >
-                        {new Date(selectedYear, selectedMonth).toLocaleString('default', { month: 'short' })} {selectedYear}
-                      </Button>
-                      <Button
-                        onClick={handleYearClick}
-                        variant={viewType === 'year' ? 'contained' : 'outlined'}
-                        sx={{ fontSize: '1.4vh', py: 0 }}
-                      >
-                        {selectedYear}
-                      </Button>
-                    </ButtonGroup>
-                    <Menu
-                      anchorEl={monthAnchorEl}
-                      open={Boolean(monthAnchorEl)}
-                      onClose={handleMonthClose}
-                    >
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <MenuItem 
-                          key={i} 
-                          onClick={() => {
-                            setViewType('month')
-                            setSelectedMonth(i)
-                            handleMonthClose()
-                          }}
-                          selected={selectedMonth === i && viewType === 'month'}
-                        >
-                          {new Date(2024, i).toLocaleString('default', { month: 'long' })}
-                        </MenuItem>
-                      ))}
-                    </Menu>
-                    <Menu
-                      anchorEl={yearAnchorEl}
-                      open={Boolean(yearAnchorEl)}
-                      onClose={handleYearClose}
-                    >
-                      {yearItems}
-                    </Menu>
-                  </Box>
-                  <ToggleButtonGroup
-                    size="small"
-                    value={chartType}
-                    exclusive
-                    onChange={(e, value) => value && setChartType(value)}
-                    sx={{ height: '3vh' }}
-                  >
-                    <ToggleButton value="line" sx={{ fontSize: '1.4vh', py: 0 }}>
-                      Line
-                    </ToggleButton>
-                    <ToggleButton value="bar" sx={{ fontSize: '1.4vh', py: 0 }}>
-                      Bar
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                </Box>
-              </Box>
-
-              {/* Chart container */}
-              <Box sx={{ 
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'relative',
-                minHeight: 0,
-                width: '100%',
-                height: '100%'
-              }}>
-                {/* Chart area */}
-                <Box sx={{ 
-                  flex: 1,
-                  position: 'relative',
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}>
-                  {/* Scrollable container for both chart and dates */}
-                  <Box sx={{
-                    overflowX: 'hidden',
-                    overflowY: 'hidden',
-                    pb: '8px',
-                    width: '100%'
-                  }}>
-                    {/* Content wrapper */}
-                    <Box sx={{
-                      width: '100%',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}>
-                      {/* Chart */}
-                      <Box sx={{
-                        height: '150px',
-                        width: '100%'
-                      }}>
-                        {renderChart()}
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
-            </Paper>
+                mb: 0,
+                pb: 0
+              }}
+              viewType={viewType}
+              chartType={chartType}
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              monthAnchorEl={monthAnchorEl}
+              yearAnchorEl={yearAnchorEl}
+              onMonthClick={handleMonthClick}
+              onYearClick={handleYearClick}
+              onMonthClose={handleMonthClose}
+              onYearClose={handleYearClose}
+              onMonthSelect={handleMonthSelect}
+              onYearSelect={handleYearSelect}
+              onChartTypeChange={setChartType}
+              calculateDailyTotals={() => calculateDailyTotals(savedData, viewType === 'week' ? 'month' : viewType, selectedMonth, selectedYear)}
+              yearItems={yearItems}
+            />
 
             {/* Inventory */}
-            <Paper sx={{ 
+            <InventoryTracker
+              sx={{
               gridArea: 'inventory',
-              p: '1.5vh',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-around',
-              borderRadius: '8px',
-              border: '1px solid #e5e7eb',
-              minHeight: 0,
+                height: '100%',
               overflow: 'hidden',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-            }}>
-              <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '2vh',
-                width: '100%'
-              }}>
-                <Typography fontSize="2.2vh" fontWeight="medium" minWidth="max-content">Inventory</Typography>
-                <Box sx={{ 
-                  display: 'flex', 
-                  gap: '2vh',
-                  flex: 1,
-                  alignItems: 'center'
-                }}>
-                  {[{ name: 'Soap', value: 70 }, { name: 'Detergent', value: 50 }].map((item, i) => (
-                    <Box key={i} sx={{ flex: 1 }}>
-                      <Typography fontSize="1.8vh" mb={0.5}>{item.name}</Typography>
-                      <LinearProgress
-                        variant="determinate"
-                        value={item.value}
-                        sx={{
-                          height: '2vh',
-                          borderRadius: '4px',
-                          bgcolor: grey[200],
-                          '& .MuiLinearProgress-bar': {
-                            bgcolor: blue[600]
-                          }
-                        }}
-                      />
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            </Paper>
-            <Snackbar
+                mb: 0,
+                pb: 0
+              }}
+              inventory={inventoryItems}
+              onUpdateStock={handleUpdateInventory}
+              onAddItem={handleAddInventoryItem}
+              onDeleteItem={handleDeleteInventoryItem}
+            />
+            
+            <AppSnackbar
               open={snackbar.open}
-              autoHideDuration={6000}
-              onClose={handleSnackbarClose}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            >
-              <Alert 
-                onClose={handleSnackbarClose} 
+              message={snackbar.message}
                 severity={snackbar.severity} 
-                sx={{ width: '100%' }}
-              >
-                {snackbar.message}
-              </Alert>
-            </Snackbar>
+              onClose={handleSnackbarClose}
+            />
           </Box>
         </Box>
       </Box>
 
       {/* Updated Timesheet Modal */}
-      <Modal
+      <TimesheetModal
         open={timesheetOpen}
         onClose={() => setTimesheetOpen(false)}
-        aria-labelledby="timesheet-modal-title"
-      >
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '90%',
-          maxWidth: '800px',
-          maxHeight: '80vh',
-          bgcolor: 'background.paper',
-          boxShadow: 24,
-          borderRadius: 2,
-          p: 4,
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <Typography id="timesheet-modal-title" variant="h6" component="h2" mb={3}>
-            Employee Timesheet
-          </Typography>
-
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-              <DatePicker
-                label="Start Date"
-                value={timesheetDateRange.startDate}
-                onChange={(newValue) => {
-                  if (newValue) {
-                    setTimesheetDateRange(prev => ({
-                      ...prev,
-                      startDate: newValue
-                    }))
-                  }
-                }}
-                sx={{ flex: 1 }}
-              />
-              <DatePicker
-                label="End Date"
-                value={timesheetDateRange.endDate}
-                onChange={(newValue) => {
-                  if (newValue) {
-                    setTimesheetDateRange(prev => ({
-                      ...prev,
-                      endDate: newValue
-                    }))
-                  }
-                }}
-                sx={{ flex: 1 }}
-              />
-            </Box>
-          </LocalizationProvider>
-          
-          {isLoadingTimesheet ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress />
-            </Box>
-          ) : timesheetData.length > 0 ? (
-            <TableContainer sx={{ maxHeight: 'calc(80vh - 200px)' }}>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Time In</TableCell>
-                    <TableCell>Time Out</TableCell>
-                    <TableCell>Duration</TableCell>
-                    <TableCell>Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {timesheetData.map((record, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{record.date}</TableCell>
-                      <TableCell>{record.timeIn}</TableCell>
-                      <TableCell>{record.timeOut}</TableCell>
-                      <TableCell>{record.duration}</TableCell>
-                      <TableCell>
-                        <Typography
-                          component="span"
-                          sx={{
-                            px: 1,
-                            py: 0.5,
-                            borderRadius: 1,
-                            fontSize: '0.875rem',
-                            bgcolor: record.status === 'Completed' ? green[100] : yellow[100],
-                            color: record.status === 'Completed' ? green[800] : yellow[800]
-                          }}
-                        >
-                          {record.status}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          ) : (
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center',
-              p: 3,
-              color: 'text.secondary'
-            }}>
-              No timesheet data available for the selected date range
-            </Box>
-          )}
-          
-          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button onClick={() => setTimesheetOpen(false)} variant="contained">
-              Close
-            </Button>
-          </Box>
-        </Box>
-      </Modal>
+        isLoading={isLoadingTimesheet}
+        timesheetData={timesheetData}
+        dateRange={timesheetDateRange}
+        onDateRangeChange={setTimesheetDateRange}
+        onRequestData={fetchOnlineTimesheetData}
+        isOnline={isOnline}
+        selectedEmployee={selectedEmployee}
+      />
 
       {/* Add Share Menu */}
-      <Menu
+      <ShareMenu
         anchorEl={shareAnchorEl}
-        open={Boolean(shareAnchorEl)}
         onClose={handleShareClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-      >
-        <MenuItem onClick={handleEmailShare}>
-          <EmailIcon sx={{ mr: 1, fontSize: '20px' }} />
-          Email CSV
-        </MenuItem>
-        <MenuItem onClick={saveToGoogleSheets}>
-          <CloudIcon sx={{ mr: 1, fontSize: '20px' }} />
-          Save to Server
-        </MenuItem>
-        <MenuItem onClick={handleBluetoothShare}>
-          <BluetoothIcon sx={{ mr: 1, fontSize: '20px' }} />
-          Bluetooth Share
-        </MenuItem>
-      </Menu>
+        onEmailShare={handleEmailShare}
+        onBluetoothShare={handleBluetoothShare}
+      />
     </>
   )
 }
