@@ -1,10 +1,10 @@
+// Create a global namespace for our app
+window.LaundryAdmin = {};
+
 // API URL constant - automatically detect environment
 const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'  // Development
     : 'https://laundry-pos-api.onrender.com/api';  // Production
-
-// Create a global namespace for our app
-window.LaundryAdmin = {};
 
 // Wait for all functions to be defined before initializing
 (function(app) {
@@ -15,7 +15,6 @@ window.LaundryAdmin = {};
 
     // Employee Management
     let employees = [];
-    let selectedEmployee = null;
 
     // DOM Elements
     const messageBox = document.getElementById('messageBox');
@@ -31,6 +30,7 @@ window.LaundryAdmin = {};
 
     // Timesheet functionality
     let timesheetData = {};
+    let selectedEmployee = null;
 
     // Inventory Management
     let inventoryChart = null;
@@ -813,11 +813,55 @@ window.LaundryAdmin = {};
     clearBtn.addEventListener('click', clearForm);
 
     // Initialize everything when the page loads
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('🚀 ADMIN: Initializing page...');
-        initializeTimesheetDates();
+    function initialize() {
+        console.log('Initializing dashboard...');
+        
+        // Register Chart.js plugins
+        if (window.Chart) {
+            Chart.register(ChartDataLabels);
+            console.log('Chart.js plugins registered');
+        }
+
+        // Set default date range to current month
+        const today = new Date();
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        document.getElementById('startDate').value = firstDayOfMonth.toISOString().split('T')[0];
+        document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        
+        // Set up refresh button click handler
+        document.getElementById('refreshButton').addEventListener('click', refreshData);
+        
+        // Initialize all components
+        initializeChart();
+        initializePeriodFilter();
+        initializeNavigation();
+        refreshData();
+        
+        // Initialize employee list
         fetchEmployees();
-    });
+        
+        // Initialize inventory controls and data
+        initializeInventoryControls();
+        refreshInventoryData();
+        
+        console.log('Dashboard initialization complete');
+    }
+
+    // Expose necessary functions to the global scope
+    app.refreshData = refreshData;
+    app.updateChart = updateChart;
+    app.initializePeriodFilter = initializePeriodFilter;
+    app.deleteEmployee = deleteEmployee;  // Expose employee management functions
+    app.editEmployee = editEmployee;
+    app.removeEmployee = removeEmployee;
+
+    // Start initialization when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+        initialize();
+    }
 
     // Initialize date inputs with current month
     function initializeTimesheetDates() {
@@ -863,13 +907,9 @@ window.LaundryAdmin = {};
 
         try {
             console.log(`🔍 ADMIN: Fetching timesheets for ${selectedEmployee} from ${timesheetStartDate.value} to ${timesheetEndDate.value}`);
-            const queryParams = new URLSearchParams({
-                employeeName: selectedEmployee,
-                startDate: timesheetStartDate.value,
-                endDate: timesheetEndDate.value
-            });
-            
-            const response = await fetch(`${API_URL}/timesheets?${queryParams}`);
+            const response = await fetch(
+                `${API_URL}/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetStartDate.value}&endDate=${timesheetEndDate.value}`
+            );
             
             console.log('📥 ADMIN: Timesheet API response status:', response.status);
             if (!response.ok) {
@@ -955,10 +995,20 @@ window.LaundryAdmin = {};
     }
 
     // Select employee and update timesheet
-    function selectEmployee(employeeName) {
+    async function selectEmployee(employeeName) {
+        console.log('👤 ADMIN: Selecting employee:', employeeName);
         selectedEmployee = employeeName;
         renderEmployeeTabs();
-        fetchTimesheetData();
+        
+        // First try to fetch existing timesheet data
+        await fetchTimesheetData();
+        
+        // If no data exists, generate test data
+        if (!timesheetData || !Array.isArray(timesheetData) || timesheetData.length === 0) {
+            console.log('📊 ADMIN: No timesheet data found, generating test data...');
+            await addTestTimesheetData(employeeName);
+            await fetchTimesheetData(); // Fetch the newly generated data
+        }
     }
 
     // Event listeners for date filters
@@ -967,6 +1017,13 @@ window.LaundryAdmin = {};
         if (selectedEmployee) {
             fetchTimesheetData();
         }
+    });
+
+    // Initialize timesheet and filters
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('🚀 ADMIN: Initializing page...');
+        initializeTimesheetDates();
+        fetchEmployees();
     });
 
     async function fetchInventoryData() {
@@ -1167,14 +1224,4 @@ window.LaundryAdmin = {};
 
         refreshButton.addEventListener('click', refreshInventoryData);
     }
-
-    // Expose functions to global namespace
-    app.addTestTimesheetData = addTestTimesheetData;
-    app.editEmployee = editEmployee;
-    app.deleteEmployee = deleteEmployee;
-    app.removeEmployee = removeEmployee;
-    Object.defineProperty(app, 'selectedEmployee', {
-        get: function() { return selectedEmployee; }
-    });
-
 })(window.LaundryAdmin); 
