@@ -39,10 +39,10 @@
         .logout-btn:hover {
             background: rgba(255,255,255,0.2);
         }
-        /* Dashboard-specific time period filter width */
-        #dashboard .period-controls {
+        .filter-section {
             max-width: 300px;
             width: 100%;
+            display: inline-block;
         }
         @media (max-width: 991px) {
             .navbar-collapse {
@@ -109,13 +109,18 @@
                 <div class="controls-container">
                     <div class="filter-section">
                         <div class="mb-3">
-                            <label>Time Period</label>
-                            <select class="form-select" id="periodFilter">
-                                <option value="this-month">This Month</option>
-                                <option value="last-month">Last Month</option>
-                                <option value="this-year">This Year</option>
-                                <option value="all-time">All Time</option>
-                            </select>
+                            <label class="form-label">Time Period</label>
+                            <div class="d-flex align-items-center">
+                                <select class="form-select" id="periodSelect">
+                                    <option>This Month</option>
+                                </select>
+                                <button class="btn btn-link text-primary ms-2" id="prevPeriod">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                <button class="btn btn-link text-primary" id="nextPeriod">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div id="dateControls" class="date-controls" style="display: none;">
