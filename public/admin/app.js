@@ -10,25 +10,13 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
     let chart = null;
     let allSalesData = null;  // Store all sales data
     let currentData = null;  // Initialize as null instead of with default values
-
-    // Employee Management
     let employees = [];
-
-    // DOM Elements
-    const messageBox = document.getElementById('messageBox');
-    const form = document.getElementById('employeeForm');
-    const employeeTable = document.getElementById('employeeTable').getElementsByTagName('tbody')[0];
-    const submitBtn = document.getElementById('submitBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const employeeTabs = document.getElementById('employeeTabs');
-    const timesheetStartDate = document.getElementById('timesheetStartDate');
-    const timesheetEndDate = document.getElementById('timesheetEndDate');
-    const timesheetTable = document.querySelector('.timesheet-table tbody');
-    const totalHoursSpan = document.getElementById('totalHours');
-
-    // Timesheet functionality
     let timesheetData = {};
     let selectedEmployee = null;
+
+    // DOM Elements - will be initialized when document is ready
+    let messageBox, form, employeeTable, submitBtn, clearBtn, employeeTabs,
+        timesheetStartDate, timesheetEndDate, timesheetTable, totalHoursSpan;
 
     // Inventory Management
     let inventoryChart = null;
@@ -350,6 +338,109 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
         }
 
         console.log('Table updated');
+    }
+
+    // Fetch sales data
+    async function fetchSalesData() {
+        try {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            console.log('Fetching sales data for range:', { startDate, endDate });
+            
+            let url = `${API_URL}/api/sales/summary`;
+            if (startDate && endDate) {
+                const queryParams = new URLSearchParams({
+                    startDate: startDate,
+                    endDate: endDate
+                });
+                url += `?${queryParams.toString()}`;
+            }
+            
+            console.log('Making API request to:', url);
+            const response = await fetch(url);
+            console.log('API Response:', response);
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch sales data: ${response.status} ${response.statusText}`);
+            }
+            
+            const salesData = await response.json();
+            console.log('Raw sales data received:', salesData);
+
+            if (!Array.isArray(salesData)) {
+                console.warn('Expected array of sales data but received:', typeof salesData);
+                return null;
+            }
+
+            // Update the data table
+            const tableBody = document.getElementById('salesTableBody');
+            if (tableBody) {
+                tableBody.innerHTML = '';
+                salesData.forEach(sale => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${sale.date}</td>
+                        <td>${formatCurrency(sale.amount)}</td>
+                        <td>${sale.type}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            // Calculate totals
+            const totals = {
+                coinTotal: 0,
+                hopperTotal: 0,
+                soapTotal: 0,
+                vendingTotal: 0,
+                dropOffAmount1Total: 0,
+                dropOffAmount2Total: 0
+            };
+
+            salesData.forEach(sale => {
+                switch (sale.type) {
+                    case 'coin':
+                        totals.coinTotal += sale.amount;
+                        break;
+                    case 'hopper':
+                        totals.hopperTotal += sale.amount;
+                        break;
+                    case 'soap':
+                        totals.soapTotal += sale.amount;
+                        break;
+                    case 'vending':
+                        totals.vendingTotal += sale.amount;
+                        break;
+                    case 'dropOff1':
+                        totals.dropOffAmount1Total += sale.amount;
+                        break;
+                    case 'dropOff2':
+                        totals.dropOffAmount2Total += sale.amount;
+                        break;
+                }
+            });
+
+            // Update total amount display
+            const totalAmount = document.getElementById('totalAmount');
+            if (totalAmount) {
+                totalAmount.textContent = formatCurrency(
+                    totals.coinTotal + 
+                    totals.hopperTotal + 
+                    totals.soapTotal + 
+                    totals.vendingTotal + 
+                    totals.dropOffAmount1Total + 
+                    totals.dropOffAmount2Total
+                );
+            }
+
+            console.log('Aggregated totals:', totals);
+            return totals;
+        } catch (error) {
+            console.error('❌ Error fetching sales data:', error);
+            showMessage('Error fetching sales data: ' + error.message, true);
+            return null;
+        }
     }
 
     async function fetchAllData() {
@@ -686,22 +777,34 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
 
     // Modified fetchEmployees function to add test data
     async function fetchEmployees() {
-        console.log('👥 ADMIN: Fetching employees...');
+        console.log('=== FETCHING EMPLOYEES ===');
         try {
-            const response = await fetch('/api/employees');
-            if (!response.ok) throw new Error('Failed to fetch employees');
+            const employeeUrl = `${API_URL}/api/employees`;
+            console.log('Making API request to:', employeeUrl);
+            
+            const response = await fetch(employeeUrl);
+            console.log('API Response:', response);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
-            console.log('📋 ADMIN: Received employee data:', data);
+            console.log('Received employee data:', data);
+            
             employees = data;
+            console.log('Updated employees array:', employees);
+            
             renderEmployees();
+            console.log('Rendered employees to table');
             
             // Initialize timesheet with first employee
             if (employees.length > 0) {
                 selectEmployee(employees[0].name);
             }
         } catch (error) {
-            console.error('❌ ADMIN: Error fetching employees:', error);
-            showMessage('Error fetching employees', true);
+            console.error('❌ Error fetching employees:', error);
+            showMessage('Error fetching employees: ' + error.message, true);
         }
     }
 
@@ -768,7 +871,7 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
     }
 
     // Form submit handler
-    form.addEventListener('submit', async (e) => {
+    async function handleFormSubmit(e) {
         e.preventDefault();
         const employeeId = document.getElementById('employeeId').value;
         const employeeData = {
@@ -781,10 +884,11 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
 
         try {
             const url = employeeId 
-                ? `/api/employees/${employeeId}`
-                : '/api/employees';
+                ? `${API_URL}/api/employees/${employeeId}`
+                : `${API_URL}/api/employees`;
             const method = employeeId ? 'PUT' : 'POST';
             
+            console.log('Making API request to:', url);
             const response = await fetch(url, {
                 method,
                 headers: {
@@ -795,17 +899,17 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.msg || 'Failed to save employee');
+                throw new Error(error.message || 'Failed to save employee');
             }
 
-                showMessage(`Employee ${employeeId ? 'updated' : 'added'} successfully`);
-                clearForm();
-                await fetchEmployees();
+            showMessage(`Employee ${employeeId ? 'updated' : 'added'} successfully`);
+            clearForm();
+            await fetchEmployees();
         } catch (error) {
-            console.error('❌ ADMIN: Error saving employee:', error);
+            console.error('❌ Error saving employee:', error);
             showMessage(error.message || 'Error saving employee', true);
         }
-    });
+    }
 
     // Clear button handler
     clearBtn.addEventListener('click', clearForm);
@@ -895,33 +999,52 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
         return '--';
     }
 
-    // Fetch timesheet data from server
+    // Fetch timesheet data
     async function fetchTimesheetData() {
-        console.log('📅 ADMIN: Fetching timesheet data...');
         if (!selectedEmployee) {
-            console.log('⚠️ ADMIN: No employee selected');
+            console.warn('No employee selected for timesheet');
             return;
         }
 
         try {
-            console.log(`🔍 ADMIN: Fetching timesheets for ${selectedEmployee} from ${timesheetStartDate.value} to ${timesheetEndDate.value}`);
-            const response = await fetch(
-                `/api/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetStartDate.value}&endDate=${timesheetEndDate.value}`
-            );
+            const startDate = timesheetStartDate.value;
+            const endDate = timesheetEndDate.value;
             
-            console.log('📥 ADMIN: Timesheet API response status:', response.status);
+            console.log('Fetching timesheet data:', {
+                employee: selectedEmployee,
+                startDate,
+                endDate
+            });
+
+            const queryParams = new URLSearchParams({
+                employee: selectedEmployee,
+                startDate,
+                endDate
+            });
+
+            const url = `${API_URL}/api/timesheet?${queryParams.toString()}`;
+            console.log('Making API request to:', url);
+            
+            const response = await fetch(url);
+            console.log('API Response:', response);
+
             if (!response.ok) {
-                throw new Error(`Failed to fetch timesheet data: ${response.status}`);
+                throw new Error(`Failed to fetch timesheet: ${response.status} ${response.statusText}`);
             }
-            
+
             const data = await response.json();
-            console.log('📋 ADMIN: Received timesheet data:', data);
+            console.log('Received timesheet data:', data);
+
+            if (!Array.isArray(data)) {
+                console.warn('Expected array of timesheet entries but received:', typeof data);
+                return;
+            }
+
             timesheetData = data;
             renderTimesheet();
         } catch (error) {
-            console.error('❌ ADMIN: Error fetching timesheet data:', error);
-            showMessage('Error loading timesheet data', true);
-            timesheetTable.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load timesheet data</td></tr>';
+            console.error('❌ Error fetching timesheet:', error);
+            showMessage('Error fetching timesheet: ' + error.message, true);
         }
     }
 
@@ -938,7 +1061,7 @@ const API_URL = 'https://laundry-pos-api.onrender.com';  // Updated to Render de
 
         if (!Array.isArray(timesheetData) || timesheetData.length === 0) {
             console.log('⚠️ ADMIN: No timesheet data to display');
-            timesheetTable.innerHTML = '<tr><td colspan="5" class="text-center">No timesheet entries found for this period</td></tr>';
+            timesheetTable.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load timesheet data</td></tr>';
             totalHoursSpan.textContent = '0';
             return;
         }
