@@ -1,5 +1,11 @@
 // Create a global namespace for our app
-window.LaundryAdmin = {};
+window.LaundryAdmin = {
+    addTestTimesheetData,
+    editEmployee,
+    deleteEmployee,
+    removeEmployee,
+    get selectedEmployee() { return selectedEmployee; }
+};
 
 // API URL constant - automatically detect environment
 const API_URL = window.location.hostname === 'localhost' 
@@ -907,29 +913,13 @@ const API_URL = window.location.hostname === 'localhost'
 
         try {
             console.log(`🔍 ADMIN: Fetching timesheets for ${selectedEmployee} from ${timesheetStartDate.value} to ${timesheetEndDate.value}`);
-            const response = await fetch(
-                `${API_URL}/timesheets/bulk`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        employeeName: selectedEmployee,
-                        entries: [
-                            {
-                                date: timesheetStartDate.value,
-                                duration: formatDuration(timesheetData.totalHours * 60)
-                            },
-                            {
-                                date: timesheetEndDate.value,
-                                duration: formatDuration(timesheetData.totalHours * 60)
-                            }
-                        ],
-                        totalHours: timesheetData.totalHours
-                    })
-                }
-            );
+            const queryParams = new URLSearchParams({
+                employeeName: selectedEmployee,
+                startDate: timesheetStartDate.value,
+                endDate: timesheetEndDate.value
+            });
+            
+            const response = await fetch(`${API_URL}/timesheets?${queryParams}`);
             
             console.log('📥 ADMIN: Timesheet API response status:', response.status);
             if (!response.ok) {

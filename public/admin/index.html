@@ -182,12 +182,14 @@
                 </div>
                 <div class="timesheet-container">
                     <div class="timesheet-header">
-                        <div class="date-filter">
-                            <label for="timesheetStartDate">From:</label>
-                            <input type="date" id="timesheetStartDate">
-                            <label for="timesheetEndDate">To:</label>
-                            <input type="date" id="timesheetEndDate">
-                            <button class="filter-btn">Filter</button>
+                        <div class="timesheet-controls">
+                            <div class="date-range">
+                                <input type="date" id="timesheetStartDate" class="form-control">
+                                <span>to</span>
+                                <input type="date" id="timesheetEndDate" class="form-control">
+                                <button class="btn btn-primary filter-btn">Filter</button>
+                                <button class="btn btn-secondary" onclick="LaundryAdmin.addTestTimesheetData(LaundryAdmin.selectedEmployee)">Generate Test Data</button>
+                            </div>
                         </div>
                     </div>
                     <div class="tabs" id="employeeTabs">
