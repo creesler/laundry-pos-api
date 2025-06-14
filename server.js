@@ -22,13 +22,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 import inventoryRoutes from './routes/inventory.js';
 import salesRoutes from './routes/sales.js';
 import employeesRoutes from './routes/employees.js';
-import timeRoutes from './routes/time.js';
+import timesheetsRoutes from './routes/timesheets.js';
 import syncRoutes from './routes/sync.js';
 
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/employees', employeesRoutes);
-app.use('/api/time', timeRoutes);
+app.use('/api/timesheets', timesheetsRoutes);
 app.use('/api/sync', syncRoutes);
 
 // Serve admin interface
