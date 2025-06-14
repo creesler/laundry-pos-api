@@ -31,7 +31,7 @@ app.use(express.json({ limit: '50mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Parse URL-encoded bodies
 
 // Serve static files from the public directory
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // API routes
 app.use('/api/employees', employeeRoutes);
@@ -42,7 +42,7 @@ app.use('/api/sync', syncRoutes);
 
 // Serve admin dashboard
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/admin/index.html'));
+  res.sendFile(path.join(__dirname, 'public/admin/index.html'));
 });
 
 // Basic test route
