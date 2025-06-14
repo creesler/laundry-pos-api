@@ -1,6 +1,7 @@
 {
   "name": "laundry-pos-api",
   "version": "1.0.0",
+  "type": "module",
   "description": "Laundry POS System API Server",
   "main": "server.js",
   "scripts": {

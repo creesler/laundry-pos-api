@@ -1,8 +1,12 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const path = require('path');
+import 'dotenv/config';
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -15,11 +19,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
-app.use('/api/inventory', require('./routes/inventory'));
-app.use('/api/sales', require('./routes/sales'));
-app.use('/api/employees', require('./routes/employees'));
-app.use('/api/time', require('./routes/time'));
-app.use('/api/sync', require('./routes/sync'));
+import inventoryRoutes from './routes/inventory.js';
+import salesRoutes from './routes/sales.js';
+import employeesRoutes from './routes/employees.js';
+import timeRoutes from './routes/time.js';
+import syncRoutes from './routes/sync.js';
+
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/employees', employeesRoutes);
+app.use('/api/time', timeRoutes);
+app.use('/api/sync', syncRoutes);
 
 // Serve admin interface
 app.get('/admin', (req, res) => {
