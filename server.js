@@ -1,7 +1,13 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
+import 'dotenv/config';
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+
+import inventoryRoutes from './routes/inventory.js';
+import salesRoutes from './routes/sales.js';
+import employeesRoutes from './routes/employees.js';
+import timeRoutes from './routes/time.js';
+import syncRoutes from './routes/sync.js';
 
 const app = express();
 
@@ -11,11 +17,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/inventory', require('./routes/inventory'));
-app.use('/api/sales', require('./routes/sales'));
-app.use('/api/employees', require('./routes/employees'));
-app.use('/api/time', require('./routes/time'));
-app.use('/api/sync', require('./routes/sync'));
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/employees', employeesRoutes);
+app.use('/api/time', timeRoutes);
+app.use('/api/sync', syncRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
