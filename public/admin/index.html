@@ -12,29 +12,18 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 </head>
 <body>
+    <script>
+        // Check authentication before loading the page
+        if (!localStorage.getItem('adminAuthenticated')) {
+            window.location.href = '/admin/login.html';
+        }
+    </script>
+
     <div class="app-container">
-        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container-fluid">
-                <a class="navbar-brand" href="#">Laundry Admin</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#" data-section="dashboard">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-section="employees">Employees</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-section="timesheets">Timesheets</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-section="inventory">Inventory</a>
-                        </li>
-                    </ul>
-                </div>
+                <a class="navbar-brand" href="#">Laundry POS Admin</a>
+                <button class="btn btn-outline-light" onclick="logout()">Logout</button>
             </div>
         </nav>
 
@@ -182,14 +171,12 @@
                 </div>
                 <div class="timesheet-container">
                     <div class="timesheet-header">
-                        <div class="timesheet-controls">
-                            <div class="date-range">
-                                <input type="date" id="timesheetStartDate" class="form-control">
-                                <span>to</span>
-                                <input type="date" id="timesheetEndDate" class="form-control">
-                                <button class="btn btn-primary filter-btn">Filter</button>
-                                <button class="btn btn-secondary" onclick="LaundryAdmin.addTestTimesheetData(LaundryAdmin.selectedEmployee)">Generate Test Data</button>
-                            </div>
+                        <div class="date-filter">
+                            <label for="timesheetStartDate">From:</label>
+                            <input type="date" id="timesheetStartDate">
+                            <label for="timesheetEndDate">To:</label>
+                            <input type="date" id="timesheetEndDate">
+                            <button class="filter-btn">Filter</button>
                         </div>
                     </div>
                     <div class="tabs" id="employeeTabs">
@@ -281,11 +268,19 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script>
-        // Initialize Chart.js plugins before loading app.js
+        // Initialize global Chart.js plugins
         if (window.Chart) {
             Chart.register(ChartDataLabels);
         }
     </script>
-    <script src="/admin/app.js" defer></script>
+    <script src="/admin/app.js"></script>
+
+    <script>
+        // Add logout functionality
+        function logout() {
+            localStorage.removeItem('adminAuthenticated');
+            window.location.href = '/admin/login.html';
+        }
+    </script>
 </body>
 </html> 
