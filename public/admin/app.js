@@ -1,3 +1,9 @@
+// Create a global namespace for our app
+window.LaundryAdmin = {};
+
+// API URL constant - Use current domain
+const API_URL = window.location.origin;  // This will be https://laundry-pos-api.onrender.com in production
+
 // DOM Elements
 const navLinks = document.querySelectorAll('.nav-link');
 const sections = document.querySelectorAll('.section');
@@ -21,6 +27,8 @@ const inventoryForm = document.getElementById('inventoryForm');
 let selectedEmployee = '';
 let timesheetData = [];
 let salesChart = null;
+let allSalesData = null;  // Store all sales data
+let currentData = null;  // Initialize as null instead of with default values
 
 // Navigation
 navLinks.forEach(link => {
@@ -58,16 +66,21 @@ function formatTime(timeString) {
 // Employee Management
 async function fetchEmployees() {
     try {
-        const response = await fetch('/api/employees');
+        const response = await fetch(`${API_URL}/api/employees`);
         if (!response.ok) {
             throw new Error('Failed to fetch employees');
         }
-        const employees = await response.json();
-        renderEmployees(employees);
-        updateEmployeeSelect(employees);
+        const data = await response.json();
+        employees = data;
+        renderEmployees();
+        
+        // Initialize timesheet with first employee
+        if (employees.length > 0) {
+            selectEmployee(employees[0].name);
+        }
     } catch (error) {
         console.error('Error fetching employees:', error);
-        showMessage('Error loading employees', true);
+        showMessage('Error fetching employees', true);
     }
 }
 
@@ -126,36 +139,29 @@ async function handleEmployeeSubmit(event) {
 
 // Timesheet Management
 async function fetchTimesheetData() {
-    if (!selectedEmployee || !timesheetStartDate.value || !timesheetEndDate.value) {
-        showMessage('Please select an employee and date range', true);
-        return;
-    }
+    if (!selectedEmployee) return;
 
     try {
-        console.log(`🔍 ADMIN: Fetching timesheets for ${selectedEmployee} from ${timesheetStartDate.value} to ${timesheetEndDate.value}`);
         const response = await fetch(
-            `/api/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetStartDate.value}&endDate=${timesheetEndDate.value}`
+            `${API_URL}/api/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetStartDate.value}&endDate=${timesheetEndDate.value}`
         );
         
-        console.log('📥 ADMIN: Timesheet API response status:', response.status);
         if (!response.ok) {
-            throw new Error(`Failed to fetch timesheet data: ${response.status}`);
+            throw new Error('Failed to fetch timesheet data');
         }
         
         const data = await response.json();
-        console.log('📋 ADMIN: Received timesheet data:', data);
         timesheetData = data;
         renderTimesheet();
     } catch (error) {
-        console.error('❌ ADMIN: Error fetching timesheet data:', error);
+        console.error('Error fetching timesheet data:', error);
         showMessage('Error loading timesheet data', true);
-        timesheetTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load timesheet data</td></tr>';
     }
 }
 
 function renderTimesheet() {
     if (!timesheetData.length) {
-        timesheetTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No timesheet data available</td></tr>';
+        timesheetTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load timesheet data</td></tr>';
         return;
     }
 
@@ -235,4 +241,80 @@ saveEmployeeBtn.addEventListener('click', handleEmployeeSubmit);
 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl);
+});
+
+// Fetch sales data
+async function fetchSalesData() {
+    try {
+        const response = await fetch(`${API_URL}/api/sales/summary`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch sales data');
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching sales data:', error);
+        showMessage('Error loading sales data', true);
+        return null;
+    }
+}
+
+// Delete employee
+async function deleteEmployee(id) {
+    if (!confirm('Are you sure you want to delete this employee?')) return;
+
+    try {
+        const response = await fetch(`${API_URL}/api/employees/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to delete employee');
+        }
+        
+        showMessage('Employee deleted successfully');
+        await fetchEmployees();
+    } catch (error) {
+        console.error('Error deleting employee:', error);
+        showMessage('Error deleting employee', true);
+    }
+}
+
+// Form submit handler
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const employeeId = document.getElementById('employeeId').value;
+    const employeeData = {
+        name: document.getElementById('name').value,
+        contactNumber: document.getElementById('contactNumber').value,
+        address: document.getElementById('address').value,
+        role: document.getElementById('role').value,
+        status: document.getElementById('status').value
+    };
+
+    try {
+        const url = employeeId 
+            ? `${API_URL}/api/employees/${employeeId}`
+            : `${API_URL}/api/employees`;
+        const method = employeeId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(employeeData)
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to save employee');
+        }
+
+        showMessage(`Employee ${employeeId ? 'updated' : 'added'} successfully`);
+        clearForm();
+        await fetchEmployees();
+    } catch (error) {
+        console.error('Error saving employee:', error);
+        showMessage('Error saving employee', true);
+    }
 }); 
