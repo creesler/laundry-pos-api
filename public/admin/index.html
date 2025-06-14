@@ -281,11 +281,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script>
-        // Initialize global Chart.js plugins
+        // Initialize Chart.js plugins before loading app.js
         if (window.Chart) {
             Chart.register(ChartDataLabels);
         }
     </script>
-    <script src="/admin/app.js"></script>
+    <script src="/admin/app.js" defer></script>
 </body>
 </html> 

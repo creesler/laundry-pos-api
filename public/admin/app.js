@@ -1,16 +1,10 @@
-// Create a global namespace for our app
-window.LaundryAdmin = {
-    addTestTimesheetData,
-    editEmployee,
-    deleteEmployee,
-    removeEmployee,
-    get selectedEmployee() { return selectedEmployee; }
-};
-
 // API URL constant - automatically detect environment
 const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'  // Development
     : 'https://laundry-pos-api.onrender.com/api';  // Production
+
+// Create a global namespace for our app
+window.LaundryAdmin = {};
 
 // Wait for all functions to be defined before initializing
 (function(app) {
@@ -21,6 +15,7 @@ const API_URL = window.location.hostname === 'localhost'
 
     // Employee Management
     let employees = [];
+    let selectedEmployee = null;
 
     // DOM Elements
     const messageBox = document.getElementById('messageBox');
@@ -36,7 +31,6 @@ const API_URL = window.location.hostname === 'localhost'
 
     // Timesheet functionality
     let timesheetData = {};
-    let selectedEmployee = null;
 
     // Inventory Management
     let inventoryChart = null;
@@ -819,55 +813,11 @@ const API_URL = window.location.hostname === 'localhost'
     clearBtn.addEventListener('click', clearForm);
 
     // Initialize everything when the page loads
-    function initialize() {
-        console.log('Initializing dashboard...');
-        
-        // Register Chart.js plugins
-        if (window.Chart) {
-            Chart.register(ChartDataLabels);
-            console.log('Chart.js plugins registered');
-        }
-
-        // Set default date range to current month
-        const today = new Date();
-        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        
-        document.getElementById('startDate').value = firstDayOfMonth.toISOString().split('T')[0];
-        document.getElementById('endDate').value = today.toISOString().split('T')[0];
-        
-        // Set up refresh button click handler
-        document.getElementById('refreshButton').addEventListener('click', refreshData);
-        
-        // Initialize all components
-        initializeChart();
-        initializePeriodFilter();
-        initializeNavigation();
-        refreshData();
-        
-        // Initialize employee list
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('🚀 ADMIN: Initializing page...');
+        initializeTimesheetDates();
         fetchEmployees();
-        
-        // Initialize inventory controls and data
-        initializeInventoryControls();
-        refreshInventoryData();
-        
-        console.log('Dashboard initialization complete');
-    }
-
-    // Expose necessary functions to the global scope
-    app.refreshData = refreshData;
-    app.updateChart = updateChart;
-    app.initializePeriodFilter = initializePeriodFilter;
-    app.deleteEmployee = deleteEmployee;  // Expose employee management functions
-    app.editEmployee = editEmployee;
-    app.removeEmployee = removeEmployee;
-
-    // Start initialization when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize);
-    } else {
-        initialize();
-    }
+    });
 
     // Initialize date inputs with current month
     function initializeTimesheetDates() {
@@ -1017,13 +967,6 @@ const API_URL = window.location.hostname === 'localhost'
         if (selectedEmployee) {
             fetchTimesheetData();
         }
-    });
-
-    // Initialize timesheet and filters
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('🚀 ADMIN: Initializing page...');
-        initializeTimesheetDates();
-        fetchEmployees();
     });
 
     async function fetchInventoryData() {
@@ -1224,4 +1167,14 @@ const API_URL = window.location.hostname === 'localhost'
 
         refreshButton.addEventListener('click', refreshInventoryData);
     }
+
+    // Expose functions to global namespace
+    app.addTestTimesheetData = addTestTimesheetData;
+    app.editEmployee = editEmployee;
+    app.deleteEmployee = deleteEmployee;
+    app.removeEmployee = removeEmployee;
+    Object.defineProperty(app, 'selectedEmployee', {
+        get: function() { return selectedEmployee; }
+    });
+
 })(window.LaundryAdmin); 
