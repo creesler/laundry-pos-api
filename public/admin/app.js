@@ -58,10 +58,12 @@ const API_URL = window.location.hostname === 'localhost'
                 return {
                     start: new Date(startOfDay),
                     end: new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1),
-                    displayText: `Day ${startOfDay.getDate()} - ${startOfDay.toLocaleDateString('en-US', { 
+                    displayText: startOfDay.toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
                         month: 'long', 
-                        year: 'numeric'
-                    })}`
+                        day: 'numeric' 
+                    })
                 };
             case 'week': {
                 const startOfWeek = new Date(startOfDay);
@@ -70,36 +72,36 @@ const API_URL = window.location.hostname === 'localhost'
                 endOfWeek.setDate(startOfWeek.getDate() + 6);
                 endOfWeek.setHours(23, 59, 59, 999);
 
-                // Calculate week number (1-52)
-                const firstDayOfYear = new Date(startOfWeek.getFullYear(), 0, 1);
-                const weekNumber = Math.ceil((((startOfWeek - firstDayOfYear) / 86400000) + firstDayOfYear.getDay() + 1) / 7);
+                const weekStartStr = startOfWeek.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric'
+                });
+                const weekEndStr = endOfWeek.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric',
+                    year: 'numeric'
+                });
 
                 return {
                     start: startOfWeek,
                     end: endOfWeek,
-                    displayText: `Week ${weekNumber} of ${startOfWeek.getFullYear()} (${startOfWeek.toLocaleDateString('en-US', { 
-                        month: 'long',
-                        day: 'numeric'
-                    })} - ${endOfWeek.toLocaleDateString('en-US', { 
-                        month: 'long',
-                        day: 'numeric'
-                    })})`
+                    displayText: `${weekStartStr} - ${weekEndStr}`
                 };
             }
             case 'month': {
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                 const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
                 
-                // Get month number (1-12)
-                const monthNumber = startOfMonth.getMonth() + 1;
-                
+                const monthStr = startOfMonth.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    year: 'numeric'
+                });
+                const daysInMonth = endOfMonth.getDate();
+
                 return {
                     start: startOfMonth,
                     end: endOfMonth,
-                    displayText: `Month ${monthNumber} - ${startOfMonth.toLocaleDateString('en-US', { 
-                        month: 'long', 
-                        year: 'numeric'
-                    })}`
+                    displayText: `${monthStr} (${daysInMonth} days)`
                 };
             }
             case 'year': {
@@ -334,12 +336,13 @@ const API_URL = window.location.hostname === 'localhost'
         console.log('Chart created with new data');
     }
 
+    // Update date range display
     function updateDateRangeDisplay(startDate, endDate, period) {
         const dateRangeDisplay = document.getElementById('dateRangeDisplay');
         if (!dateRangeDisplay) return;
 
-        const dateRange = getDateRange(period, currentPeriodDate);
-        dateRangeDisplay.textContent = dateRange.displayText;
+        const date = new Date(currentPeriodDate);
+        dateRangeDisplay.textContent = date.getDate().toString();
     }
 
     function updateTable(data) {
@@ -425,7 +428,7 @@ const API_URL = window.location.hostname === 'localhost'
             // Update the UI with the fetched data or show empty state
             if (data && data.length > 0) {
                 const totals = calculateTotals(data);
-                updateChart(totals);
+            updateChart(totals);
                 updateTable(data);
             } else {
                 // Show empty state but keep the date range display
@@ -458,31 +461,15 @@ const API_URL = window.location.hostname === 'localhost'
             return;
         }
 
-        // Calculate the new date based on period and direction
+        // Always move one day at a time
         const increment = direction === 'next' ? 1 : -1;
-        
-        switch (period) {
-            case 'day':
-                // Move one day at a time
-                currentPeriodDate.setDate(currentPeriodDate.getDate() + increment);
-                break;
-            case 'week':
-                // Move 7 days at a time
-                currentPeriodDate.setDate(currentPeriodDate.getDate() + (increment * 7));
-                break;
-            case 'month':
-                // Move one month at a time
-                currentPeriodDate.setMonth(currentPeriodDate.getMonth() + increment);
-                break;
-            case 'year':
-                // Move one year at a time
-                currentPeriodDate.setFullYear(currentPeriodDate.getFullYear() + increment);
-                break;
-        }
+        currentPeriodDate.setDate(currentPeriodDate.getDate() + increment);
 
-        // Get new date range and update display
-        const dateRange = getDateRange(period, currentPeriodDate);
-        updateDateRangeDisplay(dateRange.start, dateRange.end, period);
+        // Update display with just the date number
+        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+        if (dateRangeDisplay) {
+            dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
+        }
         
         // Update navigation buttons state
         updateNavigationState();
@@ -512,12 +499,15 @@ const API_URL = window.location.hostname === 'localhost'
         const now = new Date();
         now.setHours(23, 59, 59, 999); // End of current day
         
-        // Compare based on period type
-        const currentRange = getDateRange(period, currentPeriodDate);
-        if (currentRange.start > now) {
+        // Only disable next button if we're trying to go beyond current date
+        if (currentPeriodDate > now) {
             nextBtn.disabled = true;
             // Reset to current date if we somehow went beyond it
             currentPeriodDate = new Date();
+            const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+            if (dateRangeDisplay) {
+                dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
+            }
         }
     }
 
@@ -541,8 +531,10 @@ const API_URL = window.location.hostname === 'localhost'
                 document.getElementById('dateControls').style.display = 'flex';
             } else {
                 document.getElementById('dateControls').style.display = 'none';
-                const dateRange = getDateRange(period, currentPeriodDate);
-                updateDateRangeDisplay(dateRange.start, dateRange.end, period);
+                const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+                if (dateRangeDisplay) {
+                    dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
+                }
                 updateNavigationState();
                 refreshData();
             }
@@ -551,9 +543,11 @@ const API_URL = window.location.hostname === 'localhost'
         prevBtn.addEventListener('click', () => navigatePeriod('prev'));
         nextBtn.addEventListener('click', () => navigatePeriod('next'));
 
-        // Initialize with current period
-        const dateRange = getDateRange(periodSelect.value, currentPeriodDate);
-        updateDateRangeDisplay(dateRange.start, dateRange.end, periodSelect.value);
+        // Initialize with current date number
+        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+        if (dateRangeDisplay) {
+            dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
+        }
         updateNavigationState();
     }
 
@@ -1240,7 +1234,7 @@ const API_URL = window.location.hostname === 'localhost'
         console.log('🕒 ADMIN: Initializing timesheet section');
         initializeTimesheetDates();
         await fetchEmployees();
-        if (employees.length > 0) {
+            if (employees.length > 0) {
             await selectEmployee(employees[0].name);
         }
         // Add event listener for filter button
