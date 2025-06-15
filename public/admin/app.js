@@ -39,45 +39,61 @@ const API_URL = window.location.hostname === 'localhost'
 
     // Global date state
     let currentPeriodDate = new Date();
-    let dateDisplay = null;
-
-    // Initialize the date display element
-    function initializeDateDisplay() {
-        dateDisplay = document.getElementById('dateRangeDisplay');
-        if (!dateDisplay) {
-            console.error('Date display element not found');
-            return false;
-        }
-        return true;
-    }
 
     // Format the date with full details
     function getFormattedDate(date) {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         
-        return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        const formattedDate = `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        console.log('Formatting date:', formattedDate); // Debug log
+        return formattedDate;
     }
 
-    // Update the display element with current date
-    function updateDisplay() {
-        if (!dateDisplay && !initializeDateDisplay()) {
+    // Handle date display update
+    function updateDateDisplay() {
+        const displayElement = document.getElementById('dateRangeDisplay');
+        if (!displayElement) {
+            console.error('Date display element not found');
             return;
         }
-        dateDisplay.textContent = getFormattedDate(currentPeriodDate);
+
+        const formattedDate = getFormattedDate(currentPeriodDate);
+        console.log('Updating display with:', formattedDate); // Debug log
+        displayElement.textContent = formattedDate;
     }
 
-    // Handle navigation button clicks
+    // Handle date navigation
     function handleDateNavigation(direction) {
+        console.log('Navigation direction:', direction); // Debug log
+        console.log('Current date before:', getFormattedDate(currentPeriodDate)); // Debug log
+
+        // Create a new date object
         const newDate = new Date(currentPeriodDate);
-        newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+        
+        // Update the date
+        if (direction === 'next') {
+            newDate.setDate(newDate.getDate() + 1);
+        } else {
+            newDate.setDate(newDate.getDate() - 1);
+        }
+
+        // Update our state
         currentPeriodDate = newDate;
-        updateDisplay();
+        
+        console.log('New date after navigation:', getFormattedDate(currentPeriodDate)); // Debug log
+        
+        // Update display first
+        updateDateDisplay();
+        
+        // Then refresh data
         refreshData();
     }
 
-    // Initialize period filter and date navigation
+    // Initialize period filter
     function initializePeriodFilter() {
+        console.log('Initializing period filter'); // Debug log
+        
         // Get all required elements
         const periodSelect = document.getElementById('periodFilter');
         const prevBtn = document.getElementById('prevPeriod');
@@ -90,29 +106,35 @@ const API_URL = window.location.hostname === 'localhost'
             return;
         }
 
-        // Initialize date display
-        if (!initializeDateDisplay()) {
-            return;
-        }
-
-        // Set up navigation buttons
-        prevBtn.onclick = () => handleDateNavigation('prev');
-        nextBtn.onclick = () => handleDateNavigation('next');
+        // Set up navigation buttons with direct handlers
+        prevBtn.onclick = (e) => {
+            e.preventDefault(); // Prevent any default behavior
+            handleDateNavigation('prev');
+        };
+        
+        nextBtn.onclick = (e) => {
+            e.preventDefault(); // Prevent any default behavior
+            handleDateNavigation('next');
+        };
 
         // Handle period changes
-        periodSelect.onchange = () => {
-            if (periodSelect.value === 'custom') {
+        periodSelect.onchange = (e) => {
+            console.log('Period changed to:', e.target.value); // Debug log
+            
+            if (e.target.value === 'custom') {
                 dateControls.style.display = 'flex';
             } else {
                 dateControls.style.display = 'none';
                 currentPeriodDate = new Date();
-                updateDisplay();
+                console.log('Reset to current date:', getFormattedDate(currentPeriodDate)); // Debug log
+                updateDateDisplay();
                 refreshData();
             }
         };
 
-        // Initial display update
-        updateDisplay();
+        // Initial setup
+        console.log('Setting initial date:', getFormattedDate(currentPeriodDate)); // Debug log
+        updateDateDisplay();
         refreshData();
     }
 
