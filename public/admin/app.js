@@ -37,7 +37,7 @@ const API_URL = window.location.hostname === 'localhost'
     let inventoryData = null;
     let inventoryChartType = 'stock';
 
-    // Global state for current period
+    // Global variable for current date
     let currentPeriodDate = new Date();
 
     // Utility functions
@@ -469,39 +469,25 @@ const API_URL = window.location.hostname === 'localhost'
         nextBtn.disabled = false;
     }
 
-    // Navigate between periods
+    // Simple function to navigate one day at a time
     function navigatePeriod(direction) {
-        const periodSelect = document.getElementById('periodFilter');
-        const period = periodSelect.value;
+        // Get the current date value
+        let day = currentPeriodDate.getDate();
         
-        // Don't navigate if on 'all' or 'custom' period
-        if (period === 'all' || period === 'custom') {
-            return;
-        }
-
-        // Create a new date object to avoid reference issues
-        let newDate = new Date(currentPeriodDate);
-        
-        // Move one day at a time
+        // Increment or decrement by exactly one day
         if (direction === 'next') {
-            newDate.setDate(newDate.getDate() + 1);
+            day = day + 1;
         } else {
-            newDate.setDate(newDate.getDate() - 1);
+            day = day - 1;
         }
         
-        // Update the current period date
-        currentPeriodDate = newDate;
-
-        // Update display with just the date number
-        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
-        if (dateRangeDisplay) {
-            dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
-        }
+        // Update the date
+        currentPeriodDate.setDate(day);
         
-        // Update navigation buttons state
-        updateNavigationState();
+        // Update the display
+        document.getElementById('dateRangeDisplay').textContent = day.toString();
         
-        // Refresh data with new date range
+        // Refresh the data
         refreshData();
     }
 
@@ -510,44 +496,42 @@ const API_URL = window.location.hostname === 'localhost'
         const periodSelect = document.getElementById('periodFilter');
         const prevBtn = document.getElementById('prevPeriod');
         const nextBtn = document.getElementById('nextPeriod');
+        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
 
-        if (!periodSelect || !prevBtn || !nextBtn) return;
+        if (!periodSelect || !prevBtn || !nextBtn || !dateRangeDisplay) return;
 
-        // Reset current period date to today
+        // Reset to today's date
         currentPeriodDate = new Date();
+        dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
 
-        // Set up event listeners
-        periodSelect.addEventListener('change', () => {
-            currentPeriodDate = new Date(); // Reset to today when changing period
+        // Clear any existing event listeners
+        prevBtn.replaceWith(prevBtn.cloneNode(true));
+        nextBtn.replaceWith(nextBtn.cloneNode(true));
+        
+        // Get fresh references after replacing
+        const newPrevBtn = document.getElementById('prevPeriod');
+        const newNextBtn = document.getElementById('nextPeriod');
+
+        // Add single click handlers
+        newPrevBtn.onclick = () => navigatePeriod('prev');
+        newNextBtn.onclick = () => navigatePeriod('next');
+
+        // Period select change handler
+        periodSelect.onchange = () => {
             const period = periodSelect.value;
-            
             if (period === 'custom') {
                 document.getElementById('dateControls').style.display = 'flex';
             } else {
                 document.getElementById('dateControls').style.display = 'none';
-                const dateRangeDisplay = document.getElementById('dateRangeDisplay');
-                if (dateRangeDisplay) {
-                    dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
-                }
-                updateNavigationState();
+                // Reset to today when changing periods
+                currentPeriodDate = new Date();
+                dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
                 refreshData();
             }
-        });
+        };
 
-        // Set up navigation button event listeners
-        prevBtn.addEventListener('click', () => {
-            navigatePeriod('prev');
-        });
-        nextBtn.addEventListener('click', () => {
-            navigatePeriod('next');
-        });
-
-        // Initialize with current date number
-        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
-        if (dateRangeDisplay) {
-            dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
-        }
-        updateNavigationState();
+        // Initial data refresh
+        refreshData();
     }
 
     function initializeNavigation() {
