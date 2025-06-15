@@ -686,53 +686,33 @@ const API_URL = window.location.hostname === 'localhost'
         }
     }
 
-    // Modified fetchEmployees function to add test data
-    async function fetchEmployees() {
-        console.log('👥 ADMIN: Fetching employees...');
-        try {
-            const response = await fetch(`${API_URL}/employees`);
-            if (!response.ok) throw new Error('Failed to fetch employees');
-            const data = await response.json();
-            console.log('📋 ADMIN: Received employee data:', data);
-            employees = data;
-            renderEmployees();
-            
-            // Initialize timesheet with first employee
-            if (employees.length > 0) {
-                selectEmployee(employees[0].name);
-            }
-        } catch (error) {
-            console.error('❌ ADMIN: Error fetching employees:', error);
-            showMessage('Error fetching employees', true);
-        }
+    // Render employee tabs
+    function renderEmployeeTabs(employees) {
+        const employeeTabs = document.getElementById('employeeTabs');
+        if (!employeeTabs) return;
+
+        employeeTabs.innerHTML = '';
+        employees.forEach(employee => {
+            const tab = document.createElement('button');
+            tab.className = `employee-tab ${employee.name === selectedEmployee ? 'active' : ''}`;
+            tab.textContent = employee.name;
+            employeeTabs.appendChild(tab);
+        });
     }
 
-    // Render employees table
-    function renderEmployees() {
-        console.log('🔄 ADMIN: Rendering employee table');
-        employeeTable.innerHTML = '';
-        if (!employees || employees.length === 0) {
-            console.log('⚠️ ADMIN: No employees to display');
-            employeeTable.innerHTML = '<tr><td colspan="5">No employees found</td></tr>';
-            return;
+    // Fetch employees and render tabs
+    async function fetchEmployees() {
+        try {
+            const response = await fetch(`${API_URL}/employees`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch employees');
+            }
+            const employees = await response.json();
+            renderEmployeeTabs(employees);
+        } catch (error) {
+            console.error('Error fetching employees:', error);
+            showMessage('Error loading employees', true);
         }
-        
-        console.log(`✨ ADMIN: Rendering ${employees.length} employees`);
-        employees.forEach(employee => {
-            const row = employeeTable.insertRow();
-            row.innerHTML = `
-                <td>${employee.name || 'N/A'}</td>
-                <td>${employee.contactNumber || '-'}</td>
-                <td>${employee.role || 'N/A'}</td>
-                <td>${employee.status || 'N/A'}</td>
-                <td>
-                    <button class="btn btn-warning btn-sm" onclick="LaundryAdmin.editEmployee('${employee._id}')">Edit</button>
-                    <button class="btn btn-danger btn-sm" onclick="LaundryAdmin.deleteEmployee('${employee._id}')">Delete</button>
-                    <button class="btn btn-secondary btn-sm" onclick="LaundryAdmin.removeEmployee('${employee._id}')">Remove</button>
-                </td>
-            `;
-        });
-        console.log('✅ ADMIN: Employee table rendered successfully');
     }
 
     // Edit employee
@@ -869,8 +849,13 @@ const API_URL = window.location.hostname === 'localhost'
         const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
         const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         
-        timesheetStartDate.value = firstDay.toISOString().split('T')[0];
-        timesheetEndDate.value = lastDay.toISOString().split('T')[0];
+        const timesheetStartDate = document.getElementById('timesheetStartDate');
+        const timesheetEndDate = document.getElementById('timesheetEndDate');
+        
+        if (timesheetStartDate && timesheetEndDate) {
+            timesheetStartDate.value = firstDay.toISOString().split('T')[0];
+            timesheetEndDate.value = lastDay.toISOString().split('T')[0];
+        }
     }
 
     // Format duration to hours and minutes
@@ -905,6 +890,9 @@ const API_URL = window.location.hostname === 'localhost'
             return;
         }
 
+        const timesheetStartDate = document.getElementById('timesheetStartDate');
+        const timesheetEndDate = document.getElementById('timesheetEndDate');
+
         try {
             console.log(`🔍 ADMIN: Fetching timesheets for ${selectedEmployee} from ${timesheetStartDate.value} to ${timesheetEndDate.value}`);
             const response = await fetch(
@@ -923,107 +911,84 @@ const API_URL = window.location.hostname === 'localhost'
         } catch (error) {
             console.error('❌ ADMIN: Error fetching timesheet data:', error);
             showMessage('Error loading timesheet data', true);
-            timesheetTable.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load timesheet data</td></tr>';
+            const timesheetTable = document.querySelector('.timesheet-table tbody');
+            if (timesheetTable) {
+                timesheetTable.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load timesheet data</td></tr>';
+            }
         }
     }
 
-    // Render timesheet table
+    // Render timesheet data
     function renderTimesheet() {
-        console.log('🔄 ADMIN: Rendering timesheet table');
-        if (!timesheetTable) {
-            console.error('❌ ADMIN: Timesheet table element not found');
+        const tbody = document.querySelector('.timesheet-table tbody');
+        const totalHoursSpan = document.getElementById('totalHours');
+        
+        if (!tbody || !totalHoursSpan) {
+            console.error('Required timesheet elements not found');
             return;
         }
 
-        timesheetTable.innerHTML = '';
-        let totalHours = 0;
-
-        if (!Array.isArray(timesheetData) || timesheetData.length === 0) {
-            console.log('⚠️ ADMIN: No timesheet data to display');
-            timesheetTable.innerHTML = '<tr><td colspan="5" class="text-center">No timesheet entries found for this period</td></tr>';
+        if (!timesheetData || !Array.isArray(timesheetData)) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">No data available</td></tr>';
             totalHoursSpan.textContent = '0';
             return;
         }
 
-        console.log(`📊 ADMIN: Rendering ${timesheetData.length} timesheet entries`);
-        timesheetData.forEach(entry => {
-            const row = document.createElement('tr');
+        let totalMinutes = 0;
+        const rows = timesheetData.map(entry => {
+            const duration = entry.duration || 0;
+            totalMinutes += duration;
             
-            // Format the date as YYYY-MM-DD
-            const date = new Date(entry.date);
-            const formattedDate = date.toISOString().split('T')[0];
-            
-            // Format times as HH:MM
-            const clockInTime = entry.clockIn ? new Date(entry.clockIn).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : 'N/A';
-            const clockOutTime = entry.clockOut ? new Date(entry.clockOut).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : 'N/A';
-            
-            // Calculate hours (duration is in minutes)
-            const hours = entry.duration ? (entry.duration / 60).toFixed(2) : '0.00';
-            
-            row.innerHTML = `
-                <td>${formattedDate}</td>
-                <td>${clockInTime}</td>
-                <td>${clockOutTime}</td>
-                <td>${hours}</td>
-                <td>
-                    <span class="badge ${entry.status === 'completed' ? 'bg-success' : 'bg-warning'}">
-                        ${entry.status || 'N/A'}
-                    </span>
-                </td>
+            return `
+                <tr>
+                    <td>${formatDateTime(entry.date)}</td>
+                    <td>${formatDateTime(entry.timeIn, 'time')}</td>
+                    <td>${formatDateTime(entry.timeOut, 'time')}</td>
+                    <td>${formatDuration(duration)}</td>
+                    <td>${entry.status || '--'}</td>
+                </tr>
             `;
-            timesheetTable.appendChild(row);
+        }).join('');
 
-            if (entry.duration) {
-                totalHours += entry.duration / 60;
-            }
-        });
-
-        console.log(`✨ ADMIN: Total hours calculated: ${totalHours.toFixed(2)}`);
-        totalHoursSpan.textContent = totalHours.toFixed(2);
+        tbody.innerHTML = rows || '<tr><td colspan="5" class="text-center">No entries found</td></tr>';
+        totalHoursSpan.textContent = formatDuration(totalMinutes);
     }
 
-    // Render employee tabs
-    function renderEmployeeTabs() {
-        employeeTabs.innerHTML = '';
-        employees.forEach(employee => {
-            const tab = document.createElement('button');
-            tab.className = `tab ${employee.name === selectedEmployee ? 'active' : ''}`;
-            tab.textContent = employee.name;
-            tab.onclick = () => selectEmployee(employee.name);
-            employeeTabs.appendChild(tab);
-        });
-    }
-
-    // Select employee and update timesheet
-    async function selectEmployee(employeeName) {
-        console.log('👤 ADMIN: Selecting employee:', employeeName);
-        selectedEmployee = employeeName;
-        renderEmployeeTabs();
-        
-        // First try to fetch existing timesheet data
-        await fetchTimesheetData();
-        
-        // If no data exists, generate test data
-        if (!timesheetData || !Array.isArray(timesheetData) || timesheetData.length === 0) {
-            console.log('📊 ADMIN: No timesheet data found, generating test data...');
-            await addTestTimesheetData(employeeName);
-            await fetchTimesheetData(); // Fetch the newly generated data
-        }
-    }
-
-    // Event listeners for date filters
-    document.querySelector('.filter-btn').addEventListener('click', () => {
-        console.log('🔍 ADMIN: Filter button clicked');
-        if (selectedEmployee) {
-            fetchTimesheetData();
-        }
-    });
-
-    // Initialize timesheet and filters
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('🚀 ADMIN: Initializing page...');
+    // Initialize timesheet functionality
+    function initializeTimesheet() {
         initializeTimesheetDates();
-        fetchEmployees();
+        fetchEmployees(); // Add this line to fetch and render employee tabs
+        
+        // Add event listener for the filter button
+        const filterBtn = document.querySelector('.timesheet-header .filter-btn');
+        if (filterBtn) {
+            filterBtn.addEventListener('click', () => {
+                if (selectedEmployee) {
+                    fetchTimesheetData();
+                } else {
+                    showMessage('Please select an employee first', true);
+                }
+            });
+        }
+
+        // Add event listeners for employee tabs
+        const employeeTabs = document.getElementById('employeeTabs');
+        if (employeeTabs) {
+            employeeTabs.addEventListener('click', (e) => {
+                if (e.target.classList.contains('employee-tab')) {
+                    document.querySelectorAll('.employee-tab').forEach(tab => tab.classList.remove('active'));
+                    e.target.classList.add('active');
+                    selectedEmployee = e.target.textContent;
+                    fetchTimesheetData();
+                }
+            });
+        }
+    }
+
+    // Call initialization when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeTimesheet();
+        // ... other initialization code ...
     });
 
     async function fetchInventoryData() {
