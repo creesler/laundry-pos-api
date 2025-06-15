@@ -174,10 +174,11 @@ const API_URL = window.location.hostname === 'localhost'
                 end.setHours(23, 59, 59, 999);
                 break;
             case 'month':
+                // Set to first day of month
                 start.setDate(1);
                 start.setHours(0, 0, 0, 0);
-                end.setMonth(end.getMonth() + 1);
-                end.setDate(0);
+                // Set end to last day of month
+                end.setMonth(end.getMonth() + 1, 0); // This sets to last day of current month
                 end.setHours(23, 59, 59, 999);
                 break;
             case 'year':
@@ -453,8 +454,11 @@ const API_URL = window.location.hostname === 'localhost'
                     displayText = formatDate(currentDate);
                     break;
                 case 'month': {
+                    // Format month similar to day format
                     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                    displayText = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+                    displayText = formatDate(currentDate).split(',')[0] + ', ' + // Keep the day name
+                                months[currentDate.getMonth()] + ' 1, ' + // Always show 1st of the month
+                                currentDate.getFullYear();
                     break;
                 }
                 case 'year': {
@@ -536,7 +540,7 @@ const API_URL = window.location.hostname === 'localhost'
             endDate = new Date(endDateInput.value);
             endDate.setHours(23, 59, 59, 999);
         } else {
-            const dateRange = getDateRange(periodFilter.value, currentPeriodDate);
+            const dateRange = getDateRange(periodFilter.value);
             if (!dateRange) return;
             startDate = dateRange.start;
             endDate = dateRange.end;
@@ -1416,7 +1420,7 @@ const API_URL = window.location.hostname === 'localhost'
                 newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
                 break;
             case 'month':
-                newDate.setDate(1); // Always set to first day of month
+                // Keep the same date structure as day navigation
                 newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
                 break;
             case 'year':
