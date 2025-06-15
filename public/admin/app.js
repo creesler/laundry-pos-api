@@ -461,7 +461,7 @@ const API_URL = window.location.hostname === 'localhost'
             dateRangeDisplay.textContent = 'All Time';
         } else if (period) {
             const periodDisplay = {
-                day: formatDate(new Date()),
+                day: formatDate(currentPeriodDate || new Date()),
                 week: 'This Week',
                 month: 'This Month',
                 year: 'This Year'
@@ -1433,10 +1433,9 @@ const API_URL = window.location.hostname === 'localhost'
 
         if (newBaseDate) {
             currentPeriodDate = newBaseDate;
-            const dateRangeDisplay = document.getElementById('dateRangeDisplay');
-            if (dateRangeDisplay) {
-                dateRangeDisplay.textContent = formatDate(newBaseDate);
-            }
+            // Update display first
+            updateDateDisplay();
+            // Then refresh data
             refreshData();
         }
     }
