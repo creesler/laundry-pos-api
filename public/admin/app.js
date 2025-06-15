@@ -454,11 +454,8 @@ const API_URL = window.location.hostname === 'localhost'
                     displayText = formatDate(currentDate);
                     break;
                 case 'month': {
-                    // Format month similar to day format
                     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                    displayText = formatDate(currentDate).split(',')[0] + ', ' + // Keep the day name
-                                months[currentDate.getMonth()] + ' 1, ' + // Always show 1st of the month
-                                currentDate.getFullYear();
+                    displayText = months[currentDate.getMonth()] + ' ' + currentDate.getFullYear();
                     break;
                 }
                 case 'year': {
@@ -1420,7 +1417,8 @@ const API_URL = window.location.hostname === 'localhost'
                 newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
                 break;
             case 'month':
-                // Keep the same date structure as day navigation
+                // Set to first day of month and navigate
+                newDate.setDate(1);
                 newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
                 break;
             case 'year':
