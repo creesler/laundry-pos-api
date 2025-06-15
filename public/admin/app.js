@@ -447,6 +447,23 @@ const API_URL = window.location.hostname === 'localhost'
         console.log('Chart created with new data');
     }
 
+    // Format date with different levels of detail
+    function formatDateWithDetail(date, detail = 'full') {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        switch(detail) {
+            case 'full':
+                return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+            case 'month':
+                return `${months[date.getMonth()]} ${date.getFullYear()}`;
+            case 'year':
+                return `${date.getFullYear()}`;
+            default:
+                return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        }
+    }
+
     // Update date range display
     function updateDateRangeDisplay(startDate, endDate, period) {
         const dateRangeDisplay = document.getElementById('dateRangeDisplay');
@@ -454,8 +471,8 @@ const API_URL = window.location.hostname === 'localhost'
         if (period === 'custom' && startDate && endDate) {
             const start = new Date(startDate);
             const end = new Date(endDate);
-            const formattedStart = formatDate(start);
-            const formattedEnd = formatDate(end);
+            const formattedStart = formatDateWithDetail(start);
+            const formattedEnd = formatDateWithDetail(end);
             dateRangeDisplay.textContent = `${formattedStart} to ${formattedEnd}`;
         } else if (period === 'all') {
             dateRangeDisplay.textContent = 'All Time';
@@ -465,32 +482,21 @@ const API_URL = window.location.hostname === 'localhost'
             
             switch(period) {
                 case 'day':
-                    displayText = formatDate(currentDate);
+                    displayText = formatDateWithDetail(currentDate, 'full');
                     break;
                 case 'week': {
                     // Get start of week (Sunday)
                     const weekStart = new Date(currentDate);
                     weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-                    // Get end of week (Saturday)
-                    const weekEnd = new Date(weekStart);
-                    weekEnd.setDate(weekStart.getDate() + 6);
-                    displayText = `${formatDate(weekStart)} to ${formatDate(weekEnd)}`;
+                    displayText = formatDateWithDetail(weekStart, 'full');
                     break;
                 }
                 case 'month': {
-                    // Get start of month
-                    const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-                    // Get end of month
-                    const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-                    displayText = `${formatDate(monthStart)} to ${formatDate(monthEnd)}`;
+                    displayText = formatDateWithDetail(currentDate, 'month');
                     break;
                 }
                 case 'year': {
-                    // Get start of year
-                    const yearStart = new Date(currentDate.getFullYear(), 0, 1);
-                    // Get end of year
-                    const yearEnd = new Date(currentDate.getFullYear(), 11, 31);
-                    displayText = `${formatDate(yearStart)} to ${formatDate(yearEnd)}`;
+                    displayText = formatDateWithDetail(currentDate, 'year');
                     break;
                 }
                 default:
