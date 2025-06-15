@@ -58,35 +58,61 @@ const API_URL = window.location.hostname === 'localhost'
                 return {
                     start: new Date(startOfDay),
                     end: new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1),
-                    displayText: startOfDay.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                    displayText: startOfDay.toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    })
                 };
-            case 'week':
+            case 'week': {
                 const startOfWeek = new Date(startOfDay);
                 startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay()); // Start of week (Sunday)
                 const endOfWeek = new Date(startOfWeek);
                 endOfWeek.setDate(startOfWeek.getDate() + 6);
                 endOfWeek.setHours(23, 59, 59, 999);
+
+                const weekStartStr = startOfWeek.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric'
+                });
+                const weekEndStr = endOfWeek.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+
                 return {
                     start: startOfWeek,
                     end: endOfWeek,
-                    displayText: `Week of ${startOfWeek.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`
+                    displayText: `${weekStartStr} - ${weekEndStr}`
                 };
-            case 'month':
+            }
+            case 'month': {
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                 const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                
+                const monthStr = startOfMonth.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    year: 'numeric'
+                });
+                const daysInMonth = endOfMonth.getDate();
+
                 return {
                     start: startOfMonth,
                     end: endOfMonth,
-                    displayText: startOfMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                    displayText: `${monthStr} (${daysInMonth} days)`
                 };
-            case 'year':
+            }
+            case 'year': {
                 const startOfYear = new Date(now.getFullYear(), 0, 1);
                 const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
                 return {
                     start: startOfYear,
                     end: endOfYear,
-                    displayText: startOfYear.getFullYear().toString()
+                    displayText: `Year ${startOfYear.getFullYear()}`
                 };
+            }
             case 'all':
                 return {
                     start: new Date(0),
@@ -434,21 +460,9 @@ const API_URL = window.location.hostname === 'localhost'
             return;
         }
 
-        // Calculate the new date based on period and direction
-        switch (period) {
-            case 'day':
-                currentPeriodDate.setDate(currentPeriodDate.getDate() + (direction === 'next' ? 1 : -1));
-                break;
-            case 'week':
-                currentPeriodDate.setDate(currentPeriodDate.getDate() + (direction === 'next' ? 7 : -7));
-                break;
-            case 'month':
-                currentPeriodDate.setMonth(currentPeriodDate.getMonth() + (direction === 'next' ? 1 : -1));
-                break;
-            case 'year':
-                currentPeriodDate.setFullYear(currentPeriodDate.getFullYear() + (direction === 'next' ? 1 : -1));
-                break;
-        }
+        // Always move one day at a time
+        const increment = direction === 'next' ? 1 : -1;
+        currentPeriodDate.setDate(currentPeriodDate.getDate() + increment);
 
         // Get new date range and update display
         const dateRange = getDateRange(period, currentPeriodDate);
