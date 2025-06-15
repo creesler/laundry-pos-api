@@ -43,6 +43,19 @@ const API_URL = window.location.hostname === 'localhost'
     // Add debug counter
     let refreshCounter = 0;
 
+    // Add debounce function at the top
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
     // Format the date with full details
     function getFormattedDate(date) {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -107,8 +120,8 @@ const API_URL = window.location.hostname === 'localhost'
         // Initialize the date navigation
         initializeDateNavigation();
 
-        // Handle period changes
-        periodFilter.addEventListener('change', () => {
+        // Create debounced handler for period changes
+        const handlePeriodChange = debounce(() => {
             console.log('[Debug] Period changed to:', periodFilter.value);
             const period = periodFilter.value;
             
@@ -122,7 +135,10 @@ const API_URL = window.location.hostname === 'localhost'
                 console.log('[Debug] About to call refreshData from period change handler');
                 refreshData();
             }
-        });
+        }, 250); // 250ms debounce delay
+
+        // Handle period changes
+        periodFilter.addEventListener('change', handlePeriodChange);
 
         // Initial data refresh
         console.log('[Debug] About to call initial refreshData');
