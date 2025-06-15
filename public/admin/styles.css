@@ -629,3 +629,15 @@ body {
 #inventory .text-success {
     color: #22c55e;
 }
+
+.no-data-message {
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+    font-size: 1rem;
+}
+
+.no-data-message i {
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+}

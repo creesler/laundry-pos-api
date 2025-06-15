@@ -376,56 +376,51 @@ const API_URL = window.location.hostname === 'localhost'
 
     async function refreshData() {
         const periodFilter = document.getElementById('periodFilter');
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
         
-        let filteredStartDate, filteredEndDate;
+        let startDate, endDate;
         
-        if (periodFilter.value === 'custom') {
-            if (startDate && endDate) {
-                filteredStartDate = new Date(startDate);
-                filteredEndDate = new Date(endDate);
-                console.log('Using custom date range:', {
-                    start: filteredStartDate.toISOString(),
-                    end: filteredEndDate.toISOString()
-                });
-            }
+        if (periodFilter.value === 'custom' && startDateInput.value && endDateInput.value) {
+            startDate = new Date(startDateInput.value);
+            endDate = new Date(endDateInput.value);
+            endDate.setHours(23, 59, 59, 999);
         } else {
-            const dateRange = getDateRange(periodFilter.value);
-            if (dateRange) {
-                filteredStartDate = dateRange.start;
-                filteredEndDate = dateRange.end;
-                console.log('Using period date range:', {
-                    period: periodFilter.value,
-                    start: filteredStartDate.toISOString(),
-                    end: filteredEndDate.toISOString()
+            const dateRange = getDateRange(periodFilter.value, currentPeriodDate);
+            if (!dateRange) return;
+            startDate = dateRange.start;
+            endDate = dateRange.end;
+        }
+
+        try {
+            // Fetch data for the selected period
+            const response = await fetch(`${API_URL}/sales?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+            if (!response.ok) throw new Error('Failed to fetch data');
+            const data = await response.json();
+            
+            // Update the UI with the fetched data or show empty state
+            if (data && data.length > 0) {
+                const totals = calculateTotals(data);
+                updateChart(totals);
+                updateTable(data);
+            } else {
+                // Show empty state but keep the date range display
+                updateChart({
+                    coin: 0,
+                    hopper: 0,
+                    soap: 0,
+                    vending: 0,
+                    dropOff1: 0,
+                    dropOff2: 0
                 });
+                updateTable([]);
             }
-        }
-
-        // If we don't have data yet, fetch it
-        if (!allSalesData) {
-            console.log('Fetching all sales data...');
-            allSalesData = await fetchAllData();
-            if (allSalesData) {
-                console.log(`Fetched ${allSalesData.length} sales records`);
-            }
-        }
-
-        if (allSalesData) {
-            console.log('Starting data refresh...');
-            const filteredData = filterData(allSalesData, filteredStartDate, filteredEndDate);
-            console.log('Filtered data:', filteredData);
             
-            const totals = calculateTotals(filteredData);
-            console.log('Calculated totals:', totals);
-
-            // Always create a new chart
-            updateChart(totals);
-            updateTable(filteredData || []);
-            updateDateRangeDisplay(filteredStartDate, filteredEndDate, periodFilter.value);
-            
-            console.log('Data refresh complete');
+            // Always update the date range display
+            updateDateRangeDisplay(startDate, endDate, periodFilter.value);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            showMessage('Error fetching data', true);
         }
     }
 
@@ -485,8 +480,11 @@ const API_URL = window.location.hostname === 'localhost'
 
         // Disable next button if we're at current date
         const now = new Date();
+        now.setHours(23, 59, 59, 999); // End of current day
         const currentRange = getDateRange(period, currentPeriodDate);
-        if (currentRange.end >= now) {
+        
+        // Only disable next button if we're trying to go beyond current date
+        if (currentRange.start > now) {
             nextBtn.disabled = true;
         }
     }
