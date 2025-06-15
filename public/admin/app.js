@@ -37,8 +37,84 @@ const API_URL = window.location.hostname === 'localhost'
     let inventoryData = null;
     let inventoryChartType = 'stock';
 
-    // Global variable for current date
+    // Global date state
     let currentPeriodDate = new Date();
+    let dateDisplay = null;
+
+    // Initialize the date display element
+    function initializeDateDisplay() {
+        dateDisplay = document.getElementById('dateRangeDisplay');
+        if (!dateDisplay) {
+            console.error('Date display element not found');
+            return false;
+        }
+        return true;
+    }
+
+    // Format the date with full details
+    function getFormattedDate(date) {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    }
+
+    // Update the display element with current date
+    function updateDisplay() {
+        if (!dateDisplay && !initializeDateDisplay()) {
+            return;
+        }
+        dateDisplay.textContent = getFormattedDate(currentPeriodDate);
+    }
+
+    // Handle navigation button clicks
+    function handleDateNavigation(direction) {
+        const newDate = new Date(currentPeriodDate);
+        newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+        currentPeriodDate = newDate;
+        updateDisplay();
+        refreshData();
+    }
+
+    // Initialize period filter and date navigation
+    function initializePeriodFilter() {
+        // Get all required elements
+        const periodSelect = document.getElementById('periodFilter');
+        const prevBtn = document.getElementById('prevPeriod');
+        const nextBtn = document.getElementById('nextPeriod');
+        const dateControls = document.getElementById('dateControls');
+
+        // Verify all elements exist
+        if (!periodSelect || !prevBtn || !nextBtn || !dateControls) {
+            console.error('Required elements not found');
+            return;
+        }
+
+        // Initialize date display
+        if (!initializeDateDisplay()) {
+            return;
+        }
+
+        // Set up navigation buttons
+        prevBtn.onclick = () => handleDateNavigation('prev');
+        nextBtn.onclick = () => handleDateNavigation('next');
+
+        // Handle period changes
+        periodSelect.onchange = () => {
+            if (periodSelect.value === 'custom') {
+                dateControls.style.display = 'flex';
+            } else {
+                dateControls.style.display = 'none';
+                currentPeriodDate = new Date();
+                updateDisplay();
+                refreshData();
+            }
+        };
+
+        // Initial display update
+        updateDisplay();
+        refreshData();
+    }
 
     // Utility functions
     function formatCurrency(value) {
