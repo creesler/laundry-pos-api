@@ -43,81 +43,6 @@
             max-width: 300px;
             width: 100%;
         }
-        /* Section visibility control */
-        .section {
-            display: none;
-        }
-        .section.active {
-            display: block;
-        }
-        /* Employee tab styles */
-        .tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin: 1rem 0;
-            overflow-x: auto;
-            padding: 0.5rem;
-        }
-        .employee-tab {
-            padding: 0.5rem 1rem;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-width: 100px;
-            text-align: center;
-        }
-        .employee-tab:hover {
-            background: #f8f9fa;
-            border-color: #adb5bd;
-        }
-        .employee-tab.active {
-            background: #0d6efd;
-            color: white;
-            border-color: #0d6efd;
-        }
-        /* Timesheet styles */
-        .timesheet-container {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 1rem;
-        }
-        .timesheet-header {
-            margin-bottom: 1rem;
-        }
-        .date-filter {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .filter-btn {
-            padding: 0.375rem 0.75rem;
-            background: #0d6efd;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .filter-btn:hover {
-            background: #0b5ed7;
-        }
-        .timesheet-table {
-            width: 100%;
-            margin-top: 1rem;
-        }
-        .timesheet-table th,
-        .timesheet-table td {
-            padding: 0.75rem;
-            border-bottom: 1px solid #dee2e6;
-        }
-        .total-hours {
-            margin-top: 1rem;
-            text-align: right;
-            font-weight: 600;
-        }
         @media (max-width: 991px) {
             .navbar-collapse {
                 margin-top: 1rem;
@@ -127,13 +52,6 @@
             }
             .nav-link {
                 margin: 0.2rem 0;
-            }
-            .date-filter {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .date-filter label {
-                margin-bottom: 0.25rem;
             }
         }
     </style>
@@ -212,6 +130,7 @@
                                 </div>
                             </div>
                         </div>
+
                         <div id="dateControls" class="date-controls" style="display: none;">
                             <div class="control-group">
                                 <label for="startDate">Start Date</label>
@@ -339,7 +258,7 @@
                             </div>
                         </div>
                         <div class="tabs" id="employeeTabs">
-                            <!-- Employee tabs will be dynamically added with class "employee-tab" -->
+                            <!-- Tabs will be dynamically populated -->
                         </div>
                         <div class="timesheet-content">
                             <table class="timesheet-table">
@@ -442,21 +361,12 @@
             window.location.href = '/admin/login.html';
         }
 
-        // Add active class to current section and handle period filter visibility
+        // Add active class to current section
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
-                
-                // Show/hide sections
-                const targetSection = this.getAttribute('data-section');
-                document.querySelectorAll('.section').forEach(section => {
-                    section.classList.remove('active');
-                    if (section.id === targetSection) {
-                        section.classList.add('active');
-                    }
-                });
             });
         });
     </script>
