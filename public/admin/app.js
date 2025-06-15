@@ -451,6 +451,24 @@ const API_URL = window.location.hostname === 'localhost'
         }
     }
 
+    // Update navigation buttons state
+    function updateNavigationState() {
+        const prevBtn = document.getElementById('prevPeriod');
+        const nextBtn = document.getElementById('nextPeriod');
+        const period = document.getElementById('periodFilter').value;
+        
+        // Disable navigation for 'all' and 'custom' periods
+        if (period === 'all' || period === 'custom') {
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            return;
+        }
+
+        // Enable both buttons for sequential navigation
+        prevBtn.disabled = false;
+        nextBtn.disabled = false;
+    }
+
     // Navigate between periods
     function navigatePeriod(direction) {
         const periodSelect = document.getElementById('periodFilter');
@@ -476,39 +494,6 @@ const API_URL = window.location.hostname === 'localhost'
         
         // Refresh data with new date range
         refreshData();
-    }
-
-    // Update navigation buttons state
-    function updateNavigationState() {
-        const prevBtn = document.getElementById('prevPeriod');
-        const nextBtn = document.getElementById('nextPeriod');
-        const period = document.getElementById('periodFilter').value;
-        
-        // Disable navigation for 'all' and 'custom' periods
-        if (period === 'all' || period === 'custom') {
-            prevBtn.disabled = true;
-            nextBtn.disabled = true;
-            return;
-        }
-
-        // Enable both buttons by default
-        prevBtn.disabled = false;
-        nextBtn.disabled = false;
-
-        // Disable next button if we're at current date
-        const now = new Date();
-        now.setHours(23, 59, 59, 999); // End of current day
-        
-        // Only disable next button if we're trying to go beyond current date
-        if (currentPeriodDate > now) {
-            nextBtn.disabled = true;
-            // Reset to current date if we somehow went beyond it
-            currentPeriodDate = new Date();
-            const dateRangeDisplay = document.getElementById('dateRangeDisplay');
-            if (dateRangeDisplay) {
-                dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
-            }
-        }
     }
 
     // Initialize period filter
