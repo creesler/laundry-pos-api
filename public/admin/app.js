@@ -48,6 +48,19 @@ const API_URL = window.location.hostname === 'localhost'
         }).format(value);
     }
 
+    // Format date to show day name, month, day, and year
+    function formatDate(date) {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        const dayName = days[date.getDay()];
+        const monthName = months[date.getMonth()];
+        const day = date.getDate();
+        const year = date.getFullYear();
+        
+        return `${dayName}, ${monthName} ${day}, ${year}`;
+    }
+
     // Get date range based on period
     function getDateRange(period, baseDate = new Date()) {
         const now = new Date(baseDate);
@@ -484,8 +497,8 @@ const API_URL = window.location.hostname === 'localhost'
         // Update the date
         currentPeriodDate.setDate(day);
         
-        // Update the display
-        document.getElementById('dateRangeDisplay').textContent = day.toString();
+        // Update the display with formatted date
+        document.getElementById('dateRangeDisplay').textContent = formatDate(currentPeriodDate);
         
         // Refresh the data
         refreshData();
@@ -502,7 +515,7 @@ const API_URL = window.location.hostname === 'localhost'
 
         // Reset to today's date
         currentPeriodDate = new Date();
-        dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
+        dateRangeDisplay.textContent = formatDate(currentPeriodDate);
 
         // Clear any existing event listeners
         prevBtn.replaceWith(prevBtn.cloneNode(true));
@@ -525,7 +538,7 @@ const API_URL = window.location.hostname === 'localhost'
                 document.getElementById('dateControls').style.display = 'none';
                 // Reset to today when changing periods
                 currentPeriodDate = new Date();
-                dateRangeDisplay.textContent = currentPeriodDate.getDate().toString();
+                dateRangeDisplay.textContent = formatDate(currentPeriodDate);
                 refreshData();
             }
         };
