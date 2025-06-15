@@ -447,12 +447,12 @@ const API_URL = window.location.hostname === 'localhost'
         console.log('Chart created with new data');
     }
 
-    // Format date for display
-    function formatDateDisplay(date, format = 'full') {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    // Format date with different levels of detail
+    function formatDateWithDetail(date, detail = 'full') {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         
-        switch(format) {
+        switch(detail) {
             case 'full':
                 return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
             case 'month':
@@ -471,31 +471,42 @@ const API_URL = window.location.hostname === 'localhost'
         if (period === 'custom' && startDate && endDate) {
             const start = new Date(startDate);
             const end = new Date(endDate);
-            const formattedStart = formatDateDisplay(start);
-            const formattedEnd = formatDateDisplay(end);
+            const formattedStart = formatDate(start);
+            const formattedEnd = formatDate(end);
             dateRangeDisplay.textContent = `${formattedStart} to ${formattedEnd}`;
         } else if (period === 'all') {
             dateRangeDisplay.textContent = 'All Time';
         } else if (period) {
-            const currentRange = getDateRange(period);
-            if (!currentRange) return;
+            const currentDate = currentPeriodDate || new Date();
+            let displayText;
             
             switch(period) {
                 case 'day':
-                    dateRangeDisplay.textContent = formatDateDisplay(currentRange.start);
+                    displayText = formatDate(currentDate);
                     break;
-                case 'week':
-                    dateRangeDisplay.textContent = formatDateDisplay(currentRange.start);
+                case 'week': {
+                    // Get first day of the week (Sunday)
+                    const weekStart = new Date(currentDate);
+                    weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+                    displayText = formatDate(weekStart);
+                    currentPeriodDate = weekStart; // Store the week start date
                     break;
-                case 'month':
-                    dateRangeDisplay.textContent = formatDateDisplay(currentRange.start, 'month');
+                }
+                case 'month': {
+                    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                    displayText = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+                    currentPeriodDate = currentDate; // Store the current month date
                     break;
-                case 'year':
-                    dateRangeDisplay.textContent = formatDateDisplay(currentRange.start, 'year');
+                }
+                case 'year': {
+                    displayText = currentDate.getFullYear().toString();
+                    currentPeriodDate = currentDate; // Store the current year date
                     break;
+                }
                 default:
-                    dateRangeDisplay.textContent = period;
+                    displayText = period;
             }
+            dateRangeDisplay.textContent = displayText;
         }
     }
 
@@ -584,7 +595,7 @@ const API_URL = window.location.hostname === 'localhost'
                 const totals = calculateTotals(data);
             updateChart(totals);
                 updateTable(data);
-            } else {
+        } else {
                 // Show empty state but keep the date range display
                 updateChart({
                     coin: 0,
@@ -704,7 +715,7 @@ const API_URL = window.location.hostname === 'localhost'
         });
 
         // Initial data refresh
-        refreshData();
+                refreshData();
     }
 
     function initializeNavigation() {
