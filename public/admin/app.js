@@ -40,6 +40,9 @@ const API_URL = window.location.hostname === 'localhost'
     // Global date state
     let currentPeriodDate = new Date();
 
+    // Add debug counter
+    let refreshCounter = 0;
+
     // Format the date with full details
     function getFormattedDate(date) {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -92,49 +95,37 @@ const API_URL = window.location.hostname === 'localhost'
 
     // Initialize period filter
     function initializePeriodFilter() {
-        console.log('Initializing period filter'); // Debug log
-        
-        // Get all required elements
-        const periodSelect = document.getElementById('periodFilter');
-        const prevBtn = document.getElementById('prevPeriod');
-        const nextBtn = document.getElementById('nextPeriod');
+        console.log('[Debug] initializePeriodFilter called');
+        const periodFilter = document.getElementById('periodFilter');
         const dateControls = document.getElementById('dateControls');
 
-        // Verify all elements exist
-        if (!periodSelect || !prevBtn || !nextBtn || !dateControls) {
-            console.error('Required elements not found');
-            return;
-        }
+        if (!periodFilter || !dateControls) return;
 
-        // Set up navigation buttons with direct handlers
-        prevBtn.onclick = (e) => {
-            e.preventDefault(); // Prevent any default behavior
-            handleDateNavigation('prev');
-        };
+        // Reset to today's date
+        currentPeriodDate = new Date();
         
-        nextBtn.onclick = (e) => {
-            e.preventDefault(); // Prevent any default behavior
-            handleDateNavigation('next');
-        };
+        // Initialize the date navigation
+        initializeDateNavigation();
 
         // Handle period changes
-        periodSelect.onchange = (e) => {
-            console.log('Period changed to:', e.target.value); // Debug log
+        periodFilter.addEventListener('change', () => {
+            console.log('[Debug] Period changed to:', periodFilter.value);
+            const period = periodFilter.value;
             
-            if (e.target.value === 'custom') {
+            if (period === 'custom') {
                 dateControls.style.display = 'flex';
             } else {
                 dateControls.style.display = 'none';
+                // Reset to today
                 currentPeriodDate = new Date();
-                console.log('Reset to current date:', getFormattedDate(currentPeriodDate)); // Debug log
-                updateDateDisplay();
+                updateDateRangeDisplay(null, null, period);
+                console.log('[Debug] About to call refreshData from period change handler');
                 refreshData();
             }
-        };
+        });
 
-        // Initial setup
-        console.log('Setting initial date:', getFormattedDate(currentPeriodDate)); // Debug log
-        updateDateDisplay();
+        // Initial data refresh
+        console.log('[Debug] About to call initial refreshData');
         refreshData();
     }
 
@@ -529,6 +520,10 @@ const API_URL = window.location.hostname === 'localhost'
     }
 
     async function refreshData() {
+        refreshCounter++;
+        console.log(`[Debug] refreshData called (${refreshCounter})`);
+        console.trace('[Debug] Stack trace for refresh call');
+
         const periodFilter = document.getElementById('periodFilter');
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
@@ -646,38 +641,6 @@ const API_URL = window.location.hostname === 'localhost'
         
         // Set initial date display
         updateDateDisplay();
-    }
-
-    // Initialize period filter
-    function initializePeriodFilter() {
-        const periodSelect = document.getElementById('periodFilter');
-        const dateControls = document.getElementById('dateControls');
-
-        if (!periodSelect || !dateControls) return;
-
-        // Reset to today's date
-        currentPeriodDate = new Date();
-
-        // Initialize the date navigation
-        initializeDateNavigation();
-
-        // Handle period changes
-        periodSelect.addEventListener('change', () => {
-            const period = periodSelect.value;
-            
-            if (period === 'custom') {
-                dateControls.style.display = 'flex';
-            } else {
-                dateControls.style.display = 'none';
-                // Reset to today
-                currentPeriodDate = new Date();
-                updateDateDisplay();
-                refreshData();
-            }
-        });
-
-        // Initial data refresh
-                refreshData();
     }
 
     function initializeNavigation() {
@@ -1402,6 +1365,7 @@ const API_URL = window.location.hostname === 'localhost'
 
     // Navigate to next/previous period
     function navigatePeriod(direction) {
+        console.log(`[Debug] navigatePeriod called with direction: ${direction}`);
         const periodFilter = document.getElementById('periodFilter');
         const currentPeriod = periodFilter.value;
         
