@@ -92,26 +92,49 @@ const API_URL = window.location.hostname === 'localhost'
 
     // Initialize period filter
     function initializePeriodFilter() {
+        console.log('Initializing period filter'); // Debug log
+        
+        // Get all required elements
         const periodSelect = document.getElementById('periodFilter');
+        const prevBtn = document.getElementById('prevPeriod');
+        const nextBtn = document.getElementById('nextPeriod');
         const dateControls = document.getElementById('dateControls');
 
-        if (!periodSelect || !dateControls) return;
+        // Verify all elements exist
+        if (!periodSelect || !prevBtn || !nextBtn || !dateControls) {
+            console.error('Required elements not found');
+            return;
+        }
+
+        // Set up navigation buttons with direct handlers
+        prevBtn.onclick = (e) => {
+            e.preventDefault(); // Prevent any default behavior
+            handleDateNavigation('prev');
+        };
+        
+        nextBtn.onclick = (e) => {
+            e.preventDefault(); // Prevent any default behavior
+            handleDateNavigation('next');
+        };
 
         // Handle period changes
-        periodSelect.addEventListener('change', () => {
-            const period = periodSelect.value;
+        periodSelect.onchange = (e) => {
+            console.log('Period changed to:', e.target.value); // Debug log
             
-            if (period === 'custom') {
+            if (e.target.value === 'custom') {
                 dateControls.style.display = 'flex';
             } else {
                 dateControls.style.display = 'none';
-                // Only update display and refresh data, don't reset the date
-                updateDateRangeDisplay(null, null, period);
+                currentPeriodDate = new Date();
+                console.log('Reset to current date:', getFormattedDate(currentPeriodDate)); // Debug log
+                updateDateDisplay();
                 refreshData();
             }
-        });
+        };
 
-        // Initial data refresh
+        // Initial setup
+        console.log('Setting initial date:', getFormattedDate(currentPeriodDate)); // Debug log
+        updateDateDisplay();
         refreshData();
     }
 
@@ -138,37 +161,50 @@ const API_URL = window.location.hostname === 'localhost'
 
     // Get date range based on period
     function getDateRange(period) {
-        const currentDate = currentPeriodDate || new Date();
-        let start, end;
+        if (!currentPeriodDate) {
+            currentPeriodDate = new Date();
+        }
+
+        const start = new Date(currentPeriodDate);
+        const end = new Date(currentPeriodDate);
 
         switch (period) {
             case 'day':
-                start = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-                end = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59);
+                start.setHours(0, 0, 0, 0);
+                end.setHours(23, 59, 59, 999);
                 break;
             case 'month':
-                start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-                end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
+                start.setDate(1);
+                start.setHours(0, 0, 0, 0);
+                end.setMonth(end.getMonth() + 1);
+                end.setDate(0);
+                end.setHours(23, 59, 59, 999);
                 break;
             case 'year':
-                start = new Date(currentDate.getFullYear(), 0, 1);
-                end = new Date(currentDate.getFullYear(), 11, 31, 23, 59, 59);
+                start.setMonth(0, 1);
+                start.setHours(0, 0, 0, 0);
+                end.setMonth(11, 31);
+                end.setHours(23, 59, 59, 999);
                 break;
             case 'custom':
                 const startInput = document.getElementById('startDate');
                 const endInput = document.getElementById('endDate');
                 if (startInput.value && endInput.value) {
-                    start = new Date(startInput.value);
-                    end = new Date(endInput.value);
-                    end.setHours(23, 59, 59);
+                    start.setTime(new Date(startInput.value).getTime());
+                    start.setHours(0, 0, 0, 0);
+                    end.setTime(new Date(endInput.value).getTime());
+                    end.setHours(23, 59, 59, 999);
+                } else {
+                    return null;
                 }
                 break;
             case 'all':
-                // Handle 'all' case if needed
-                break;
+                return null;
+            default:
+                return null;
         }
 
-        return start && end ? { start, end } : null;
+        return { start, end };
     }
 
     // Filter data based on date range
@@ -492,42 +528,50 @@ const API_URL = window.location.hostname === 'localhost'
         }
     }
 
-    // Refresh data based on current filters
     async function refreshData() {
         const periodFilter = document.getElementById('periodFilter');
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
         
-        let filteredStartDate, filteredEndDate;
+        let startDate, endDate;
         
-        // Get date range based on period
         if (periodFilter.value === 'custom' && startDateInput.value && endDateInput.value) {
-            filteredStartDate = new Date(startDateInput.value);
-            filteredEndDate = new Date(endDateInput.value);
-            filteredEndDate.setHours(23, 59, 59);
+            startDate = new Date(startDateInput.value);
+            endDate = new Date(endDateInput.value);
+            endDate.setHours(23, 59, 59, 999);
         } else {
-            const dateRange = getDateRange(periodFilter.value);
-            if (dateRange) {
-                filteredStartDate = dateRange.start;
-                filteredEndDate = dateRange.end;
-            }
+            const dateRange = getDateRange(periodFilter.value, currentPeriodDate);
+            if (!dateRange) return;
+            startDate = dateRange.start;
+            endDate = dateRange.end;
         }
 
         try {
-            if (!allSalesData) {
-                const response = await fetch('/api/sales');
-                if (!response.ok) throw new Error('Failed to fetch sales data');
-                allSalesData = await response.json();
-            }
+            // Fetch data for the selected period
+            const response = await fetch(`${API_URL}/sales?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+            if (!response.ok) throw new Error('Failed to fetch data');
+            const data = await response.json();
+            
+            // Update the UI with the fetched data or show empty state
+            if (data && data.length > 0) {
+                const totals = calculateTotals(data);
+            updateChart(totals);
+                updateTable(data);
+        } else {
+                // Show empty state but keep the date range display
+                updateChart({
+                    coin: 0,
+                    hopper: 0,
+                    soap: 0,
+                    vending: 0,
+                    dropOff1: 0,
+                    dropOff2: 0
+                });
+                updateTable([]);
+        }
 
-            if (allSalesData) {
-                const filteredData = filterData(allSalesData, filteredStartDate, filteredEndDate);
-                const totals = calculateTotals(filteredData);
-
-                // Update chart and table
-                updateChart(totals);
-                updateTable(filteredData || []);
-            }
+            // Always update the date range display
+            updateDateRangeDisplay(startDate, endDate, periodFilter.value);
         } catch (error) {
             console.error('Error fetching data:', error);
             showMessage('Error fetching data', true);
@@ -550,7 +594,7 @@ const API_URL = window.location.hostname === 'localhost'
         // Enable both buttons for sequential navigation
         prevBtn.disabled = false;
         nextBtn.disabled = false;
-    }
+        }
 
     // Update the display with the current date
     function updateDateDisplay() {
@@ -580,7 +624,7 @@ const API_URL = window.location.hostname === 'localhost'
         
         // Refresh data
         refreshData();
-    }
+        }
 
     // Initialize the date navigation
     function initializeDateNavigation() {
@@ -611,6 +655,12 @@ const API_URL = window.location.hostname === 'localhost'
 
         if (!periodSelect || !dateControls) return;
 
+        // Reset to today's date
+        currentPeriodDate = new Date();
+
+        // Initialize the date navigation
+        initializeDateNavigation();
+
         // Handle period changes
         periodSelect.addEventListener('change', () => {
             const period = periodSelect.value;
@@ -619,14 +669,15 @@ const API_URL = window.location.hostname === 'localhost'
                 dateControls.style.display = 'flex';
             } else {
                 dateControls.style.display = 'none';
-                // Only update display and refresh data, don't reset the date
-                updateDateRangeDisplay(null, null, period);
+                // Reset to today
+                currentPeriodDate = new Date();
+                updateDateDisplay();
                 refreshData();
             }
         });
 
         // Initial data refresh
-        refreshData();
+                refreshData();
     }
 
     function initializeNavigation() {
@@ -1321,8 +1372,8 @@ const API_URL = window.location.hostname === 'localhost'
             filterBtn.addEventListener('click', () => {
                 if (selectedEmployee) {
                     fetchTimesheetData();
-                }
-            });
+            }
+        });
         }
     }
 
