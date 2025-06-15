@@ -484,21 +484,24 @@ const API_URL = window.location.hostname === 'localhost'
 
     // Simple function to navigate one day at a time
     function navigatePeriod(direction) {
-        // Get the current date value
-        let day = currentPeriodDate.getDate();
+        // Create a new date object to avoid reference issues
+        let newDate = new Date(currentPeriodDate);
         
         // Increment or decrement by exactly one day
         if (direction === 'next') {
-            day = day + 1;
+            newDate.setDate(newDate.getDate() + 1);
         } else {
-            day = day - 1;
+            newDate.setDate(newDate.getDate() - 1);
         }
         
-        // Update the date
-        currentPeriodDate.setDate(day);
+        // Update the current period date
+        currentPeriodDate = newDate;
         
         // Update the display with formatted date
-        document.getElementById('dateRangeDisplay').textContent = formatDate(currentPeriodDate);
+        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+        if (dateRangeDisplay) {
+            dateRangeDisplay.textContent = formatDate(currentPeriodDate);
+        }
         
         // Refresh the data
         refreshData();
@@ -513,7 +516,7 @@ const API_URL = window.location.hostname === 'localhost'
 
         if (!periodSelect || !prevBtn || !nextBtn || !dateRangeDisplay) return;
 
-        // Reset to today's date
+        // Reset to today's date and display full format
         currentPeriodDate = new Date();
         dateRangeDisplay.textContent = formatDate(currentPeriodDate);
 
