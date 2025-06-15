@@ -58,11 +58,10 @@ const API_URL = window.location.hostname === 'localhost'
                 return {
                     start: new Date(startOfDay),
                     end: new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1),
-                    displayText: startOfDay.toLocaleDateString('en-US', { 
+                    displayText: `Day ${startOfDay.getDate()} - ${startOfDay.toLocaleDateString('en-US', { 
                         month: 'long', 
-                        day: 'numeric',
                         year: 'numeric'
-                    })
+                    })}`
                 };
             case 'week': {
                 const startOfWeek = new Date(startOfDay);
@@ -71,20 +70,19 @@ const API_URL = window.location.hostname === 'localhost'
                 endOfWeek.setDate(startOfWeek.getDate() + 6);
                 endOfWeek.setHours(23, 59, 59, 999);
 
-                // Calculate week number
+                // Calculate week number (1-52)
                 const firstDayOfYear = new Date(startOfWeek.getFullYear(), 0, 1);
                 const weekNumber = Math.ceil((((startOfWeek - firstDayOfYear) / 86400000) + firstDayOfYear.getDay() + 1) / 7);
 
                 return {
                     start: startOfWeek,
                     end: endOfWeek,
-                    displayText: `Week ${weekNumber} (${startOfWeek.toLocaleDateString('en-US', { 
+                    displayText: `Week ${weekNumber} of ${startOfWeek.getFullYear()} (${startOfWeek.toLocaleDateString('en-US', { 
                         month: 'long',
                         day: 'numeric'
                     })} - ${endOfWeek.toLocaleDateString('en-US', { 
                         month: 'long',
-                        day: 'numeric',
-                        year: 'numeric'
+                        day: 'numeric'
                     })})`
                 };
             }
@@ -92,13 +90,16 @@ const API_URL = window.location.hostname === 'localhost'
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                 const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
                 
+                // Get month number (1-12)
+                const monthNumber = startOfMonth.getMonth() + 1;
+                
                 return {
                     start: startOfMonth,
                     end: endOfMonth,
-                    displayText: startOfMonth.toLocaleDateString('en-US', { 
+                    displayText: `Month ${monthNumber} - ${startOfMonth.toLocaleDateString('en-US', { 
                         month: 'long', 
                         year: 'numeric'
-                    })
+                    })}`
                 };
             }
             case 'year': {
@@ -107,7 +108,7 @@ const API_URL = window.location.hostname === 'localhost'
                 return {
                     start: startOfYear,
                     end: endOfYear,
-                    displayText: startOfYear.getFullYear().toString()
+                    displayText: `Year ${startOfYear.getFullYear()}`
                 };
             }
             case 'all':
