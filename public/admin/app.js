@@ -460,13 +460,43 @@ const API_URL = window.location.hostname === 'localhost'
         } else if (period === 'all') {
             dateRangeDisplay.textContent = 'All Time';
         } else if (period) {
-            const periodDisplay = {
-                day: formatDate(currentPeriodDate || new Date()),
-                week: 'This Week',
-                month: 'This Month',
-                year: 'This Year'
-            };
-            dateRangeDisplay.textContent = periodDisplay[period] || period;
+            const currentDate = currentPeriodDate || new Date();
+            let displayText;
+            
+            switch(period) {
+                case 'day':
+                    displayText = formatDate(currentDate);
+                    break;
+                case 'week': {
+                    // Get start of week (Sunday)
+                    const weekStart = new Date(currentDate);
+                    weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+                    // Get end of week (Saturday)
+                    const weekEnd = new Date(weekStart);
+                    weekEnd.setDate(weekStart.getDate() + 6);
+                    displayText = `${formatDate(weekStart)} to ${formatDate(weekEnd)}`;
+                    break;
+                }
+                case 'month': {
+                    // Get start of month
+                    const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                    // Get end of month
+                    const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+                    displayText = `${formatDate(monthStart)} to ${formatDate(monthEnd)}`;
+                    break;
+                }
+                case 'year': {
+                    // Get start of year
+                    const yearStart = new Date(currentDate.getFullYear(), 0, 1);
+                    // Get end of year
+                    const yearEnd = new Date(currentDate.getFullYear(), 11, 31);
+                    displayText = `${formatDate(yearStart)} to ${formatDate(yearEnd)}`;
+                    break;
+                }
+                default:
+                    displayText = period;
+            }
+            dateRangeDisplay.textContent = displayText;
         }
     }
 
