@@ -482,69 +482,85 @@ const API_URL = window.location.hostname === 'localhost'
         nextBtn.disabled = false;
     }
 
-    // Simple function to navigate one day at a time
-    function navigatePeriod(direction) {
-        // Create a new date object to avoid reference issues
-        let newDate = new Date(currentPeriodDate);
+    // Update the display with the current date
+    function updateDateDisplay() {
+        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+        if (dateRangeDisplay) {
+            dateRangeDisplay.textContent = formatDate(currentPeriodDate);
+        }
+    }
+
+    // Navigate to the next or previous day
+    function navigateDay(direction) {
+        // Create a new date object
+        const newDate = new Date(currentPeriodDate);
         
-        // Increment or decrement by exactly one day
+        // Add or subtract one day
         if (direction === 'next') {
             newDate.setDate(newDate.getDate() + 1);
         } else {
             newDate.setDate(newDate.getDate() - 1);
         }
         
-        // Update the current period date
+        // Update the current date
         currentPeriodDate = newDate;
         
-        // Update the display with formatted date
-        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
-        if (dateRangeDisplay) {
-            dateRangeDisplay.textContent = formatDate(currentPeriodDate);
+        // Update the display
+        updateDateDisplay();
+        
+        // Refresh data
+        refreshData();
+    }
+
+    // Initialize the date navigation
+    function initializeDateNavigation() {
+        const prevBtn = document.getElementById('prevPeriod');
+        const nextBtn = document.getElementById('nextPeriod');
+        
+        if (prevBtn && nextBtn) {
+            // Remove any existing listeners
+            const newPrevBtn = prevBtn.cloneNode(true);
+            const newNextBtn = nextBtn.cloneNode(true);
+            
+            prevBtn.parentNode.replaceChild(newPrevBtn, prevBtn);
+            nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
+            
+            // Add new click handlers
+            newPrevBtn.addEventListener('click', () => navigateDay('prev'));
+            newNextBtn.addEventListener('click', () => navigateDay('next'));
         }
         
-        // Refresh the data
-        refreshData();
+        // Set initial date display
+        updateDateDisplay();
     }
 
     // Initialize period filter
     function initializePeriodFilter() {
         const periodSelect = document.getElementById('periodFilter');
-        const prevBtn = document.getElementById('prevPeriod');
-        const nextBtn = document.getElementById('nextPeriod');
-        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+        const dateControls = document.getElementById('dateControls');
 
-        if (!periodSelect || !prevBtn || !nextBtn || !dateRangeDisplay) return;
+        if (!periodSelect || !dateControls) return;
 
-        // Reset to today's date and display full format
+        // Reset to today's date
         currentPeriodDate = new Date();
-        dateRangeDisplay.textContent = formatDate(currentPeriodDate);
-
-        // Clear any existing event listeners
-        prevBtn.replaceWith(prevBtn.cloneNode(true));
-        nextBtn.replaceWith(nextBtn.cloneNode(true));
         
-        // Get fresh references after replacing
-        const newPrevBtn = document.getElementById('prevPeriod');
-        const newNextBtn = document.getElementById('nextPeriod');
+        // Initialize the date navigation
+        initializeDateNavigation();
 
-        // Add single click handlers
-        newPrevBtn.onclick = () => navigatePeriod('prev');
-        newNextBtn.onclick = () => navigatePeriod('next');
-
-        // Period select change handler
-        periodSelect.onchange = () => {
+        // Handle period changes
+        periodSelect.addEventListener('change', () => {
             const period = periodSelect.value;
+            
             if (period === 'custom') {
-                document.getElementById('dateControls').style.display = 'flex';
+                dateControls.style.display = 'flex';
             } else {
-                document.getElementById('dateControls').style.display = 'none';
-                // Reset to today when changing periods
+                dateControls.style.display = 'none';
+                // Reset to today
                 currentPeriodDate = new Date();
-                dateRangeDisplay.textContent = formatDate(currentPeriodDate);
+                updateDateDisplay();
                 refreshData();
             }
-        };
+        });
 
         // Initial data refresh
         refreshData();
