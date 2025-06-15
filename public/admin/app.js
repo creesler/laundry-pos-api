@@ -59,10 +59,9 @@ const API_URL = window.location.hostname === 'localhost'
                     start: new Date(startOfDay),
                     end: new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1),
                     displayText: startOfDay.toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
                         month: 'long', 
-                        day: 'numeric' 
+                        day: 'numeric',
+                        year: 'numeric'
                     })
                 };
             case 'week': {
@@ -72,36 +71,34 @@ const API_URL = window.location.hostname === 'localhost'
                 endOfWeek.setDate(startOfWeek.getDate() + 6);
                 endOfWeek.setHours(23, 59, 59, 999);
 
-                const weekStartStr = startOfWeek.toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    day: 'numeric'
-                });
-                const weekEndStr = endOfWeek.toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    day: 'numeric',
-                    year: 'numeric'
-                });
+                // Calculate week number
+                const firstDayOfYear = new Date(startOfWeek.getFullYear(), 0, 1);
+                const weekNumber = Math.ceil((((startOfWeek - firstDayOfYear) / 86400000) + firstDayOfYear.getDay() + 1) / 7);
 
                 return {
                     start: startOfWeek,
                     end: endOfWeek,
-                    displayText: `${weekStartStr} - ${weekEndStr}`
+                    displayText: `Week ${weekNumber} (${startOfWeek.toLocaleDateString('en-US', { 
+                        month: 'long',
+                        day: 'numeric'
+                    })} - ${endOfWeek.toLocaleDateString('en-US', { 
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                    })})`
                 };
             }
             case 'month': {
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
                 const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
                 
-                const monthStr = startOfMonth.toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    year: 'numeric'
-                });
-                const daysInMonth = endOfMonth.getDate();
-
                 return {
                     start: startOfMonth,
                     end: endOfMonth,
-                    displayText: `${monthStr} (${daysInMonth} days)`
+                    displayText: startOfMonth.toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        year: 'numeric'
+                    })
                 };
             }
             case 'year': {
@@ -110,7 +107,7 @@ const API_URL = window.location.hostname === 'localhost'
                 return {
                     start: startOfYear,
                     end: endOfYear,
-                    displayText: `Year ${startOfYear.getFullYear()}`
+                    displayText: startOfYear.getFullYear().toString()
                 };
             }
             case 'all':
@@ -460,9 +457,27 @@ const API_URL = window.location.hostname === 'localhost'
             return;
         }
 
-        // Always move one day at a time
+        // Calculate the new date based on period and direction
         const increment = direction === 'next' ? 1 : -1;
-        currentPeriodDate.setDate(currentPeriodDate.getDate() + increment);
+        
+        switch (period) {
+            case 'day':
+                // Move one day at a time
+                currentPeriodDate.setDate(currentPeriodDate.getDate() + increment);
+                break;
+            case 'week':
+                // Move 7 days at a time
+                currentPeriodDate.setDate(currentPeriodDate.getDate() + (increment * 7));
+                break;
+            case 'month':
+                // Move one month at a time
+                currentPeriodDate.setMonth(currentPeriodDate.getMonth() + increment);
+                break;
+            case 'year':
+                // Move one year at a time
+                currentPeriodDate.setFullYear(currentPeriodDate.getFullYear() + increment);
+                break;
+        }
 
         // Get new date range and update display
         const dateRange = getDateRange(period, currentPeriodDate);
@@ -495,11 +510,13 @@ const API_URL = window.location.hostname === 'localhost'
         // Disable next button if we're at current date
         const now = new Date();
         now.setHours(23, 59, 59, 999); // End of current day
-        const currentRange = getDateRange(period, currentPeriodDate);
         
-        // Only disable next button if we're trying to go beyond current date
+        // Compare based on period type
+        const currentRange = getDateRange(period, currentPeriodDate);
         if (currentRange.start > now) {
             nextBtn.disabled = true;
+            // Reset to current date if we somehow went beyond it
+            currentPeriodDate = new Date();
         }
     }
 
