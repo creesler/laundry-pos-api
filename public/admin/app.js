@@ -450,10 +450,24 @@ const API_URL = window.location.hostname === 'localhost'
     // Update date range display
     function updateDateRangeDisplay(startDate, endDate, period) {
         const dateRangeDisplay = document.getElementById('dateRangeDisplay');
-        if (!dateRangeDisplay) return;
-
-        const date = new Date(currentPeriodDate);
-        dateRangeDisplay.textContent = date.getDate().toString();
+        
+        if (period === 'custom' && startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const formattedStart = formatDate(start);
+            const formattedEnd = formatDate(end);
+            dateRangeDisplay.textContent = `${formattedStart} to ${formattedEnd}`;
+        } else if (period === 'all') {
+            dateRangeDisplay.textContent = 'All Time';
+        } else if (period) {
+            const periodDisplay = {
+                day: formatDate(new Date()),
+                week: 'This Week',
+                month: 'This Month',
+                year: 'This Year'
+            };
+            dateRangeDisplay.textContent = periodDisplay[period] || period;
+        }
     }
 
     function updateTable(data) {
@@ -1383,5 +1397,48 @@ const API_URL = window.location.hostname === 'localhost'
             initializeTimesheets();
         }
     });
+
+    // Navigate to next/previous period
+    function navigatePeriod(direction) {
+        const periodFilter = document.getElementById('periodFilter');
+        const currentPeriod = periodFilter.value;
+        
+        if (currentPeriod === 'all' || currentPeriod === 'custom') {
+            return; // No navigation for these periods
+        }
+
+        // Get current date range
+        const currentRange = getDateRange(currentPeriod);
+        if (!currentRange) return;
+
+        let newBaseDate;
+        switch (currentPeriod) {
+            case 'day':
+                newBaseDate = new Date(currentRange.start);
+                newBaseDate.setDate(newBaseDate.getDate() + (direction === 'next' ? 1 : -1));
+                break;
+            case 'week':
+                newBaseDate = new Date(currentRange.start);
+                newBaseDate.setDate(newBaseDate.getDate() + (direction === 'next' ? 7 : -7));
+                break;
+            case 'month':
+                newBaseDate = new Date(currentRange.start);
+                newBaseDate.setMonth(newBaseDate.getMonth() + (direction === 'next' ? 1 : -1));
+                break;
+            case 'year':
+                newBaseDate = new Date(currentRange.start);
+                newBaseDate.setFullYear(newBaseDate.getFullYear() + (direction === 'next' ? 1 : -1));
+                break;
+        }
+
+        if (newBaseDate) {
+            currentPeriodDate = newBaseDate;
+            const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+            if (dateRangeDisplay) {
+                dateRangeDisplay.textContent = formatDate(newBaseDate);
+            }
+            refreshData();
+        }
+    }
 
 })(window.LaundryAdmin); 
