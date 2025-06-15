@@ -556,27 +556,26 @@ const API_URL = window.location.hostname === 'localhost'
     }
 
     function initializeNavigation() {
-        console.log('Initializing navigation...');
-        
-        // Add Bootstrap's navbar toggle functionality
-        const navbarToggler = document.querySelector('.navbar-toggler');
-        const navbarCollapse = document.querySelector('.navbar-collapse');
-        
-        if (navbarToggler && navbarCollapse) {
-            navbarToggler.addEventListener('click', () => {
-                navbarCollapse.classList.toggle('show');
-            });
-        }
-
         // Set up section navigation
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                const section = e.target.getAttribute('data-section');
+                // Get the nav-link element, whether the click was on the link itself or its child icon
+                const navLink = e.target.closest('.nav-link');
+                if (!navLink) return;
+                
+                const section = navLink.getAttribute('data-section');
                 document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                document.getElementById(section === 'timesheets' ? 'timesheet' : section).classList.add('active');
+                document.getElementById(section).classList.add('active');
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                e.target.classList.add('active');
+                navLink.classList.add('active');
+
+                // Initialize section-specific functionality
+                if (section === 'employees') {
+                    fetchEmployees();
+                } else if (section === 'timesheets') {
+                    initializeTimesheets();
+                }
             });
         });
 
