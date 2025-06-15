@@ -479,9 +479,18 @@ const API_URL = window.location.hostname === 'localhost'
             return;
         }
 
-        // Always move one day at a time
-        const increment = direction === 'next' ? 1 : -1;
-        currentPeriodDate.setDate(currentPeriodDate.getDate() + increment);
+        // Create a new date object to avoid reference issues
+        let newDate = new Date(currentPeriodDate);
+        
+        // Move one day at a time
+        if (direction === 'next') {
+            newDate.setDate(newDate.getDate() + 1);
+        } else {
+            newDate.setDate(newDate.getDate() - 1);
+        }
+        
+        // Update the current period date
+        currentPeriodDate = newDate;
 
         // Update display with just the date number
         const dateRangeDisplay = document.getElementById('dateRangeDisplay');
@@ -525,8 +534,13 @@ const API_URL = window.location.hostname === 'localhost'
             }
         });
 
-        prevBtn.addEventListener('click', () => navigatePeriod('prev'));
-        nextBtn.addEventListener('click', () => navigatePeriod('next'));
+        // Set up navigation button event listeners
+        prevBtn.addEventListener('click', () => {
+            navigatePeriod('prev');
+        });
+        nextBtn.addEventListener('click', () => {
+            navigatePeriod('next');
+        });
 
         // Initialize with current date number
         const dateRangeDisplay = document.getElementById('dateRangeDisplay');
