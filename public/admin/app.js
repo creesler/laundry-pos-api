@@ -637,26 +637,28 @@ const API_URL = window.location.hostname === 'localhost'
         refreshData();
         }
 
-    // Initialize the date navigation
+    // Initialize date navigation
     function initializeDateNavigation() {
+        console.log('[Debug] Initializing date navigation');
         const prevBtn = document.getElementById('prevPeriod');
         const nextBtn = document.getElementById('nextPeriod');
-        
-        if (prevBtn && nextBtn) {
-            // Remove any existing listeners
-            const newPrevBtn = prevBtn.cloneNode(true);
-            const newNextBtn = nextBtn.cloneNode(true);
-            
-            prevBtn.parentNode.replaceChild(newPrevBtn, prevBtn);
-            nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
-            
-            // Add new click handlers
-            newPrevBtn.addEventListener('click', () => navigateDay('prev'));
-            newNextBtn.addEventListener('click', () => navigateDay('next'));
+
+        if (!prevBtn || !nextBtn) {
+            console.error('Navigation buttons not found');
+            return;
         }
-        
-        // Set initial date display
-        updateDateDisplay();
+
+        prevBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('[Debug] Previous button clicked');
+            navigatePeriod('prev');
+        });
+
+        nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('[Debug] Next button clicked');
+            navigatePeriod('next');
+        });
     }
 
     function initializeNavigation() {
@@ -1393,20 +1395,26 @@ const API_URL = window.location.hostname === 'localhost'
             currentPeriodDate = new Date();
         }
 
+        const newDate = new Date(currentPeriodDate); // Create a new date object to avoid modifying the original
+
         switch (currentPeriod) {
             case 'day':
-                currentPeriodDate.setDate(currentPeriodDate.getDate() + (direction === 'next' ? 1 : -1));
+                newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
                 break;
             case 'month':
-                // Create a new date object to avoid modifying the original
-                const newDate = new Date(currentPeriodDate);
+                console.log('[Debug] Navigating month:', direction);
+                console.log('[Debug] Current month before:', newDate.getMonth());
                 newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-                currentPeriodDate = newDate;
+                console.log('[Debug] Current month after:', newDate.getMonth());
                 break;
             case 'year':
-                currentPeriodDate.setFullYear(currentPeriodDate.getFullYear() + (direction === 'next' ? 1 : -1));
+                newDate.setFullYear(newDate.getFullYear() + (direction === 'next' ? 1 : -1));
                 break;
         }
+
+        // Update the current period date with the new date
+        currentPeriodDate = newDate;
+        console.log('[Debug] Updated currentPeriodDate:', currentPeriodDate);
 
         // Update display and refresh data
         updateDateRangeDisplay(null, null, currentPeriod);
