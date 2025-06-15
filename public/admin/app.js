@@ -92,50 +92,15 @@ const API_URL = window.location.hostname === 'localhost'
 
     // Initialize period filter
     function initializePeriodFilter() {
-        console.log('Initializing period filter'); // Debug log
-        
-        // Get all required elements
-        const periodSelect = document.getElementById('periodFilter');
-        const prevBtn = document.getElementById('prevPeriod');
-        const nextBtn = document.getElementById('nextPeriod');
-        const dateControls = document.getElementById('dateControls');
-
-        // Verify all elements exist
-        if (!periodSelect || !prevBtn || !nextBtn || !dateControls) {
-            console.error('Required elements not found');
-            return;
-        }
-
-        // Set up navigation buttons with direct handlers
-        prevBtn.onclick = (e) => {
-            e.preventDefault(); // Prevent any default behavior
-            handleDateNavigation('prev');
-        };
-        
-        nextBtn.onclick = (e) => {
-            e.preventDefault(); // Prevent any default behavior
-            handleDateNavigation('next');
-        };
-
-        // Handle period changes
-        periodSelect.onchange = (e) => {
-            console.log('Period changed to:', e.target.value); // Debug log
-            
-            if (e.target.value === 'custom') {
-                dateControls.style.display = 'flex';
-            } else {
-                dateControls.style.display = 'none';
-                currentPeriodDate = new Date();
-                console.log('Reset to current date:', getFormattedDate(currentPeriodDate)); // Debug log
-                updateDateDisplay();
-                refreshData();
-            }
-        };
-
-        // Initial setup
-        console.log('Setting initial date:', getFormattedDate(currentPeriodDate)); // Debug log
-        updateDateDisplay();
-        refreshData();
+        const periodFilter = document.getElementById('periodFilter');
+        periodFilter.innerHTML = `
+            <option value="day">Day</option>
+            <option value="month">Month</option>
+            <option value="year">Year</option>
+            <option value="custom">Custom</option>
+            <option value="all">All Time</option>
+        `;
+        periodFilter.value = 'day';
     }
 
     // Utility functions
@@ -160,79 +125,39 @@ const API_URL = window.location.hostname === 'localhost'
     }
 
     // Get date range based on period
-    function getDateRange(period, baseDate = new Date()) {
-        const now = new Date(baseDate);
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        
-        switch (period) {
+    function getDateRange(period) {
+        const now = currentPeriodDate || new Date();
+        let start, end;
+
+        switch(period) {
             case 'day':
-                return {
-                    start: new Date(startOfDay),
-                    end: new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1),
-                    displayText: startOfDay.toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    })
-                };
-            case 'week': {
-                const startOfWeek = new Date(startOfDay);
-                startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay()); // Start of week (Sunday)
-                const endOfWeek = new Date(startOfWeek);
-                endOfWeek.setDate(startOfWeek.getDate() + 6);
-                endOfWeek.setHours(23, 59, 59, 999);
-
-                const weekStartStr = startOfWeek.toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    day: 'numeric'
-                });
-                const weekEndStr = endOfWeek.toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    day: 'numeric',
-                    year: 'numeric'
-                });
-
-                return {
-                    start: startOfWeek,
-                    end: endOfWeek,
-                    displayText: `${weekStartStr} - ${weekEndStr}`
-                };
-            }
-            case 'month': {
-                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-                
-                const monthStr = startOfMonth.toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    year: 'numeric'
-                });
-                const daysInMonth = endOfMonth.getDate();
-
-                return {
-                    start: startOfMonth,
-                    end: endOfMonth,
-                    displayText: `${monthStr} (${daysInMonth} days)`
-                };
-            }
-            case 'year': {
-                const startOfYear = new Date(now.getFullYear(), 0, 1);
-                const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
-                return {
-                    start: startOfYear,
-                    end: endOfYear,
-                    displayText: `Year ${startOfYear.getFullYear()}`
-                };
-            }
+                start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+                break;
+            case 'month':
+                start = new Date(now.getFullYear(), now.getMonth(), 1);
+                end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                break;
+            case 'year':
+                start = new Date(now.getFullYear(), 0, 1);
+                end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+                break;
+            case 'custom':
+                start = document.getElementById('startDate').value;
+                end = document.getElementById('endDate').value;
+                if (!start || !end) return null;
+                start = new Date(start);
+                end = new Date(end);
+                end.setHours(23, 59, 59, 999);
+                break;
             case 'all':
-                return {
-                    start: new Date(0),
-                    end: new Date(),
-                    displayText: 'All Time'
-                };
+                start = new Date(0); // Beginning of time
+                end = new Date(now.getFullYear() + 1, 11, 31, 23, 59, 59, 999); // Far future
+                break;
             default:
                 return null;
         }
+        return { start, end };
     }
 
     // Filter data based on date range
@@ -484,14 +409,6 @@ const API_URL = window.location.hostname === 'localhost'
                 case 'day':
                     displayText = formatDate(currentDate);
                     break;
-                case 'week': {
-                    // Get first day of the week (Sunday)
-                    const weekStart = new Date(currentDate);
-                    weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-                    displayText = formatDate(weekStart);
-                    currentPeriodDate = weekStart; // Store the week start date
-                    break;
-                }
                 case 'month': {
                     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
                     displayText = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
@@ -578,7 +495,7 @@ const API_URL = window.location.hostname === 'localhost'
             endDate = new Date(endDateInput.value);
             endDate.setHours(23, 59, 59, 999);
         } else {
-            const dateRange = getDateRange(periodFilter.value, currentPeriodDate);
+            const dateRange = getDateRange(periodFilter.value);
             if (!dateRange) return;
             startDate = dateRange.start;
             endDate = dateRange.end;
@@ -1457,10 +1374,6 @@ const API_URL = window.location.hostname === 'localhost'
                 newBaseDate = new Date(currentRange.start);
                 newBaseDate.setDate(newBaseDate.getDate() + (direction === 'next' ? 1 : -1));
                 break;
-            case 'week':
-                newBaseDate = new Date(currentRange.start);
-                newBaseDate.setDate(newBaseDate.getDate() + (direction === 'next' ? 7 : -7));
-                break;
             case 'month':
                 newBaseDate = new Date(currentRange.start);
                 newBaseDate.setMonth(newBaseDate.getMonth() + (direction === 'next' ? 1 : -1));
@@ -1469,15 +1382,12 @@ const API_URL = window.location.hostname === 'localhost'
                 newBaseDate = new Date(currentRange.start);
                 newBaseDate.setFullYear(newBaseDate.getFullYear() + (direction === 'next' ? 1 : -1));
                 break;
+            default:
+                return;
         }
 
-        if (newBaseDate) {
-            currentPeriodDate = newBaseDate;
-            // Update display first
-            updateDateDisplay();
-            // Then refresh data
-            refreshData();
-        }
+        currentPeriodDate = newBaseDate;
+        refreshData();
     }
 
 })(window.LaundryAdmin); 
