@@ -25,7 +25,7 @@ const API_URL = window.location.hostname === 'localhost'
     const employeeTabs = document.getElementById('employeeTabs');
     const timesheetStartDate = document.getElementById('timesheetStartDate');
     const timesheetEndDate = document.getElementById('timesheetEndDate');
-    const timesheetTable = document.querySelector('.timesheet-table tbody');
+    const timesheetTable = document.getElementById('timesheetTableBody');
     const totalHoursSpan = document.getElementById('totalHours');
 
     // Timesheet functionality
@@ -1234,17 +1234,46 @@ const API_URL = window.location.hostname === 'localhost'
     app.fetchEmployees = fetchEmployees;
     app.initialize = initialize;
 
+    // Function to initialize timesheet section
+    async function initializeTimesheets() {
+        console.log('🕒 ADMIN: Initializing timesheet section');
+        initializeTimesheetDates();
+        await fetchEmployees();
+        if (employees.length > 0) {
+            await selectEmployee(employees[0].name);
+        }
+        // Add event listener for filter button
+        const filterBtn = document.querySelector('.filter-btn');
+        if (filterBtn) {
+            filterBtn.addEventListener('click', () => {
+                if (selectedEmployee) {
+                    fetchTimesheetData();
+                }
+            });
+        }
+    }
+
+    // Expose necessary functions to global namespace
+    app.fetchEmployees = fetchEmployees;
+    app.initialize = initialize;
+    app.initializeTimesheets = initializeTimesheets;
+
     // Initialize the application
     document.addEventListener('DOMContentLoaded', () => {
         initialize();
         initializePeriodFilter();
         initializeNavigation();
-        initializeTimesheetDates();
         initializeInventoryControls();
         
         // Fetch initial data
         fetchAllData();
         fetchEmployees();
+
+        // Initialize timesheet if it's the active section
+        const timesheetSection = document.getElementById('timesheets');
+        if (timesheetSection && timesheetSection.classList.contains('active')) {
+            initializeTimesheets();
+        }
     });
 
 })(window.LaundryAdmin); 

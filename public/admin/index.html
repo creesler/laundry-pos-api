@@ -251,17 +251,17 @@
                         <div class="timesheet-header">
                             <div class="date-filter">
                                 <label for="timesheetStartDate">From:</label>
-                                <input type="date" id="timesheetStartDate">
+                                <input type="date" id="timesheetStartDate" class="form-control">
                                 <label for="timesheetEndDate">To:</label>
-                                <input type="date" id="timesheetEndDate">
-                                <button class="filter-btn">Filter</button>
+                                <input type="date" id="timesheetEndDate" class="form-control">
+                                <button class="filter-btn btn btn-primary">Filter</button>
                             </div>
                         </div>
                         <div class="tabs" id="employeeTabs">
-                            <!-- Tabs will be dynamically populated -->
+                            <!-- Employee tabs will be dynamically populated -->
                         </div>
                         <div class="timesheet-content">
-                            <table class="timesheet-table">
+                            <table class="timesheet-table table">
                                 <thead>
                                     <tr>
                                         <th>Date</th>
@@ -271,7 +271,9 @@
                                         <th>Status</th>
                                     </tr>
                                 </thead>
-                                <tbody></tbody>
+                                <tbody id="timesheetTableBody">
+                                    <!-- Timesheet entries will be dynamically populated -->
+                                </tbody>
                             </table>
                             <div class="total-hours">Total Hours: <span id="totalHours">0</span></div>
                         </div>
@@ -375,9 +377,11 @@
                     section.classList.remove('active');
                     if (section.id === targetSection) {
                         section.classList.add('active');
-                        // If switching to employees section, refresh the employee data
+                        // Initialize specific section functionality
                         if (targetSection === 'employees') {
                             window.LaundryAdmin.fetchEmployees();
+                        } else if (targetSection === 'timesheets') {
+                            window.LaundryAdmin.initializeTimesheets();
                         }
                     }
                 });
