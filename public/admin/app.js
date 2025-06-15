@@ -446,26 +446,22 @@ const API_URL = window.location.hostname === 'localhost'
         } else if (period === 'all') {
             dateRangeDisplay.textContent = 'All Time';
         } else if (period) {
-            const currentDate = currentPeriodDate || new Date();
-            let displayText;
-            
             switch(period) {
                 case 'day':
-                    displayText = formatDate(currentDate);
+                    dateRangeDisplay.textContent = formatDate(currentPeriodDate || new Date());
                     break;
                 case 'month': {
+                    // Simple month display
+                    const date = currentPeriodDate || new Date();
                     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                    displayText = months[currentDate.getMonth()] + ' ' + currentDate.getFullYear();
+                    dateRangeDisplay.textContent = `${months[date.getMonth()]} ${date.getFullYear()}`;
                     break;
                 }
                 case 'year': {
-                    displayText = currentDate.getFullYear().toString();
+                    dateRangeDisplay.textContent = (currentPeriodDate || new Date()).getFullYear().toString();
                     break;
                 }
-                default:
-                    displayText = period;
             }
-            dateRangeDisplay.textContent = displayText;
         }
     }
 
@@ -1402,31 +1398,27 @@ const API_URL = window.location.hostname === 'localhost'
         const periodFilter = document.getElementById('periodFilter');
         const currentPeriod = periodFilter.value;
         
-        if (currentPeriod === 'all' || currentPeriod === 'custom') {
-            return; // No navigation for these periods
-        }
-
         if (!currentPeriodDate) {
             currentPeriodDate = new Date();
         }
 
-        let newDate = new Date(currentPeriodDate);
-        
         switch (currentPeriod) {
             case 'day':
-                newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+                currentPeriodDate.setDate(currentPeriodDate.getDate() + (direction === 'next' ? 1 : -1));
                 break;
             case 'month':
-                // Set to first day of month and navigate
-                newDate.setDate(1);
+                // Simple month navigation
+                const newDate = new Date(currentPeriodDate);
                 newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+                currentPeriodDate = newDate;
                 break;
             case 'year':
-                newDate.setFullYear(newDate.getFullYear() + (direction === 'next' ? 1 : -1));
+                currentPeriodDate.setFullYear(currentPeriodDate.getFullYear() + (direction === 'next' ? 1 : -1));
                 break;
+            default:
+                return; // No navigation for other periods
         }
 
-        currentPeriodDate = newDate;
         updateDateRangeDisplay(null, null, currentPeriod);
         refreshData();
     }
