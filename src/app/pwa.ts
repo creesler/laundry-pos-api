@@ -5,13 +5,8 @@ export async function registerServiceWorker() {
       const registrations = await navigator.serviceWorker.getRegistrations();
       await Promise.all(registrations.map(registration => registration.unregister()));
       
-      // Get the base URL from the current window location
-      const baseUrl = window.location.origin;
-      
-      // In development, use the local service worker
-      const swUrl = process.env.NODE_ENV === 'development' 
-        ? '/sw.js'
-        : `${baseUrl}/_next/static/sw.js`;
+      // Always use /sw.js from the public directory
+      const swUrl = '/sw.js';
       
       console.log('[PWA] Registering service worker from:', swUrl);
       
@@ -30,7 +25,6 @@ export async function registerServiceWorker() {
       // Register the service worker with the correct scope
       const registration = await navigator.serviceWorker.register(swUrl, {
         scope: '/',
-        type: 'classic',
         updateViaCache: 'none'
       });
       
@@ -47,7 +41,7 @@ export async function registerServiceWorker() {
       });
       
       // Fetch the manifest
-      const manifestUrl = `${baseUrl}/manifest.webmanifest`;
+      const manifestUrl = '/manifest.webmanifest';
       const manifestResponse = await fetch(manifestUrl, {
         method: 'GET'
       });

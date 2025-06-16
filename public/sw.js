@@ -1,4 +1,4 @@
-const CACHE_NAME = 'laundry-pos-cache-v1';
+const CACHE_NAME = 'laundry-pos-cache-v2';
 const FALLBACK_HTML = `
 <!DOCTYPE html>
 <html lang="en">
@@ -25,14 +25,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       try {
-        const baseUrl = getBaseUrl();
-        const urlsToCache = [
-          '/',
-          '/manifest.webmanifest',
-          '/icons/icon-192x192.png',
-          '/icons/icon-512x512.png',
-        ].map(url => `${baseUrl}${url}`);
-
         const cache = await caches.open(CACHE_NAME);
         console.log('[Service Worker] Caching app shell and assets');
         
@@ -40,11 +32,18 @@ self.addEventListener('install', (event) => {
         const fallbackResponse = new Response(FALLBACK_HTML, {
           headers: { 'Content-Type': 'text/html' }
         });
-        await cache.put(`${baseUrl}/offline.html`, fallbackResponse);
+        await cache.put('/offline.html', fallbackResponse);
         
-        // Cache other assets
-        await cache.addAll(urlsToCache);
+        // Cache core assets
+        await cache.addAll([
+          '/',
+          '/manifest.webmanifest',
+          '/icons/icon-192x192.png',
+          '/icons/icon-512x512.png'
+        ]);
+
         await self.skipWaiting();
+        console.log('[Service Worker] Successfully installed and cached assets');
       } catch (error) {
         console.error('[Service Worker] Install failed:', error);
       }
@@ -74,8 +73,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       try {
-        const baseUrl = getBaseUrl();
-        
         // Network-first strategy for API requests
         if (event.request.url.includes('/api/')) {
           try {
@@ -109,7 +106,7 @@ self.addEventListener('fetch', (event) => {
         } catch (error) {
           // Return offline page for navigation requests
           if (event.request.mode === 'navigate') {
-            const offlineResponse = await caches.match(`${baseUrl}/offline.html`);
+            const offlineResponse = await caches.match('/offline.html');
             return offlineResponse || new Response(FALLBACK_HTML, {
               headers: { 'Content-Type': 'text/html' }
             });
