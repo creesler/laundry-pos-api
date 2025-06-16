@@ -2,8 +2,8 @@ const CACHE_NAME = 'laundry-pos-v1';
 const urlsToCache = [
   '/',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png',
   '/install-instructions.html'
 ];
 
