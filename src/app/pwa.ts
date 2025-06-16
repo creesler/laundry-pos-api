@@ -7,13 +7,17 @@ export async function registerServiceWorker() {
       
       // Get the base URL from the current window location
       const baseUrl = window.location.origin;
-      const swUrl = `${baseUrl}/sw.js`;
+      
+      // In development, use the local service worker
+      const swUrl = process.env.NODE_ENV === 'development' 
+        ? '/sw.js'
+        : `${baseUrl}/_next/static/sw.js`;
+      
+      console.log('[PWA] Registering service worker from:', swUrl);
       
       // First check if the service worker file exists
       const swResponse = await fetch(swUrl, {
         method: 'GET',
-        mode: 'same-origin',
-        credentials: 'same-origin',
         headers: {
           'Accept': 'application/javascript'
         }
@@ -30,14 +34,14 @@ export async function registerServiceWorker() {
         updateViaCache: 'none'
       });
       
-      console.log('Service Worker registered with scope:', registration.scope);
+      console.log('[PWA] Service Worker registered with scope:', registration.scope);
       
       // Add event listeners for service worker updates
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
-            console.log('Service Worker state changed:', newWorker.state);
+            console.log('[PWA] Service Worker state changed:', newWorker.state);
           });
         }
       });
@@ -45,9 +49,7 @@ export async function registerServiceWorker() {
       // Fetch the manifest
       const manifestUrl = `${baseUrl}/manifest.webmanifest`;
       const manifestResponse = await fetch(manifestUrl, {
-        method: 'GET',
-        mode: 'same-origin',
-        credentials: 'same-origin'
+        method: 'GET'
       });
       
       if (!manifestResponse.ok) {
@@ -55,16 +57,16 @@ export async function registerServiceWorker() {
       }
       
       const manifest = await manifestResponse.json();
-      console.log('PWA Manifest loaded:', manifest);
+      console.log('[PWA] Manifest loaded:', manifest);
       
       return true;
     } catch (error) {
-      console.error('Service Worker registration failed:', error);
+      console.error('[PWA] Service Worker registration failed:', error);
       // Log more detailed error information
       if (error instanceof Error) {
-        console.error('Error name:', error.name);
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
+        console.error('[PWA] Error name:', error.name);
+        console.error('[PWA] Error message:', error.message);
+        console.error('[PWA] Error stack:', error.stack);
       }
       return false;
     }

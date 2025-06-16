@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@mui/x-date-pickers'],
+  output: 'standalone',
   async headers() {
     return [
       {
@@ -67,12 +68,19 @@ const nextConfig = {
       {
         source: '/manifest.webmanifest',
         destination: '/manifest.webmanifest',
-      },
-      {
-        source: '/sw.js',
-        destination: '/sw.js'
       }
     ]
+  },
+  // Copy service worker to the public directory during build
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    if (!isServer) {
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          'process.env.NEXT_PUBLIC_BUILD_ID': JSON.stringify(buildId),
+        })
+      );
+    }
+    return config;
   }
 }
 
