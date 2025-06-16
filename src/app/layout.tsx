@@ -1,6 +1,6 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v13-appRouter';
 import PWARoot from './components/PWARoot';
 
 const inter = Inter({ subsets: ['latin'] });
