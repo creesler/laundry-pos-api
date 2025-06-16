@@ -662,29 +662,50 @@ export default function Header({
   };
 
   return (
-    <>
-      <Paper sx={{ 
-        gridArea: 'header',
-        p: '1vh',
-        display: 'flex',
-        flexDirection: { xs: 'column', md: 'row' },
-        alignItems: { xs: 'stretch', md: 'center' },
-        justifyContent: 'space-between',
-        gap: { xs: '0.5vh', md: 0 },
-        borderRadius: '8px',
-        border: '1px solid #e5e7eb',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-        minHeight: { xs: 'auto', md: '6vh' }
-      }}>
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '1vh',
-          flex: 1
-        }}>
+    <Box sx={{ width: '100%', bgcolor: 'background.paper', boxShadow: 1, position: 'sticky', top: 0, zIndex: 1100 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ px: 2, py: 1 }}
+      >
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', color: blue[700] }}>
+            Laundry King
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<DownloadIcon />}
+            onClick={() => {
+              // Check if the app is already installed
+              if (window.matchMedia('(display-mode: standalone)').matches) {
+                alert('App is already installed!');
+                return;
+              }
+              // Try to trigger install prompt
+              const installButton = document.createElement('button');
+              installButton.type = 'button';
+              installButton.style.display = 'none';
+              document.body.appendChild(installButton);
+              installButton.click();
+              document.body.removeChild(installButton);
+              // Fallback - open instructions
+              window.open('/install-instructions.html', '_blank');
+            }}
+            sx={{
+              bgcolor: green[600],
+              '&:hover': { bgcolor: green[700] },
+              fontWeight: 'bold'
+            }}
+          >
+            Download App
+          </Button>
+        </Stack>
+        
+        <Stack direction="row" alignItems="center" spacing={2}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="h6" fontSize="2vh" fontWeight="bold">Laundry King</Typography>
-            <InstallButton />
             <Box sx={{ display: 'flex', gap: '1vh' }}>
               <IconButton
                 onClick={onShareClick}
@@ -724,7 +745,7 @@ export default function Header({
           <Typography fontSize="1.6vh" color="textSecondary">
             Laundry Shop POS Daily Entry
           </Typography>
-        </Box>
+        </Stack>
         <Box display="flex" alignItems="center" gap="1vh" justifyContent={{ xs: 'space-between', md: 'flex-end' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '1vh' }}>
             <Box>
@@ -776,7 +797,7 @@ export default function Header({
             LK
           </Avatar>
         </Box>
-      </Paper>
+      </Stack>
 
       {/* Usage Dialog */}
       <Dialog 
@@ -834,6 +855,6 @@ export default function Header({
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </>
+    </Box>
   )
 } 
