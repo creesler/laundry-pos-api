@@ -34,10 +34,11 @@ import {
   ToggleButtonGroup,
   ToggleButton
 } from '@mui/material'
-import { GOOGLE_SHEETS_CONFIG, API_URL } from '../config'
+import { GOOGLE_SHEETS_CONFIG, API_URL } from '@/app/config'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns'
 import { blue } from '@mui/material/colors'
@@ -1428,716 +1429,177 @@ export default function AdminPage() {
           <Typography variant="h4" gutterBottom>
             Admin Dashboard
           </Typography>
-          <Button onClick={handleRefresh} sx={{ mr: 2 }}>
-            Refresh Data
-          </Button>
-          <Button onClick={handleLogout} color="error">
-            Logout
-          </Button>
-        </Box>
-
-        {/* Tab Selection */}
-        <Box sx={{ mb: 2 }}>
-          <ButtonGroup>
+          <ButtonGroup variant="contained" sx={{ mb: 2 }}>
             <Button
-              variant={selectedTab === 'sales' ? 'contained' : 'outlined'}
               onClick={() => setSelectedTab('sales')}
+              color={selectedTab === 'sales' ? 'primary' : 'inherit'}
             >
-              Sales Overview
+              Sales Data
             </Button>
             <Button
-              variant={selectedTab === 'inventory' ? 'contained' : 'outlined'}
               onClick={() => setSelectedTab('inventory')}
+              color={selectedTab === 'inventory' ? 'primary' : 'inherit'}
             >
-              Inventory Overview
+              Inventory
             </Button>
           </ButtonGroup>
-          </Box>
+        </Box>
 
         {selectedTab === 'sales' ? (
-          /* Sales Overview Graph */
-            <Paper sx={{ 
-              p: '1.5vh',
-              display: 'flex',
-              flexDirection: 'column',
-              borderRadius: '8px',
-              border: '1px solid #e5e7eb',
-              minHeight: 0,
-              overflow: 'hidden',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              mb: 4
-            }}>
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                mb: '1.5vh'
-              }}>
-                <Typography variant="h5" gutterBottom>
-                  Sales Overview
-                </Typography>
-                <Box sx={{ display: 'flex', gap: '1vh', alignItems: 'center' }}>
-                    <ButtonGroup size="small" sx={{ height: '3vh' }}>
-                      <Button
-                        onClick={handleMonthClick}
-                        variant={viewType === 'month' ? 'contained' : 'outlined'}
-                        sx={{ fontSize: '1.4vh', py: 0 }}
-                      >
-                        {new Date(selectedYear, selectedMonth).toLocaleString('default', { month: 'short' })} {selectedYear}
-                      </Button>
-                      <Button
-                        onClick={handleYearClick}
-                        variant={viewType === 'year' ? 'contained' : 'outlined'}
-                        sx={{ fontSize: '1.4vh', py: 0 }}
-                      >
-                        {selectedYear}
-                      </Button>
-                    </ButtonGroup>
-                    <Menu
-                      anchorEl={monthAnchorEl}
-                      open={Boolean(monthAnchorEl)}
-                      onClose={handleMonthClose}
-                    >
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <MenuItem 
-                          key={i} 
-                          onClick={() => handleMonthSelect(i)}
-                          selected={selectedMonth === i && viewType === 'month'}
-                        >
-                          {new Date(2024, i).toLocaleString('default', { month: 'long' })}
-                        </MenuItem>
-                      ))}
-                    </Menu>
-                    <Menu
-                      anchorEl={yearAnchorEl}
-                      open={Boolean(yearAnchorEl)}
-                      onClose={handleYearClose}
-                    >
-                      {getAvailableYears().map((year) => (
-                        <MenuItem 
-                          key={year} 
-                          onClick={() => handleYearSelect(year)}
-                          selected={selectedYear === year && viewType === 'year'}
-                        >
-                          {year}
-                        </MenuItem>
-                      ))}
-                    </Menu>
-                  </Box>
-                  <ToggleButtonGroup
-                    size="small"
-                    value={chartType}
-                    exclusive
-                    onChange={(e, value) => value && setChartType(value)}
-                    sx={{ height: '3vh' }}
-                  >
-                    <ToggleButton value="line" sx={{ fontSize: '1.4vh', py: 0 }}>
-                      Line
-                    </ToggleButton>
-                    <ToggleButton value="bar" sx={{ fontSize: '1.4vh', py: 0 }}>
-                      Bar
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-              </Box>
-
-              {/* Chart container */}
-              <Box sx={{ 
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'relative',
-                minHeight: 0,
-                width: '100%',
-                height: '100%'
-              }}>
-                {/* Chart area */}
-                <Box sx={{ 
-                  flex: 1,
-                  position: 'relative',
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}>
-                {/* Scrollable container for chart */}
-                  <Box sx={{
-                    overflowX: 'hidden',
-                    overflowY: 'hidden',
-                    pb: '8px',
-                    width: '100%'
-                  }}>
-                    {/* Content wrapper */}
-                    <Box sx={{
-                      width: '100%',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}>
-                      {/* Chart */}
-                      <Box sx={{
-                        height: '300px',
-                        width: '100%'
-                      }}>
-                        {renderChart()}
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
-            </Paper>
-        ) : (
-          /* Inventory Overview */
-          <Paper sx={{ 
-            p: '1.5vh',
-            display: 'flex',
-            flexDirection: 'column',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb',
-            minHeight: 0,
-            overflow: 'hidden',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-            mb: 4
-          }}>
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              mb: '1.5vh'
-            }}>
-              <Typography variant="h5" gutterBottom>
-                Inventory Overview
-              </Typography>
-              <Box sx={{ display: 'flex', gap: '1vh', alignItems: 'center' }}>
-                <ButtonGroup size="small" sx={{ height: '3vh' }}>
-                  <Button
-                    onClick={() => setInventoryViewPeriod('week')}
-                    variant={inventoryViewPeriod === 'week' ? 'contained' : 'outlined'}
-                    sx={{ fontSize: '1.4vh', py: 0 }}
-                  >
-                    Last 7 Days
-                  </Button>
-                  <Button
-                    onClick={() => setInventoryViewPeriod('month')}
-                    variant={inventoryViewPeriod === 'month' ? 'contained' : 'outlined'}
-                    sx={{ fontSize: '1.4vh', py: 0 }}
-                  >
-                    Last 30 Days
-                  </Button>
-                </ButtonGroup>
-                <ToggleButtonGroup
-                  size="small"
-                  value={inventoryChartType}
-                  exclusive
-                  onChange={(e, value) => value && setInventoryChartType(value)}
-                  sx={{ height: '3vh' }}
-                >
-                  <ToggleButton value="stock" sx={{ fontSize: '1.4vh', py: 0 }}>
-                    Stock Levels
-                  </ToggleButton>
-                  <ToggleButton value="usage" sx={{ fontSize: '1.4vh', py: 0 }}>
-                    Usage Trends
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Box>
-            </Box>
-
-            {/* Chart container */}
-            <Box sx={{ 
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              position: 'relative',
-              minHeight: 0,
-              width: '100%',
-              height: '100%'
-            }}>
-              {/* Chart area */}
-              <Box sx={{ 
-                flex: 1,
-                position: 'relative',
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column'
-              }}>
-                {/* Scrollable container for chart */}
-                <Box sx={{
-                  overflowX: 'hidden',
-                  overflowY: 'hidden',
-                  pb: '8px',
-                  width: '100%'
-                }}>
-                  {/* Content wrapper */}
-                  <Box sx={{
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }}>
-                    {/* Chart */}
-                    <Box sx={{
-                      height: '300px',
-                      width: '100%'
-                    }}>
-                      {renderInventoryChart()}
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
-            </Box>
-          </Paper>
-        )}
-
-            {/* Daily Tracker Table */}
-            <Typography variant="h5" gutterBottom sx={{ mt: 4, mb: 2 }}>
-              Daily Tracker
-            </Typography>
-            <TableContainer component={Paper} sx={{ maxHeight: 'calc(100vh - 200px)', mb: 4 }}>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{
-                      backgroundColor: '#f3f4f6',
-                      borderBottom: '2px solid #e5e7eb',
-                      borderRight: '1px solid #e5e7eb',
-                      fontWeight: 'bold',
-                      '&:last-child': {
-                        borderRight: 'none'
-                      }
-                    }}>Date</TableCell>
-                    <TableCell sx={{
-                      backgroundColor: '#f3f4f6',
-                      borderBottom: '2px solid #e5e7eb',
-                      borderRight: '1px solid #e5e7eb',
-                      fontWeight: 'bold',
-                      '&:last-child': {
-                        borderRight: 'none'
-                      }
-                    }}>Coin</TableCell>
-                    <TableCell sx={{
-                      backgroundColor: '#f3f4f6',
-                      borderBottom: '2px solid #e5e7eb',
-                      borderRight: '1px solid #e5e7eb',
-                      fontWeight: 'bold',
-                      '&:last-child': {
-                        borderRight: 'none'
-                      }
-                    }}>Hopper</TableCell>
-                    <TableCell sx={{
-                      backgroundColor: '#f3f4f6',
-                      borderBottom: '2px solid #e5e7eb',
-                      borderRight: '1px solid #e5e7eb',
-                      fontWeight: 'bold',
-                      '&:last-child': {
-                        borderRight: 'none'
-                      }
-                    }}>Soap</TableCell>
-                    <TableCell sx={{
-                      backgroundColor: '#f3f4f6',
-                      borderBottom: '2px solid #e5e7eb',
-                      borderRight: '1px solid #e5e7eb',
-                      fontWeight: 'bold',
-                      '&:last-child': {
-                        borderRight: 'none'
-                      }
-                    }}>Vending</TableCell>
-                    <TableCell sx={{
-                      backgroundColor: '#f3f4f6',
-                      borderBottom: '2px solid #e5e7eb',
-                      borderRight: '1px solid #e5e7eb',
-                      fontWeight: 'bold',
-                      '&:last-child': {
-                        borderRight: 'none'
-                      }
-                    }}>Drop Off Amount 1</TableCell>
-                    <TableCell sx={{
-                      backgroundColor: '#f3f4f6',
-                      borderBottom: '2px solid #e5e7eb',
-                      borderRight: '1px solid #e5e7eb',
-                      fontWeight: 'bold',
-                      '&:last-child': {
-                        borderRight: 'none'
-                      }
-                    }}>Drop Off Code</TableCell>
-                    <TableCell sx={{
-                      backgroundColor: '#f3f4f6',
-                      borderBottom: '2px solid #e5e7eb',
-                      borderRight: '1px solid #e5e7eb',
-                      fontWeight: 'bold',
-                      '&:last-child': {
-                        borderRight: 'none'
-                      }
-                    }}>Drop Off Amount 2</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {data.map((row, index) => (
-                    <TableRow 
-                      key={index}
-                      sx={{
-                        '&:nth-of-type(odd)': {
-                          backgroundColor: '#ffffff',
-                        },
-                        '&:nth-of-type(even)': {
-                          backgroundColor: '#f9fafb',
-                        },
-                        '&:hover': {
-                          backgroundColor: '#f3f4f6',
-                        }
-                      }}
-                    >
-                      <TableCell>{row.Date}</TableCell>
-                      <TableCell>{row.Coin}</TableCell>
-                      <TableCell>{row.Hopper}</TableCell>
-                      <TableCell>{row.Soap}</TableCell>
-                      <TableCell>{row.Vending}</TableCell>
-                      <TableCell>{row['Drop Off Amount 1']}</TableCell>
-                      <TableCell>{row['Drop Off Code']}</TableCell>
-                      <TableCell>{row['Drop Off Amount 2']}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            {/* Employee Management Section */}
+          <>
             <Paper sx={{ p: 2, mb: 4 }}>
-              <Typography variant="h6" gutterBottom>
-                Employee Management
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">Employee Management</Typography>
+                <Button variant="contained" onClick={() => setOpenEmployeeDialog(true)}>
+                  Add Employee
+                </Button>
+              </Box>
               <List>
                 {localEmployees.map((employee) => (
-                  <ListItem
-                    key={employee.name}
-                    divider
-                    sx={{
-                      display: 'flex',
-                      flexDirection: { xs: 'column', md: 'row' },
-                      alignItems: { xs: 'stretch', md: 'center' },
-                      gap: 2,
-                      py: 2
-                    }}
-                  >
+                  <ListItem key={employee.name}>
                     <ListItemText
                       primary={employee.name}
                       secondary={`Contact: ${employee.contactNumber} | Address: ${employee.address}`}
-                      sx={{ flex: '1 1 auto', minWidth: 0 }}
                     />
-                    <Stack
-                      direction={{ xs: 'column', sm: 'row' }}
-                      spacing={2}
-                      alignItems="center"
-                      sx={{ flex: '2 1 auto' }}
-                    >
-                      <DatePicker
-                        label="Start Date"
-                        value={employeeHours[employee.name]?.startDate || null}
-                        onChange={(date) => handleDateChange(employee.name, 'start', date)}
-                        sx={{ width: 200 }}
-                      />
-                      <DatePicker
-                        label="End Date"
-                        value={employeeHours[employee.name]?.endDate || null}
-                        onChange={(date) => handleDateChange(employee.name, 'end', date)}
-                        sx={{ width: 200 }}
-                      />
-                      <Button 
-                        variant="contained" 
-                        onClick={() => handleCalculateHours(employee.name)}
-                        sx={{ height: 40 }}
-                      >
-                        Calculate Hours
-                      </Button>
-                      <Button 
-                        variant="contained" 
-                        onClick={() => saveToServer(employee.name)}
-                        sx={{ height: 40, bgcolor: 'success.main', '&:hover': { bgcolor: 'success.dark' } }}
-                      >
-                        Save to Server
-                      </Button>
-                      <Typography sx={{ minWidth: 120, fontWeight: 'medium' }}>
-                        Total Hours: {employeeHours[employee.name]?.totalHours.toFixed(2) || '0.00'}
-                      </Typography>
-                    </Stack>
-                    <ListItemSecondaryAction sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton
-                        edge="end"
-                        aria-label="edit"
-                        onClick={() => {
-                          setEditingEmployee(employee.name);
-                          setNewEmployee(employee);
-                          setOpenEmployeeDialog(true);
-                        }}
-                      >
+                    <ListItemSecondaryAction>
+                      <IconButton edge="end" onClick={() => setEditingEmployee(employee.name)}>
                         <EditIcon />
                       </IconButton>
-                      <IconButton
-                        edge="end"
-                        aria-label="delete"
-                        onClick={() => handleDeleteEmployee(employee.name)}
-                      >
+                      <IconButton edge="end" onClick={() => handleDeleteEmployee(employee.name)}>
                         <DeleteIcon />
                       </IconButton>
                     </ListItemSecondaryAction>
                   </ListItem>
                 ))}
               </List>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  setEditingEmployee(null);
-                  setNewEmployee({ name: '', contactNumber: '', address: '' });
-                  setOpenEmployeeDialog(true);
-                }}
-                sx={{ mt: 2 }}
-              >
-                Add Employee
-              </Button>
             </Paper>
 
-            {/* Employee Timesheets */}
-            {!loading && localEmployees.map((employee) => (
-              <Box key={employee.name} sx={{ mt: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <Typography variant="h5" fontWeight="medium">
-                    {employee.name}'s Timesheet
-                  </Typography>
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <DatePicker
-                      label="Start Date"
-                      value={employeeHours[employee.name]?.startDate || null}
-                      onChange={(date) => handleDateChange(employee.name, 'start', date)}
-                      sx={{ width: 200 }}
-                    />
-                    <DatePicker
-                      label="End Date"
-                      value={employeeHours[employee.name]?.endDate || null}
-                      onChange={(date) => handleDateChange(employee.name, 'end', date)}
-                      sx={{ width: 200 }}
-                    />
-                    <Button 
-                      variant="contained" 
-                      onClick={() => handleCalculateHours(employee.name)}
-                      sx={{ height: 40 }}
-                    >
-                      Calculate Hours
-                    </Button>
-                    <Button 
-                      variant="contained" 
-                      onClick={() => saveToServer(employee.name)}
-                      sx={{ height: 40, bgcolor: 'success.main', '&:hover': { bgcolor: 'success.dark' } }}
-                    >
-                      Save to Server
-                    </Button>
-                    <Typography sx={{ minWidth: 120, fontWeight: 'medium' }}>
-                      Total Hours: {employeeHours[employee.name]?.totalHours.toFixed(2) || '0.00'}
-                    </Typography>
-                  </Stack>
-                </Box>
-                <TableContainer sx={{ maxHeight: 'calc(100vh - 200px)', mb: 4 }}>
-                  <Table stickyHeader>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{
-                          backgroundColor: '#f3f4f6',
-                          borderBottom: '2px solid #e5e7eb',
-                          borderRight: '1px solid #e5e7eb',
-                          fontWeight: 'bold',
-                          '&:last-child': {
-                            borderRight: 'none'
-                          }
-                        }}>Date</TableCell>
-                        <TableCell sx={{
-                          backgroundColor: '#f3f4f6',
-                          borderBottom: '2px solid #e5e7eb',
-                          borderRight: '1px solid #e5e7eb',
-                          fontWeight: 'bold',
-                          '&:last-child': {
-                            borderRight: 'none'
-                          }
-                        }}>Time In</TableCell>
-                        <TableCell sx={{
-                          backgroundColor: '#f3f4f6',
-                          borderBottom: '2px solid #e5e7eb',
-                          borderRight: '1px solid #e5e7eb',
-                          fontWeight: 'bold',
-                          '&:last-child': {
-                            borderRight: 'none'
-                          }
-                        }}>Time Out</TableCell>
-                        <TableCell sx={{
-                          backgroundColor: '#f3f4f6',
-                          borderBottom: '2px solid #e5e7eb',
-                          borderRight: '1px solid #e5e7eb',
-                          fontWeight: 'bold',
-                          '&:last-child': {
-                            borderRight: 'none'
-                          }
-                        }}>Duration</TableCell>
-                        <TableCell sx={{
-                          backgroundColor: '#f3f4f6',
-                          borderBottom: '2px solid #e5e7eb',
-                          borderRight: '1px solid #e5e7eb',
-                          fontWeight: 'bold',
-                          '&:last-child': {
-                            borderRight: 'none'
-                          }
-                        }}>Status</TableCell>
-                        <TableCell sx={{
-                          backgroundColor: '#f3f4f6',
-                          borderBottom: '2px solid #e5e7eb',
-                          borderRight: '1px solid #e5e7eb',
-                          fontWeight: 'bold',
-                          '&:last-child': {
-                            borderRight: 'none'
-                          }
-                        }}>EmpName</TableCell>
-                        <TableCell sx={{
-                          backgroundColor: '#f3f4f6',
-                          borderBottom: '2px solid #e5e7eb',
-                          borderRight: '1px solid #e5e7eb',
-                          fontWeight: 'bold',
-                          '&:last-child': {
-                            borderRight: 'none'
-                          }
-                        }}>Start Date</TableCell>
-                        <TableCell sx={{
-                          backgroundColor: '#f3f4f6',
-                          borderBottom: '2px solid #e5e7eb',
-                          borderRight: '1px solid #e5e7eb',
-                          fontWeight: 'bold',
-                          '&:last-child': {
-                            borderRight: 'none'
-                          }
-                        }}>Total Hours</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {(employeeTimesheets[employee.name] || []).map((row, index) => (
-                        <TableRow 
-                          key={index}
-                          sx={{
-                            '&:nth-of-type(odd)': {
-                              backgroundColor: '#ffffff',
-                            },
-                            '&:nth-of-type(even)': {
-                              backgroundColor: '#f9fafb',
-                            },
-                            '&:hover': {
-                              backgroundColor: '#f3f4f6',
-                            }
-                          }}
-                        >
-                          <TableCell sx={{
-                            borderBottom: '1px solid #e5e7eb',
-                            borderRight: '1px solid #e5e7eb',
-                            '&:last-child': {
-                              borderRight: 'none'
-                            }
-                          }}>{row.Date}</TableCell>
-                          <TableCell sx={{
-                            borderBottom: '1px solid #e5e7eb',
-                            borderRight: '1px solid #e5e7eb',
-                            '&:last-child': {
-                              borderRight: 'none'
-                            }
-                          }}>{row.TimeIn}</TableCell>
-                          <TableCell sx={{
-                            borderBottom: '1px solid #e5e7eb',
-                            borderRight: '1px solid #e5e7eb',
-                            '&:last-child': {
-                              borderRight: 'none'
-                            }
-                          }}>{row.TimeOut}</TableCell>
-                          <TableCell sx={{
-                            borderBottom: '1px solid #e5e7eb',
-                            borderRight: '1px solid #e5e7eb',
-                            '&:last-child': {
-                              borderRight: 'none'
-                            }
-                          }}>{row.Duration}</TableCell>
-                          <TableCell sx={{
-                            borderBottom: '1px solid #e5e7eb',
-                            borderRight: '1px solid #e5e7eb',
-                            '&:last-child': {
-                              borderRight: 'none'
-                            }
-                          }}>{row.Status}</TableCell>
-                          <TableCell sx={{
-                            borderBottom: '1px solid #e5e7eb',
-                            borderRight: '1px solid #e5e7eb',
-                            '&:last-child': {
-                              borderRight: 'none'
-                            }
-                          }}>{row.EmpName}</TableCell>
-                          <TableCell sx={{
-                            borderBottom: '1px solid #e5e7eb',
-                            borderRight: '1px solid #e5e7eb',
-                            '&:last-child': {
-                              borderRight: 'none'
-                            }
-                          }}>{row.Date}</TableCell>
-                          <TableCell sx={{
-                            borderBottom: '1px solid #e5e7eb',
-                            borderRight: '1px solid #e5e7eb',
-                            '&:last-child': {
-                              borderRight: 'none'
-                            }
-                          }}>{row.Duration}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+            <Paper sx={{ p: 2, mb: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">Employee Hours</Typography>
+                <ToggleButtonGroup
+                  value={chartType}
+                  exclusive
+                  onChange={(e, value) => value && setChartType(value)}
+                >
+                  <ToggleButton value="line">Line</ToggleButton>
+                  <ToggleButton value="bar">Bar</ToggleButton>
+                </ToggleButtonGroup>
               </Box>
-            ))}
+              {renderChart()}
+            </Paper>
           </>
-  ) : (
-    <Container maxWidth="sm">
-      <Box sx={{ 
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <Paper sx={{ 
-          p: 4,
-          width: '100%',
-          borderRadius: '8px',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-        }}>
-          <Typography variant="h5" align="center" gutterBottom>
-            Admin Login
-          </Typography>
-          <form onSubmit={handleLogin}>
+        ) : (
+          <>
+            <Paper sx={{ p: 2, mb: 4 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">Inventory Status</Typography>
+                <ToggleButtonGroup
+                  value={inventoryChartType}
+                  exclusive
+                  onChange={(e, value) => value && setInventoryChartType(value)}
+                >
+                  <ToggleButton value="stock">Stock Levels</ToggleButton>
+                  <ToggleButton value="usage">Usage Trends</ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+              {renderInventoryChart()}
+            </Paper>
+          </>
+        )}
+
+        <Dialog open={openEmployeeDialog} onClose={() => setOpenEmployeeDialog(false)}>
+          <DialogTitle>{editingEmployee ? 'Edit Employee' : 'Add Employee'}</DialogTitle>
+          <DialogContent>
             <TextField
+              autoFocus
+              margin="dense"
+              label="Name"
               fullWidth
-              label="Username"
-              variant="outlined"
-              margin="normal"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
+              value={newEmployee.name}
+              onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
             />
             <TextField
+              margin="dense"
+              label="Contact Number"
               fullWidth
-              label="Password"
-              type="password"
-              variant="outlined"
-              margin="normal"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              value={newEmployee.contactNumber}
+              onChange={(e) => setNewEmployee({ ...newEmployee, contactNumber: e.target.value })}
             />
-            <Button
+            <TextField
+              margin="dense"
+              label="Address"
               fullWidth
-              variant="contained"
-              type="submit"
-              sx={{ mt: 3 }}
-            >
-              Login
+              value={newEmployee.address}
+              onChange={(e) => setNewEmployee({ ...newEmployee, address: e.target.value })}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenEmployeeDialog(false)}>Cancel</Button>
+            <Button onClick={editingEmployee ? handleEditEmployee : handleAddEmployee}>
+              {editingEmployee ? 'Save Changes' : 'Add'}
             </Button>
-          </form>
-        </Paper>
+          </DialogActions>
+        </Dialog>
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleSnackbarClose}
+        >
+          <Alert onClose={handleSnackbarClose} severity={snackbar.severity}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Container>
+    </LocalizationProvider>
+  ) : (
+    <Container component="main" maxWidth="xs">
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        <Typography component="h1" variant="h5">
+          Admin Login
+        </Typography>
+        <Box component="form" onSubmit={handleLogin} sx={{ mt: 1 }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="username"
+            label="Username"
+            name="username"
+            autoComplete="username"
+            autoFocus
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+          >
+            Sign In
+          </Button>
+        </Box>
       </Box>
     </Container>
   );
