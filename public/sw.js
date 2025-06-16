@@ -3,13 +3,15 @@ const urlsToCache = [
   '/',
   '/manifest.json',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/icons/icon-512x512.png',
+  '/install-instructions.html'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
+        console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
   );

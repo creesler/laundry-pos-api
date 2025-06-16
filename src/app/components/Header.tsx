@@ -692,13 +692,26 @@ export default function Header({
                   alert('App is already installed!');
                   return;
                 }
-                const installButton = document.createElement('button');
-                installButton.type = 'button';
-                installButton.style.display = 'none';
-                document.body.appendChild(installButton);
-                installButton.click();
-                document.body.removeChild(installButton);
-                window.open('/install-instructions.html', '_blank');
+                
+                // Check if the browser supports PWA installation
+                if (!window.deferredPrompt) {
+                  // Open install instructions if PWA install not available
+                  window.open('/install-instructions.html', '_blank');
+                  return;
+                }
+
+                // Trigger PWA install prompt
+                window.deferredPrompt.prompt();
+                window.deferredPrompt.userChoice.then((choiceResult) => {
+                  if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                  } else {
+                    console.log('User dismissed the install prompt');
+                    // Open install instructions if user dismisses prompt
+                    window.open('/install-instructions.html', '_blank');
+                  }
+                  window.deferredPrompt = null;
+                });
               }}
               sx={{
                 bgcolor: green[600],
