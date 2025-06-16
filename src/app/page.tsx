@@ -449,7 +449,7 @@ export default function Home() {
   }
 
   // Add handlers for share menu
-  const handleShareClick = () => setShareAnchorEl(null)
+  const handleShareClick = (_event?: React.MouseEvent<HTMLElement>) => setShareAnchorEl(null)
 
   // Add state for Google API
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
