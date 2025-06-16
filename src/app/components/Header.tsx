@@ -70,96 +70,12 @@ interface HeaderProps {
 }
 
 interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
-function InstallButton() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      console.log('Received beforeinstallprompt event');
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setIsInstallable(true);
-    };
-
-    // Always show the button in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode: showing install button');
-      setIsInstallable(true);
-    }
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log('App is already installed');
-      setIsInstallable(false);
-    } else {
-      console.log('App is not installed');
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    console.log('Install button clicked', { deferredPrompt, isInstallable });
-    
-    if (!deferredPrompt && process.env.NODE_ENV === 'development') {
-      console.log('Development mode: simulating install');
-      alert('In development mode. This would trigger the install prompt in production.');
-      return;
-    }
-
-    if (!deferredPrompt) {
-      console.log('No deferred prompt available');
-      alert('Installation is not available at this time. Please try again later.');
-      return;
-    }
-
-    try {
-      await deferredPrompt.prompt();
-      const choiceResult = await deferredPrompt.userChoice;
-      console.log('User choice:', choiceResult.outcome);
-
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-        setIsInstallable(false);
-      }
-    } catch (error) {
-      console.error('Error during installation:', error);
-      alert('There was an error during installation. Please try again.');
-    }
-
-    setDeferredPrompt(null);
-  };
-
-  // Always show in development, otherwise check isInstallable
-  if (!isInstallable && process.env.NODE_ENV !== 'development') {
-    console.log('Install button hidden');
-    return null;
-  }
-
-  return (
-    <Button
-      variant="contained"
-      onClick={handleInstallClick}
-      startIcon={<DownloadIcon />}
-      sx={{
-        bgcolor: blue[700],
-        '&:hover': { bgcolor: blue[800] },
-        minWidth: '140px',
-        fontWeight: 'bold'
-      }}
-    >
-      Install App
-    </Button>
-  );
+  readonly platforms: string[];
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed';
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
 }
 
 export default function Header({ 
@@ -186,6 +102,24 @@ export default function Header({
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: AlertColor }>({ open: false, message: '', severity: 'info' })
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [itemUsages, setItemUsages] = useState<Record<string, string>>({})
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Store the event for later use
+      const promptEvent = e as BeforeInstallPromptEvent;
+      setDeferredPrompt(promptEvent);
+      window.deferredPrompt = promptEvent;
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
 
   // Load initial state from IndexedDB
   useEffect(() => {
@@ -687,22 +621,24 @@ export default function Header({
             </Typography>
             <IconButton
               size="small"
-              onClick={() => {
+              onClick={async () => {
                 if (window.matchMedia('(display-mode: standalone)').matches) {
                   alert('App is already installed!');
                   return;
                 }
                 
                 // Check if the browser supports PWA installation
-                if (!window.deferredPrompt) {
+                if (!deferredPrompt) {
                   // Open install instructions if PWA install not available
                   window.open('/install-instructions.html', '_blank');
                   return;
                 }
 
                 // Trigger PWA install prompt
-                window.deferredPrompt.prompt();
-                window.deferredPrompt.userChoice.then((choiceResult) => {
+                try {
+                  await deferredPrompt.prompt();
+                  const choiceResult = await deferredPrompt.userChoice;
+                  
                   if (choiceResult.outcome === 'accepted') {
                     console.log('User accepted the install prompt');
                   } else {
@@ -710,8 +646,14 @@ export default function Header({
                     // Open install instructions if user dismisses prompt
                     window.open('/install-instructions.html', '_blank');
                   }
+                  
+                  // Clear the deferredPrompt
+                  setDeferredPrompt(null);
                   window.deferredPrompt = null;
-                });
+                } catch (error) {
+                  console.error('Error during PWA installation:', error);
+                  window.open('/install-instructions.html', '_blank');
+                }
               }}
               sx={{
                 bgcolor: green[600],
