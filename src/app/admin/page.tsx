@@ -34,7 +34,7 @@ import {
   ToggleButtonGroup,
   ToggleButton
 } from '@mui/material'
-import { GOOGLE_SHEETS_CONFIG, API_URL } from '@/app/config'
+import { GOOGLE_SHEETS_CONFIG, API_URL } from '../config'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'

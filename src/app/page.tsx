@@ -37,7 +37,7 @@ import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email
 import { LineChart, BarChart } from '@mui/x-charts'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
-import { GOOGLE_SHEETS_CONFIG, APP_CONFIG, API_URL } from '@/app/config'
+import { GOOGLE_SHEETS_CONFIG, APP_CONFIG, API_URL } from './config'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
