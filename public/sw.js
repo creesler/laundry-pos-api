@@ -1,4 +1,4 @@
-const CACHE_NAME = 'laundry-pos-cache-v2';
+const CACHE_NAME = 'laundry-pos-v1';
 const FALLBACK_HTML = `
 <!DOCTYPE html>
 <html lang="en">
@@ -21,102 +21,40 @@ const FALLBACK_HTML = `
 // Get the base URL from the service worker scope
 const getBaseUrl = () => self.registration.scope.replace(/\/$/, '');
 
+// Install event - cache basic assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    (async () => {
-      try {
-        const cache = await caches.open(CACHE_NAME);
-        console.log('[Service Worker] Caching app shell and assets');
-        
-        // Create a fallback offline page
-        const fallbackResponse = new Response(FALLBACK_HTML, {
-          headers: { 'Content-Type': 'text/html' }
-        });
-        await cache.put('/offline.html', fallbackResponse);
-        
-        // Cache core assets
-        await cache.addAll([
-          '/',
-          '/manifest.webmanifest',
-          '/icons/icon-192x192.png',
-          '/icons/icon-512x512.png'
-        ]);
-
-        await self.skipWaiting();
-        console.log('[Service Worker] Successfully installed and cached assets');
-      } catch (error) {
-        console.error('[Service Worker] Install failed:', error);
-      }
-    })()
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll([
+        '/',
+        '/manifest.json',
+        '/icons/icon-192x192.png',
+        '/icons/icon-512x512.png'
+      ]);
+    })
   );
 });
 
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    (async () => {
-      try {
-        // Clear old caches
-        const cacheKeys = await caches.keys();
-        const oldCaches = cacheKeys.filter(key => key !== CACHE_NAME);
-        await Promise.all(oldCaches.map(key => caches.delete(key)));
-        
-        await self.clients.claim();
-        console.log('[Service Worker] Activated and claimed clients');
-      } catch (error) {
-        console.error('[Service Worker] Activation failed:', error);
-      }
-    })()
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
   );
 });
 
+// Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    (async () => {
-      try {
-        // Network-first strategy for API requests
-        if (event.request.url.includes('/api/')) {
-          try {
-            const networkResponse = await fetch(event.request);
-            return networkResponse;
-          } catch (error) {
-            const cachedResponse = await caches.match(event.request);
-            return cachedResponse || new Response(JSON.stringify({ error: 'Network error' }), {
-              status: 503,
-              headers: { 'Content-Type': 'application/json' }
-            });
-          }
-        }
-        
-        // Cache-first strategy for static assets
-        const cachedResponse = await caches.match(event.request);
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        try {
-          const networkResponse = await fetch(event.request);
-          
-          // Cache successful GET requests for static assets
-          if (event.request.method === 'GET' && networkResponse.ok) {
-            const cache = await caches.open(CACHE_NAME);
-            cache.put(event.request, networkResponse.clone());
-          }
-          
-          return networkResponse;
-        } catch (error) {
-          // Return offline page for navigation requests
-          if (event.request.mode === 'navigate') {
-            const offlineResponse = await caches.match('/offline.html');
-            return offlineResponse || new Response(FALLBACK_HTML, {
-              headers: { 'Content-Type': 'text/html' }
-            });
-          }
-          throw error;
-        }
-      } catch (error) {
-        console.error('[Service Worker] Fetch failed:', error);
-        throw error;
-      }
-    })()
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
   );
 }); 
