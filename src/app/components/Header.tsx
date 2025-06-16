@@ -23,6 +23,7 @@ import ShareIcon from '@mui/icons-material/Share'
 import { saveToIndexedDB, getFromIndexedDB } from '../utils/db'
 import { TimeEntry, SalesRecord } from '../types'
 import { API_URL } from '../config'
+import { Download as DownloadIcon } from '@mui/icons-material'
 
 interface HeaderProps {
   onShareClick: () => void
@@ -66,6 +67,64 @@ interface HeaderProps {
   }>>>
   savedData: SalesRecord[]
   setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>
+}
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+function InstallButton() {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstallable(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    await deferredPrompt.prompt();
+    const choiceResult = await deferredPrompt.userChoice;
+
+    if (choiceResult.outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+      setIsInstallable(false);
+    }
+
+    setDeferredPrompt(null);
+  };
+
+  if (!isInstallable) return null;
+
+  return (
+    <Button
+      variant="contained"
+      onClick={handleInstallClick}
+      startIcon={<DownloadIcon />}
+      sx={{
+        bgcolor: blue[700],
+        '&:hover': { bgcolor: blue[800] }
+      }}
+    >
+      Install App
+    </Button>
+  );
 }
 
 export default function Header({ 
@@ -603,16 +662,16 @@ export default function Header({
                 <ShareIcon sx={{ fontSize: '2.2vh', color: blue[600] }} />
               </IconButton>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Button
+                <Button
                   variant="contained"
-                onClick={onOpenTimesheet}
-                sx={{
-                  bgcolor: blue[600],
+                  onClick={onOpenTimesheet}
+                  sx={{
+                    bgcolor: blue[600],
                     '&:hover': { bgcolor: blue[700] }
-                }}
-              >
-                Timesheet
-              </Button>
+                  }}
+                >
+                  Timesheet
+                </Button>
                 <Button
                   variant="contained"
                   onClick={onSaveToServer}
@@ -623,6 +682,7 @@ export default function Header({
                 >
                   Save to Server
                 </Button>
+                <InstallButton />
               </Box>
             </Box>
           </Box>

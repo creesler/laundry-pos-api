@@ -7,7 +7,6 @@ import { CacheProvider } from '@emotion/react';
 import createEmotionCache from '../utils/createEmotionCache';
 import { registerServiceWorker } from '../pwa';
 import theme from '../theme';
-import PWAInstallButton from './PWAInstallButton';
 
 const clientSideEmotionCache = createEmotionCache();
 
@@ -20,7 +19,6 @@ export default function PWARoot({ children }: { children: React.ReactNode }) {
     <CacheProvider value={clientSideEmotionCache}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <PWAInstallButton />
         {children}
       </ThemeProvider>
     </CacheProvider>
