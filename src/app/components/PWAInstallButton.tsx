@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Button } from '@mui/material';
 import { Download as DownloadIcon } from '@mui/icons-material';

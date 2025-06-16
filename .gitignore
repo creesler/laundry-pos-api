@@ -59,7 +59,7 @@ desktop.ini
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+next-env.d.ts 
 
 # Dependencies
 node_modules/

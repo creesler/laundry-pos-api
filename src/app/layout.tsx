@@ -1,20 +1,9 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import theme from './theme';
-import dynamic from 'next/dynamic';
-import { useEffect } from 'react';
-import { registerServiceWorker } from './pwa';
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v13-appRouter';
+import PWARoot from './components/PWARoot';
 
 const inter = Inter({ subsets: ['latin'] });
-
-// Dynamically import PWAInstallButton with no SSR
-const PWAInstallButton = dynamic(
-  () => import('./components/PWAInstallButton'),
-  { ssr: false }
-);
 
 export const metadata = {
   title: 'Laundry POS',
@@ -31,10 +20,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  useEffect(() => {
-    registerServiceWorker();
-  }, []);
-
   return (
     <html lang="en">
       <head>
@@ -44,11 +29,9 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AppRouterCacheProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
+          <PWARoot>
             {children}
-            <PWAInstallButton />
-          </ThemeProvider>
+          </PWARoot>
         </AppRouterCacheProvider>
       </body>
     </html>
