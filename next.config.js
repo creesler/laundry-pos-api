@@ -35,17 +35,25 @@ const nextConfig = {
           {
             key: 'Content-Type',
             value: 'application/manifest+json'
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*'
           }
         ]
       }
     ]
   },
-  // Ensure PWA assets are handled correctly
+  // Handle PWA and static assets
   async rewrites() {
     return [
       {
         source: '/manifest.json',
         destination: '/manifest.json'
+      },
+      {
+        source: '/icons/:path*',
+        destination: '/icons/:path*'
       }
     ]
   }
