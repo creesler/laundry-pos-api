@@ -28,6 +28,24 @@ const nextConfig = {
             value: 'Content-Type, Authorization'
           }
         ]
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json'
+          }
+        ]
+      }
+    ]
+  },
+  // Ensure PWA assets are handled correctly
+  async rewrites() {
+    return [
+      {
+        source: '/manifest.json',
+        destination: '/manifest.json'
       }
     ]
   }

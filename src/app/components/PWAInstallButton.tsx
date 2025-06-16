@@ -14,7 +14,10 @@ export default function PWAInstallButton() {
   const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
+    console.log('PWAInstallButton mounted');
+
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('beforeinstallprompt event fired');
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
       // Store the event for later use
@@ -23,12 +26,23 @@ export default function PWAInstallButton() {
       setIsInstallable(true);
     };
 
+    // Force show button in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode - showing install button');
+      setIsInstallable(true);
+    }
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // Check if the app is already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('App is already installed');
       setIsInstallable(false);
     }
+
+    // Log PWA support status
+    console.log('Service Worker supported:', 'serviceWorker' in navigator);
+    console.log('Display Mode:', window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -36,26 +50,41 @@ export default function PWAInstallButton() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-
-    // Show the install prompt
-    await deferredPrompt.prompt();
-
-    // Wait for the user to respond to the prompt
-    const choiceResult = await deferredPrompt.userChoice;
-
-    if (choiceResult.outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-      setIsInstallable(false);
-    } else {
-      console.log('User dismissed the install prompt');
+    console.log('Install button clicked');
+    
+    if (!deferredPrompt) {
+      console.log('No deferred prompt available');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Development mode - simulating install');
+        alert('In development mode. In production, this would trigger the install prompt.');
+        return;
+      }
+      return;
     }
 
-    // Clear the deferredPrompt for the next time
-    setDeferredPrompt(null);
+    try {
+      // Show the install prompt
+      await deferredPrompt.prompt();
+
+      // Wait for the user to respond to the prompt
+      const choiceResult = await deferredPrompt.userChoice;
+
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+        setIsInstallable(false);
+      } else {
+        console.log('User dismissed the install prompt');
+      }
+
+      // Clear the deferredPrompt for the next time
+      setDeferredPrompt(null);
+    } catch (error) {
+      console.error('Error during installation:', error);
+    }
   };
 
-  if (!isInstallable) return null;
+  // Always render in development mode
+  if (!isInstallable && process.env.NODE_ENV !== 'development') return null;
 
   return (
     <Button
@@ -70,6 +99,7 @@ export default function PWAInstallButton() {
         borderRadius: '24px',
         padding: '1vh 2vh',
         boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        zIndex: 9999,
         '&:hover': {
           boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
         }

@@ -11,7 +11,12 @@ export const metadata = {
   icons: {
     apple: '/icons/icon-192x192.png',
   },
-  themeColor: '#1976d2'
+  themeColor: '#1976d2',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Laundry POS'
+  }
 };
 
 export default function RootLayout({
@@ -23,9 +28,12 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="emotion-insertion-point" content="" />
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="theme-color" content="#1976d2" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Laundry POS" />
       </head>
       <body className={inter.className}>
         <PWARoot>
