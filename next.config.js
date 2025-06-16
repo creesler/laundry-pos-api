@@ -5,6 +5,23 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+        ],
+      },
+      {
         source: '/:path*',
         headers: [
           {
@@ -44,8 +61,8 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/manifest.json',
-        destination: '/manifest.json'
+        source: '/manifest.webmanifest',
+        destination: '/manifest.webmanifest',
       },
       {
         source: '/sw.js',

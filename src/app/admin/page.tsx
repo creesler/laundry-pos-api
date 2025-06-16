@@ -1430,20 +1430,20 @@ export default function AdminPage() {
             Admin Dashboard
           </Typography>
           <ButtonGroup variant="contained" sx={{ mb: 2 }}>
-            <Button
+                      <Button
               onClick={() => setSelectedTab('sales')}
               color={selectedTab === 'sales' ? 'primary' : 'inherit'}
-            >
+                      >
               Sales Data
-            </Button>
-            <Button
+                      </Button>
+                      <Button
               onClick={() => setSelectedTab('inventory')}
               color={selectedTab === 'inventory' ? 'primary' : 'inherit'}
-            >
+                      >
               Inventory
-            </Button>
-          </ButtonGroup>
-        </Box>
+                      </Button>
+                    </ButtonGroup>
+              </Box>
 
         {selectedTab === 'sales' ? (
           <>
@@ -1485,7 +1485,7 @@ export default function AdminPage() {
                   <ToggleButton value="line">Line</ToggleButton>
                   <ToggleButton value="bar">Bar</ToggleButton>
                 </ToggleButtonGroup>
-              </Box>
+                </Box>
               {renderChart()}
             </Paper>
           </>
@@ -1558,47 +1558,47 @@ export default function AdminPage() {
       <Box
         sx={{
           marginTop: 8,
-          display: 'flex',
+        display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
+        alignItems: 'center',
         }}
       >
         <Typography component="h1" variant="h5">
-          Admin Login
-        </Typography>
+            Admin Login
+          </Typography>
         <Box component="form" onSubmit={handleLogin} sx={{ mt: 1 }}>
-          <TextField
+            <TextField
             margin="normal"
             required
-            fullWidth
+              fullWidth
             id="username"
-            label="Username"
+              label="Username"
             name="username"
             autoComplete="username"
             autoFocus
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <TextField
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+            <TextField
             margin="normal"
             required
-            fullWidth
+              fullWidth
             name="password"
-            label="Password"
-            type="password"
+              label="Password"
+              type="password"
             id="password"
             autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <Button
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Button
             type="submit"
-            fullWidth
-            variant="contained"
+              fullWidth
+              variant="contained"
             sx={{ mt: 3, mb: 2 }}
-          >
+            >
             Sign In
-          </Button>
+            </Button>
         </Box>
       </Box>
     </Container>

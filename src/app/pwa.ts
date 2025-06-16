@@ -1,30 +1,19 @@
-export function registerServiceWorker() {
-  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-    window.addEventListener('load', async () => {
-      try {
-        // First check if manifest exists
-        const manifestResponse = await fetch('/manifest.json');
-        if (!manifestResponse.ok) {
-          throw new Error(`Manifest fetch failed: ${manifestResponse.status} ${manifestResponse.statusText}`);
-        }
-        console.log('Manifest loaded successfully');
-
-        // Then try to register service worker
-        const registration = await navigator.serviceWorker.register('/sw.js');
-        console.log('SW registered:', registration);
-
-        // Check if PWA is installable
-        window.addEventListener('beforeinstallprompt', (e) => {
-          console.log('PWA is installable');
-          // Prevent Chrome 67 and earlier from automatically showing the prompt
-          e.preventDefault();
-        });
-
-      } catch (error) {
-        console.error('PWA setup failed:', error);
-      }
-    });
-  } else {
-    console.log('Service workers are not supported');
+export async function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      console.log('Service Worker registered with scope:', registration.scope);
+      
+      // Fetch the manifest
+      const manifestResponse = await fetch('/manifest.webmanifest');
+      const manifest = await manifestResponse.json();
+      console.log('PWA Manifest loaded:', manifest);
+      
+      return true;
+    } catch (error) {
+      console.error('Service Worker registration failed:', error);
+      return false;
+    }
   }
+  return false;
 } 

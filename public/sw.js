@@ -1,17 +1,15 @@
-const CACHE_NAME = 'laundry-pos-v1';
+const CACHE_NAME = 'laundry-pos-cache-v1';
 const urlsToCache = [
   '/',
-  '/manifest.json',
-  './icons/icon-192x192.png',
-  './icons/icon-512x512.png',
-  '/install-instructions.html'
+  '/manifest.webmanifest',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
   );

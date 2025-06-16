@@ -16,11 +16,7 @@
 # misc
 .DS_Store
 *.pem
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.history
 
 # debug
 npm-debug.log*
@@ -29,30 +25,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
-
-# IDE
-.vscode/
-.idea/
-
-# History files
-.history/
-*/.history/
-
-# Backup files
-*backup*
-*backup.html
-*backup.js
-oldbackup/
-oldbackup.zip
-
-# Temporary files
-*.tmp
-*.temp
-~$*
-
-# System files
-Thumbs.db
-desktop.ini
+.env
 
 # vercel
 .vercel

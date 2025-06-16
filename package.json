@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Laundry POS System",
   "scripts": {
+    "dev": "next dev",
     "dev:backend": "nodemon server.js",
     "dev:frontend": "next dev",
     "build": "next build",
@@ -14,11 +15,11 @@
   },
   "dependencies": {
     "@emailjs/browser": "^3.11.0",
+    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^5.0.0",
     "@mui/material": "^5.17.1",
-    "@mui/material-nextjs": "^7.1.1",
     "@mui/x-charts": "^6.0.0",
     "@mui/x-date-pickers": "^6.0.0",
     "@types/node": "^18.0.0",

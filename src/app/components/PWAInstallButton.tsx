@@ -15,6 +15,8 @@ export default function PWAInstallButton() {
 
   useEffect(() => {
     console.log('PWAInstallButton mounted');
+    console.log('Current environment:', process.env.NODE_ENV);
+    console.log('Initial isInstallable state:', isInstallable);
 
     const handleBeforeInstallPrompt = (e: Event) => {
       console.log('beforeinstallprompt event fired');
@@ -24,33 +26,51 @@ export default function PWAInstallButton() {
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       // Show the install button
       setIsInstallable(true);
+      console.log('Setting isInstallable to true due to beforeinstallprompt event');
     };
 
     // Force show button in development
     if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode - showing install button');
+      console.log('Development mode detected - forcing button visibility');
       setIsInstallable(true);
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // Check if the app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log('App is already installed');
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    console.log('Is app in standalone mode?', isStandalone);
+    
+    if (isStandalone) {
+      console.log('App is already installed - hiding button');
       setIsInstallable(false);
     }
 
     // Log PWA support status
-    console.log('Service Worker supported:', 'serviceWorker' in navigator);
-    console.log('Display Mode:', window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser');
+    const hasServiceWorker = 'serviceWorker' in navigator;
+    console.log('PWA Support Status:', {
+      serviceWorkerSupported: hasServiceWorker,
+      displayMode: isStandalone ? 'standalone' : 'browser',
+      isInstallable: isInstallable,
+      environment: process.env.NODE_ENV
+    });
+
+    // Check if manifest is loaded
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    console.log('Manifest link found:', manifestLink ? 'yes' : 'no');
+    if (manifestLink) {
+      console.log('Manifest href:', manifestLink.getAttribute('href'));
+    }
 
     return () => {
+      console.log('PWAInstallButton unmounting');
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
 
   const handleInstallClick = async () => {
     console.log('Install button clicked');
+    console.log('Current deferredPrompt state:', deferredPrompt ? 'available' : 'not available');
     
     if (!deferredPrompt) {
       console.log('No deferred prompt available');
@@ -63,12 +83,14 @@ export default function PWAInstallButton() {
     }
 
     try {
+      console.log('Attempting to show install prompt');
       // Show the install prompt
       await deferredPrompt.prompt();
 
       // Wait for the user to respond to the prompt
       const choiceResult = await deferredPrompt.userChoice;
 
+      console.log('User choice result:', choiceResult.outcome);
       if (choiceResult.outcome === 'accepted') {
         console.log('User accepted the install prompt');
         setIsInstallable(false);
@@ -83,8 +105,18 @@ export default function PWAInstallButton() {
     }
   };
 
-  // Always render in development mode
-  if (!isInstallable && process.env.NODE_ENV !== 'development') return null;
+  // Log visibility decision
+  const shouldShow = isInstallable || process.env.NODE_ENV === 'development';
+  console.log('Button visibility decision:', {
+    isInstallable,
+    environment: process.env.NODE_ENV,
+    shouldShow
+  });
+
+  if (!shouldShow) {
+    console.log('Install button hidden - conditions not met');
+    return null;
+  }
 
   return (
     <Button
