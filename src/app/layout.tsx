@@ -1,6 +1,5 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v13-appRouter';
 import PWARoot from './components/PWARoot';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -23,16 +22,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name="emotion-insertion-point" content="" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="theme-color" content="#1976d2" />
       </head>
       <body className={inter.className}>
-        <AppRouterCacheProvider>
-          <PWARoot>
-            {children}
-          </PWARoot>
-        </AppRouterCacheProvider>
+        <PWARoot>
+          {children}
+        </PWARoot>
       </body>
     </html>
   );

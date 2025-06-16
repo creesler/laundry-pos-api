@@ -1,28 +1,22 @@
 'use client';
 
-import { useEffect } from 'react';
-import { registerServiceWorker } from '../pwa';
-import dynamic from 'next/dynamic';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { CacheProvider } from '@emotion/react';
+import createEmotionCache from '../utils/createEmotionCache';
 import theme from '../theme';
+import PWAInstallButton from './PWAInstallButton';
 
-// Dynamically import PWAInstallButton with no SSR
-const PWAInstallButton = dynamic(
-  () => import('./PWAInstallButton'),
-  { ssr: false }
-);
+const clientSideEmotionCache = createEmotionCache();
 
 export default function PWARoot({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    registerServiceWorker();
-  }, []);
-
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      {children}
-      <PWAInstallButton />
-    </ThemeProvider>
+    <CacheProvider value={clientSideEmotionCache}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <PWAInstallButton />
+        {children}
+      </ThemeProvider>
+    </CacheProvider>
   );
 } 
