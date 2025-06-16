@@ -69,6 +69,99 @@ interface HeaderProps {
   setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>
 }
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+function InstallButton() {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('Received beforeinstallprompt event');
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setIsInstallable(true);
+    };
+
+    // Always show the button in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode: showing install button');
+      setIsInstallable(true);
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('App is already installed');
+      setIsInstallable(false);
+    } else {
+      console.log('App is not installed');
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    console.log('Install button clicked', { deferredPrompt, isInstallable });
+    
+    if (!deferredPrompt && process.env.NODE_ENV === 'development') {
+      console.log('Development mode: simulating install');
+      alert('In development mode. This would trigger the install prompt in production.');
+      return;
+    }
+
+    if (!deferredPrompt) {
+      console.log('No deferred prompt available');
+      alert('Installation is not available at this time. Please try again later.');
+      return;
+    }
+
+    try {
+      await deferredPrompt.prompt();
+      const choiceResult = await deferredPrompt.userChoice;
+      console.log('User choice:', choiceResult.outcome);
+
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+        setIsInstallable(false);
+      }
+    } catch (error) {
+      console.error('Error during installation:', error);
+      alert('There was an error during installation. Please try again.');
+    }
+
+    setDeferredPrompt(null);
+  };
+
+  // Always show in development, otherwise check isInstallable
+  if (!isInstallable && process.env.NODE_ENV !== 'development') {
+    console.log('Install button hidden');
+    return null;
+  }
+
+  return (
+    <Button
+      variant="contained"
+      onClick={handleInstallClick}
+      startIcon={<DownloadIcon />}
+      sx={{
+        bgcolor: blue[700],
+        '&:hover': { bgcolor: blue[800] },
+        minWidth: '140px',
+        fontWeight: 'bold'
+      }}
+    >
+      Install App
+    </Button>
+  );
+}
+
 export default function Header({ 
   onShareClick, 
   onOpenTimesheet,
@@ -93,25 +186,6 @@ export default function Header({
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: AlertColor }>({ open: false, message: '', severity: 'info' })
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [itemUsages, setItemUsages] = useState<Record<string, string>>({})
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
-      e.preventDefault();
-      // Store the event for later use
-      const promptEvent = e as BeforeInstallPromptEvent;
-      setDeferredPrompt(promptEvent);
-      // Update the global window property
-      (window as any).deferredPrompt = promptEvent;
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
 
   // Load initial state from IndexedDB
   useEffect(() => {
@@ -613,39 +687,18 @@ export default function Header({
             </Typography>
             <IconButton
               size="small"
-              onClick={async () => {
+              onClick={() => {
                 if (window.matchMedia('(display-mode: standalone)').matches) {
                   alert('App is already installed!');
                   return;
                 }
-                
-                // Check if the browser supports PWA installation
-                if (!deferredPrompt) {
-                  // Open install instructions if PWA install not available
-                  window.open('/install-instructions.html', '_blank');
-                  return;
-                }
-
-                // Trigger PWA install prompt
-                try {
-                  await deferredPrompt.prompt();
-                  const choiceResult = await deferredPrompt.userChoice;
-                  
-                  if (choiceResult.outcome === 'accepted') {
-                    console.log('User accepted the install prompt');
-                  } else {
-                    console.log('User dismissed the install prompt');
-                    // Open install instructions if user dismisses prompt
-                    window.open('/install-instructions.html', '_blank');
-                  }
-                  
-                  // Clear the deferredPrompt
-                  setDeferredPrompt(null);
-                  (window as any).deferredPrompt = null;
-                } catch (error) {
-                  console.error('Error during PWA installation:', error);
-                  window.open('/install-instructions.html', '_blank');
-                }
+                const installButton = document.createElement('button');
+                installButton.type = 'button';
+                installButton.style.display = 'none';
+                document.body.appendChild(installButton);
+                installButton.click();
+                document.body.removeChild(installButton);
+                window.open('/install-instructions.html', '_blank');
               }}
               sx={{
                 bgcolor: green[600],
@@ -659,58 +712,54 @@ export default function Header({
             >
               <AndroidIcon />
             </IconButton>
-            <Box sx={{ display: 'flex', gap: '1vh' }}>
-              <IconButton
-                onClick={onShareClick}
+            <IconButton
+              onClick={onShareClick}
+              sx={{
+                bgcolor: grey[100],
+                '&:hover': { bgcolor: grey[200] },
+                width: '4vh',
+                height: '4vh'
+              }}
+            >
+              <ShareIcon sx={{ fontSize: '2.2vh', color: blue[600] }} />
+            </IconButton>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Button
+                variant="contained"
+                onClick={onOpenTimesheet}
                 sx={{
-                  bgcolor: grey[100],
-                  '&:hover': { bgcolor: grey[200] },
-                  width: '4vh',
-                  height: '4vh'
+                  bgcolor: blue[600],
+                  '&:hover': { bgcolor: blue[700] }
                 }}
               >
-                <ShareIcon sx={{ fontSize: '2.2vh', color: blue[600] }} />
-              </IconButton>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Button
-                  variant="contained"
-                  onClick={onOpenTimesheet}
-                  sx={{
-                    bgcolor: blue[600],
-                    '&:hover': { bgcolor: blue[700] }
-                  }}
-                >
-                  Timesheet
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={onSaveToServer}
-                  sx={{
-                    bgcolor: green[600],
-                    '&:hover': { bgcolor: green[700] }
-                  }}
-                >
-                  Save to Server
-                </Button>
-              </Box>
+                Timesheet
+              </Button>
+              <Button
+                variant="contained"
+                onClick={onSaveToServer}
+                sx={{
+                  bgcolor: green[600],
+                  '&:hover': { bgcolor: green[700] }
+                }}
+              >
+                Save to Server
+              </Button>
             </Box>
           </Box>
-          <Typography fontSize="1.6vh" color="textSecondary">
-            Laundry Shop POS Daily Entry
-          </Typography>
         </Box>
+
         <Box display="flex" alignItems="center" gap="1vh" justifyContent={{ xs: 'space-between', md: 'flex-end' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '1vh' }}>
             <Box>
-              <Typography fontSize="2.2vh" color={blue[600]}>
-                {currentTime || '\u00A0'}
+              <Typography fontSize="1.4vh" color={grey[600]}>
+                Time In: {clockInTime}
               </Typography>
-              <Typography fontSize="1.4vh">
-                Time In: {clockInTime} • Time Out: {clockOutTime}
+              <Typography fontSize="1.4vh" color={grey[600]}>
+                Time Out: {clockOutTime}
               </Typography>
             </Box>
-            <Typography fontSize="2.8vh" fontWeight="bold" color={grey[600]} sx={{ ml: 2, mr: 1 }}>
-              Hi{activeEmployee ? ` ${activeEmployee}` : ''}
+            <Typography fontSize="2vh" fontWeight="medium" color={grey[700]} sx={{ ml: 2, mr: 1 }}>
+              Hi {activeEmployee}
             </Typography>
             <Stack direction="row" spacing={1}>
               <Button
@@ -736,17 +785,15 @@ export default function Header({
                 Clock Out
               </Button>
             </Stack>
+            <Avatar sx={{ 
+              bgcolor: blue[500],
+              width: '4vh',
+              height: '4vh',
+              fontSize: '2vh'
+            }}>
+              {activeEmployee?.split(' ').map(n => n[0]).join('')}
+            </Avatar>
           </Box>
-          <Avatar sx={{ 
-            width: '4vh', 
-            height: '4vh',
-            bgcolor: blue[500],
-            color: 'white',
-            fontWeight: 'bold',
-            ml: 1
-          }}>
-            {activeEmployee?.split(' ').map(n => n[0]).join('')}
-          </Avatar>
         </Box>
       </Paper>
 
