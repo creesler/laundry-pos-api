@@ -2,9 +2,9 @@
 window.LaundryAdmin = {};
 
 // API URL constant - automatically detect environment
-const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5000/api'  // Development
-    : 'https://laundry-pos-api.onrender.com/api';  // Production
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:5000/api'  // Development
+  : 'https://laundry-pos-api.onrender.com/api';  // Production
 
 // Wait for all functions to be defined before initializing
 (function(app) {
@@ -174,7 +174,7 @@ const API_URL = window.location.hostname === 'localhost'
 
         const start = new Date(currentPeriodDate);
         const end = new Date(currentPeriodDate);
-
+        
         switch (period) {
             case 'day':
                 start.setHours(0, 0, 0, 0);
@@ -568,7 +568,7 @@ const API_URL = window.location.hostname === 'localhost'
                 const totals = calculateTotals(data);
             updateChart(totals);
                 updateTable(data);
-        } else {
+            } else {
                 // Show empty state but keep the date range display
                 updateChart({
                     coin: 0,
@@ -623,7 +623,7 @@ const API_URL = window.location.hostname === 'localhost'
         // Add or subtract one day
         if (direction === 'next') {
             newDate.setDate(newDate.getDate() + 1);
-        } else {
+            } else {
             newDate.setDate(newDate.getDate() - 1);
         }
         
@@ -634,8 +634,8 @@ const API_URL = window.location.hostname === 'localhost'
         updateDateDisplay();
         
         // Refresh data
-        refreshData();
-        }
+                refreshData();
+            }
 
     // Initialize date navigation
     function initializeDateNavigation() {

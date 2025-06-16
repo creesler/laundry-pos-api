@@ -21,6 +21,7 @@ import { blue, green, grey, red } from '@mui/material/colors'
 import ShareIcon from '@mui/icons-material/Share'
 import { saveToIndexedDB, getFromIndexedDB } from '../utils/db'
 import { TimeEntry, SalesRecord } from '../types'
+import { API_URL } from '../config'
 
 interface HeaderProps {
   onShareClick: () => void
@@ -159,7 +160,7 @@ export default function Header({
       const now = new Date()
       
       // Check for pending timesheets first
-      const pendingResponse = await fetch(`http://localhost:5000/api/timesheets?employeeName=${activeEmployee}&status=pending`);
+      const pendingResponse = await fetch(`${API_URL}/api/timesheets?employeeName=${activeEmployee}&status=pending`);
       const pendingTimesheets = await pendingResponse.json();
       
       // If trying to clock in and there's a pending timesheet, clock out first
@@ -167,7 +168,7 @@ export default function Header({
         const pendingTimesheet = pendingTimesheets[0];
         
         // Clock out from the pending timesheet first
-        const clockOutResponse = await fetch(`http://localhost:5000/api/timesheets/clock-out/${pendingTimesheet._id}`, {
+        const clockOutResponse = await fetch(`${API_URL}/api/timesheets/clock-out/${pendingTimesheet._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -188,7 +189,7 @@ export default function Header({
 
       // Now proceed with the requested action
       if (action === 'in') {
-        const clockInResponse = await fetch('http://localhost:5000/api/timesheets/clock-in', {
+        const clockInResponse = await fetch(`${API_URL}/api/timesheets/clock-in`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -256,7 +257,7 @@ export default function Header({
           throw new Error('No matching clock-in entry found');
         }
 
-        const clockOutResponse = await fetch(`http://localhost:5000/api/timesheets/clock-out/${clockInEntry._id}`, {
+        const clockOutResponse = await fetch(`${API_URL}/api/timesheets/clock-out/${clockInEntry._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -462,7 +463,7 @@ export default function Header({
           const entry = entries[i];
           if (entry.action === 'in') {
             // Create clock-in entry first
-            const clockInResponse = await fetch('http://localhost:5000/api/timesheets/clock-in', {
+            const clockInResponse = await fetch(`${API_URL}/api/timesheets/clock-in`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -488,7 +489,7 @@ export default function Header({
 
             if (clockOut) {
               // Update the timesheet with clock-out time
-              const clockOutResponse = await fetch(`http://localhost:5000/api/timesheets/clock-out/${clockInData._id}`, {
+              const clockOutResponse = await fetch(`${API_URL}/api/timesheets/clock-out/${clockInData._id}`, {
                 method: 'PUT',
                 headers: {
                   'Content-Type': 'application/json'
@@ -519,7 +520,7 @@ export default function Header({
         }));
 
         // Send sales data to server
-        const salesResponse = await fetch('http://localhost:5000/api/sales/bulk', {
+        const salesResponse = await fetch(`${API_URL}/api/sales/bulk`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

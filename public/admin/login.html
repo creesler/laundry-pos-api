@@ -63,9 +63,9 @@
     </div>
 
     <script>
-        const API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:5000/api'
-            : 'https://laundry-pos-api.onrender.com/api';
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:5000/api'  // Development
+            : 'https://laundry-pos-api.onrender.com/api';  // Production
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();

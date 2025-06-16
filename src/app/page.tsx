@@ -37,7 +37,7 @@ import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email
 import { LineChart, BarChart } from '@mui/x-charts'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
-import { GOOGLE_SHEETS_CONFIG, APP_CONFIG } from '@/app/config'
+import { GOOGLE_SHEETS_CONFIG, APP_CONFIG, API_URL } from '@/app/config'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
@@ -1096,9 +1096,7 @@ export default function Home() {
     
     setIsLoadingTimesheet(true);
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetDateRange.startDate.toISOString().split('T')[0]}&endDate=${timesheetDateRange.endDate.toISOString().split('T')[0]}`
-      );
+      const response = await fetch(`${API_URL}/api/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetDateRange.startDate.toISOString().split('T')[0]}&endDate=${timesheetDateRange.endDate.toISOString().split('T')[0]}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch timesheet data');
@@ -1413,7 +1411,7 @@ export default function Home() {
       const localEmployeeList = indexedDBData.employeeList || [];
       
       // Fetch active employees from MongoDB
-      const response = await fetch('http://localhost:5000/api/employees');
+      const response = await fetch(`${API_URL}/api/employees`);
       if (!response.ok) {
         throw new Error('Failed to fetch employee data from server');
       }
@@ -1524,7 +1522,7 @@ export default function Home() {
       };
       console.log('Sync request payload:', JSON.stringify(syncData, null, 2));
 
-      const syncResponse = await fetch('http://localhost:5000/api/sync', {
+      const syncResponse = await fetch(`${API_URL}/api/sync`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

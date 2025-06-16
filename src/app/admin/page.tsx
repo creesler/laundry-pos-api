@@ -34,7 +34,7 @@ import {
   ToggleButtonGroup,
   ToggleButton
 } from '@mui/material'
-import { GOOGLE_SHEETS_CONFIG } from '../config'
+import { GOOGLE_SHEETS_CONFIG, API_URL } from '../config'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers'
@@ -1286,7 +1286,7 @@ export default function AdminPage() {
         }));
 
       // Send to server
-      const response = await fetch('http://localhost:5000/api/timesheets/bulk', {
+      const response = await fetch(`${API_URL}/api/timesheets/bulk`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1320,7 +1320,7 @@ export default function AdminPage() {
   // New functions for inventory management
   const fetchInventoryData = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/inventory');
+      const response = await fetch(`${API_URL}/api/inventory`);
       if (!response.ok) {
         throw new Error('Failed to fetch inventory data');
       }
@@ -1338,7 +1338,7 @@ export default function AdminPage() {
 
   const fetchInventoryLogs = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/inventory/logs');
+      const response = await fetch(`${API_URL}/api/inventory/logs`);
       if (!response.ok) {
         throw new Error('Failed to fetch inventory logs');
       }
