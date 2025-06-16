@@ -28,10 +28,28 @@ const nextConfig = {
             value: 'Content-Type, Authorization'
           }
         ]
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json'
+          }
+        ]
+      },
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate'
+          }
+        ]
       }
     ]
   },
-  // Handle PWA and static assets
+  // Ensure PWA assets are handled correctly
   async rewrites() {
     return [
       {
@@ -39,8 +57,8 @@ const nextConfig = {
         destination: '/manifest.json'
       },
       {
-        source: '/icons/:path*',
-        destination: '/icons/:path*'
+        source: '/sw.js',
+        destination: '/sw.js'
       }
     ]
   }
