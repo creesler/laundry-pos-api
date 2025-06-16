@@ -7,7 +7,6 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata = {
   title: 'Laundry POS',
   description: 'Laundry Point of Sale System',
-  manifest: 'manifest.json',
   icons: {
     apple: '/icons/icon-192x192.png',
   },
@@ -34,7 +33,6 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="emotion-insertion-point" content="" />
-        <link rel="manifest" href="manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="theme-color" content="#1976d2" />
         <meta name="mobile-web-app-capable" content="yes" />
