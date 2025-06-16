@@ -80,15 +80,26 @@ function InstallButton() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('Received beforeinstallprompt event');
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
 
+    // Always show the button in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode: showing install button');
+      setIsInstallable(true);
+    }
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('App is already installed');
       setIsInstallable(false);
+    } else {
+      console.log('App is not installed');
     }
 
     return () => {
@@ -97,20 +108,42 @@ function InstallButton() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    console.log('Install button clicked', { deferredPrompt, isInstallable });
+    
+    if (!deferredPrompt && process.env.NODE_ENV === 'development') {
+      console.log('Development mode: simulating install');
+      alert('In development mode. This would trigger the install prompt in production.');
+      return;
+    }
 
-    await deferredPrompt.prompt();
-    const choiceResult = await deferredPrompt.userChoice;
+    if (!deferredPrompt) {
+      console.log('No deferred prompt available');
+      alert('Installation is not available at this time. Please try again later.');
+      return;
+    }
 
-    if (choiceResult.outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-      setIsInstallable(false);
+    try {
+      await deferredPrompt.prompt();
+      const choiceResult = await deferredPrompt.userChoice;
+      console.log('User choice:', choiceResult.outcome);
+
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+        setIsInstallable(false);
+      }
+    } catch (error) {
+      console.error('Error during installation:', error);
+      alert('There was an error during installation. Please try again.');
     }
 
     setDeferredPrompt(null);
   };
 
-  if (!isInstallable) return null;
+  // Always show in development, otherwise check isInstallable
+  if (!isInstallable && process.env.NODE_ENV !== 'development') {
+    console.log('Install button hidden');
+    return null;
+  }
 
   return (
     <Button
@@ -119,7 +152,9 @@ function InstallButton() {
       startIcon={<DownloadIcon />}
       sx={{
         bgcolor: blue[700],
-        '&:hover': { bgcolor: blue[800] }
+        '&:hover': { bgcolor: blue[800] },
+        minWidth: '140px',
+        fontWeight: 'bold'
       }}
     >
       Install App
@@ -649,6 +684,7 @@ export default function Header({
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="h6" fontSize="2vh" fontWeight="bold">Laundry King</Typography>
+            <InstallButton />
             <Box sx={{ display: 'flex', gap: '1vh' }}>
               <IconButton
                 onClick={onShareClick}
@@ -682,7 +718,6 @@ export default function Header({
                 >
                   Save to Server
                 </Button>
-                <InstallButton />
               </Box>
             </Box>
           </Box>
