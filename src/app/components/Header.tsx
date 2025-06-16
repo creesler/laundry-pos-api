@@ -11,6 +11,7 @@ import {
   Paper,
   Snackbar,
   Alert,
+  AlertColor,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -88,7 +89,7 @@ export default function Header({
   const [clockOutTime, setClockOutTime] = useState('--')
   const [isClockingIn, setIsClockingIn] = useState(false)
   const [isClockingOut, setIsClockingOut] = useState(false)
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' as 'info' | 'error' })
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: AlertColor }>({ open: false, message: '', severity: 'info' })
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [itemUsages, setItemUsages] = useState<Record<string, string>>({})
 
