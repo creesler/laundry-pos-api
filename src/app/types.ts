@@ -19,11 +19,13 @@ export interface InputValues {
 }
 
 export interface TimeEntry {
+  _id?: string;
   date: string;
   time: string;
   action: 'in' | 'out';
   employeeName: string;
   isSaved: boolean;
+  clockOutTime?: string;
 }
 
 export interface SalesRecord {
