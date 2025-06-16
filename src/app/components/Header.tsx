@@ -69,15 +69,6 @@ interface HeaderProps {
   setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>
 }
 
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
-}
-
 export default function Header({ 
   onShareClick, 
   onOpenTimesheet,
@@ -111,7 +102,8 @@ export default function Header({
       // Store the event for later use
       const promptEvent = e as BeforeInstallPromptEvent;
       setDeferredPrompt(promptEvent);
-      window.deferredPrompt = promptEvent;
+      // Update the global window property
+      (window as any).deferredPrompt = promptEvent;
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -649,7 +641,7 @@ export default function Header({
                   
                   // Clear the deferredPrompt
                   setDeferredPrompt(null);
-                  window.deferredPrompt = null;
+                  (window as any).deferredPrompt = null;
                 } catch (error) {
                   console.error('Error during PWA installation:', error);
                   window.open('/install-instructions.html', '_blank');
