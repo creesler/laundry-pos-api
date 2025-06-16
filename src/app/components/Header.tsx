@@ -674,9 +674,10 @@ export default function Header({
             Laundry King
           </Typography>
           <Button
+            size="small"
             variant="contained"
             color="primary"
-            startIcon={<DownloadIcon />}
+            startIcon={<DownloadIcon sx={{ fontSize: '1rem' }} />}
             onClick={() => {
               // Check if the app is already installed
               if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -694,12 +695,15 @@ export default function Header({
               window.open('/install-instructions.html', '_blank');
             }}
             sx={{
+              minWidth: 'auto',
+              padding: '4px 8px',
+              fontSize: '0.75rem',
               bgcolor: green[600],
               '&:hover': { bgcolor: green[700] },
               fontWeight: 'bold'
             }}
           >
-            Download App
+            Download
           </Button>
         </Stack>
         
