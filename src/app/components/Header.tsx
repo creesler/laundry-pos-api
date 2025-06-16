@@ -663,174 +663,148 @@ export default function Header({
 
   return (
     <Box sx={{ width: '100%', bgcolor: 'background.paper', boxShadow: 1, position: 'sticky', top: 0, zIndex: 1100 }}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        spacing={2}
-        sx={{ 
-          px: 2, 
-          py: 1,
-          height: '48px'
-        }}
-      >
-        {/* Left section */}
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
-              color: blue[600],
-              fontWeight: 'bold',
-              fontSize: '1.1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            Laundry King
-          </Typography>
-          <IconButton
-            size="small"
-            onClick={() => {
-              if (window.matchMedia('(display-mode: standalone)').matches) {
-                alert('App is already installed!');
-                return;
-              }
-              const installButton = document.createElement('button');
-              installButton.type = 'button';
-              installButton.style.display = 'none';
-              document.body.appendChild(installButton);
-              installButton.click();
-              document.body.removeChild(installButton);
-              window.open('/install-instructions.html', '_blank');
-            }}
-            sx={{
-              bgcolor: green[600],
-              padding: '4px',
-              '&:hover': { 
-                bgcolor: green[700] 
-              },
-              '& .MuiSvgIcon-root': {
-                fontSize: '1rem',
-                color: 'white'
-              }
-            }}
-          >
-            <AndroidIcon />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={onShareClick}
-            sx={{
-              padding: '4px',
-              '& .MuiSvgIcon-root': {
-                fontSize: '1.2rem'
-              }
-            }}
-          >
-            <ShareIcon />
-          </IconButton>
-        </Stack>
-
-        {/* Center section */}
-        <Stack direction="row" spacing={1} sx={{ flex: 1, justifyContent: 'center' }}>
-          <Button
-            variant="contained"
-            onClick={onOpenTimesheet}
-            sx={{
-              bgcolor: blue[500],
-              '&:hover': { bgcolor: blue[600] },
-              textTransform: 'none',
-              px: 2,
-              py: 0.5,
-              fontSize: '0.9rem'
-            }}
-          >
-            Timesheet
-          </Button>
-          <Button
-            variant="contained"
-            onClick={onSaveToServer}
-            sx={{
-              bgcolor: green[600],
-              '&:hover': { bgcolor: green[700] },
-              textTransform: 'none',
-              px: 2,
-              py: 0.5,
-              fontSize: '0.9rem'
-            }}
-          >
-            Save to Server
-          </Button>
-        </Stack>
-
-        {/* Right section */}
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Box sx={{ textAlign: 'right', mr: 1 }}>
-            <Typography variant="body2" sx={{ color: grey[600], fontSize: '0.75rem' }}>
-              Time In: {clockInTime}
+      <Paper sx={{ 
+        p: '1vh',
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        alignItems: { xs: 'stretch', md: 'center' },
+        justifyContent: 'space-between',
+        gap: { xs: '0.5vh', md: 0 },
+        borderRadius: '8px',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+        minHeight: { xs: 'auto', md: '6vh' }
+      }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '1vh',
+          flex: 1
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6" fontSize="2vh" fontWeight="bold" color={blue[600]}>
+              Laundry King
             </Typography>
-            <Typography variant="body2" sx={{ color: grey[600], fontSize: '0.75rem' }}>
-              Time Out: {clockOutTime}
-            </Typography>
+            <IconButton
+              size="small"
+              onClick={() => {
+                if (window.matchMedia('(display-mode: standalone)').matches) {
+                  alert('App is already installed!');
+                  return;
+                }
+                const installButton = document.createElement('button');
+                installButton.type = 'button';
+                installButton.style.display = 'none';
+                document.body.appendChild(installButton);
+                installButton.click();
+                document.body.removeChild(installButton);
+                window.open('/install-instructions.html', '_blank');
+              }}
+              sx={{
+                bgcolor: green[600],
+                padding: '4px',
+                '&:hover': { bgcolor: green[700] },
+                '& .MuiSvgIcon-root': {
+                  fontSize: '1rem',
+                  color: 'white'
+                }
+              }}
+            >
+              <AndroidIcon />
+            </IconButton>
+            <Box sx={{ display: 'flex', gap: '1vh' }}>
+              <IconButton
+                onClick={onShareClick}
+                sx={{
+                  bgcolor: grey[100],
+                  '&:hover': { bgcolor: grey[200] },
+                  width: '4vh',
+                  height: '4vh'
+                }}
+              >
+                <ShareIcon sx={{ fontSize: '2.2vh', color: blue[600] }} />
+              </IconButton>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Button
+                  variant="contained"
+                  onClick={onOpenTimesheet}
+                  sx={{
+                    bgcolor: blue[600],
+                    '&:hover': { bgcolor: blue[700] }
+                  }}
+                >
+                  Timesheet
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={onSaveToServer}
+                  sx={{
+                    bgcolor: green[600],
+                    '&:hover': { bgcolor: green[700] }
+                  }}
+                >
+                  Save to Server
+                </Button>
+              </Box>
+            </Box>
           </Box>
-          <Typography sx={{ 
-            color: grey[700],
-            fontSize: '1rem',
-            fontWeight: 'medium'
-          }}>
-            Hi {activeEmployee}
+          <Typography fontSize="1.6vh" color="textSecondary">
+            Laundry Shop POS Daily Entry
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => saveEmployeeTimeLocally('in')}
-            disabled={isClockingIn || clockedIn}
-            sx={{
-              bgcolor: clockedIn ? grey[400] : green[600],
-              '&:hover': { bgcolor: clockedIn ? grey[500] : green[700] },
-              textTransform: 'none',
-              px: 2,
-              py: 0.5,
-              fontSize: '0.9rem'
-            }}
-          >
-            Clock In
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleClockOut}
-            disabled={isClockingOut || !clockedIn}
-            sx={{
-              bgcolor: !clockedIn ? grey[400] : red[600],
-              '&:hover': { bgcolor: !clockedIn ? grey[500] : red[700] },
-              textTransform: 'none',
-              px: 2,
-              py: 0.5,
-              fontSize: '0.9rem'
-            }}
-          >
-            Clock Out
-          </Button>
+        </Box>
+        <Box display="flex" alignItems="center" gap="1vh" justifyContent={{ xs: 'space-between', md: 'flex-end' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '1vh' }}>
+            <Box>
+              <Typography fontSize="2.2vh" color={blue[600]}>
+                {currentTime || '\u00A0'}
+              </Typography>
+              <Typography fontSize="1.4vh">
+                Time In: {clockInTime} • Time Out: {clockOutTime}
+              </Typography>
+            </Box>
+            <Typography fontSize="2.8vh" fontWeight="bold" color={grey[600]} sx={{ ml: 2, mr: 1 }}>
+              Hi{activeEmployee ? ` ${activeEmployee}` : ''}
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="contained"
+                onClick={() => saveEmployeeTimeLocally('in')}
+                disabled={isClockingIn || clockedIn}
+                sx={{
+                  bgcolor: clockedIn ? grey[400] : green[600],
+                  '&:hover': { bgcolor: clockedIn ? grey[500] : green[700] }
+                }}
+              >
+                Clock In
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleClockOut}
+                disabled={isClockingOut || !clockedIn}
+                sx={{
+                  bgcolor: !clockedIn ? grey[400] : red[600],
+                  '&:hover': { bgcolor: !clockedIn ? grey[500] : red[700] }
+                }}
+              >
+                Clock Out
+              </Button>
+            </Stack>
+          </Box>
           <Avatar sx={{ 
+            width: '4vh', 
+            height: '4vh',
             bgcolor: blue[500],
-            width: 32,
-            height: 32,
-            fontSize: '0.9rem'
+            color: 'white',
+            fontWeight: 'bold',
+            ml: 1
           }}>
             {activeEmployee?.split(' ').map(n => n[0]).join('')}
           </Avatar>
-        </Stack>
-      </Stack>
+        </Box>
+      </Paper>
 
       {/* Usage Dialog */}
-      <Dialog 
-        open={usageDialogOpen} 
-        onClose={() => {
-          setUsageDialogOpen(false);
-          setItemUsages({});
-        }}
-      >
+      <Dialog open={usageDialogOpen} onClose={() => setUsageDialogOpen(false)}>
         <DialogTitle>Record Today's Usage</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -870,6 +844,7 @@ export default function Header({
         </DialogActions>
       </Dialog>
 
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -880,5 +855,5 @@ export default function Header({
         </Alert>
       </Snackbar>
     </Box>
-  )
+  );
 } 
