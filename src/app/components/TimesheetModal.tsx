@@ -38,7 +38,15 @@ interface TimesheetModalProps {
     endDate: Date;
   };
   onDateRangeChange: (range: { startDate: Date; endDate: Date }) => void;
-  onRequestData: () => Promise<void>;
+  onRequestData: () => Promise<Array<{
+    date: string;
+    timeIn: string;
+    timeOut: string;
+    duration: string;
+    status: string;
+    employeeName: string;
+    isSaved: boolean;
+  }>>;
   isOnline: boolean;
   selectedEmployee: string;
 }

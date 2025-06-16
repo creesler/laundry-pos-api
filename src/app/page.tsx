@@ -61,12 +61,7 @@ const Header = dynamic(() => import('./components/Header'), { ssr: false })
 emailjs.init('your_public_key') // Replace with your EmailJS public key
 
 // Add type declarations for window.gapi and window.google at the top
-declare global {
-  interface Window {
-    gapi: any;
-    google: any;
-  }
-}
+
 
 // Add type for time entry
 interface TimeEntry {

@@ -25,7 +25,9 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
     name: '',
     currentStock: 0,
     maxStock: 100,
-    unit: 'units'
+    minStock: 20,
+    unit: 'units',
+    isDeleted: false
   });
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<string | null>(null);
 
@@ -79,7 +81,8 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
     if (onAddItem) {
       onAddItem({
         ...newItem,
-        currentStock: 0 // Start with 0 used
+        currentStock: 0, // Start with 0 used
+        isDeleted: false
       });
     }
     setAddDialogOpen(false);
@@ -87,7 +90,9 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
       name: '',
       currentStock: 0,
       maxStock: 100,
-      unit: 'units'
+      minStock: 20,
+      unit: 'units',
+      isDeleted: false
     });
   };
 
@@ -275,7 +280,9 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
             name: '',
             currentStock: 0,
             maxStock: 100,
-            unit: 'units'
+            minStock: 20,
+            unit: 'units',
+            isDeleted: false
           });
         }}
       >
@@ -320,7 +327,9 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
               name: '',
               currentStock: 0,
               maxStock: 100,
-              unit: 'units'
+              minStock: 20,
+              unit: 'units',
+              isDeleted: false
             });
           }}>Cancel</Button>
           <Button 

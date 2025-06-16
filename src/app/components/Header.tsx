@@ -512,7 +512,7 @@ export default function Header({
       }
 
       // Now sync sales data
-      const unsavedSales = savedData.filter(entry => entry.isSaved === 'false' || !entry.isSaved);
+      const unsavedSales = savedData.filter(entry => entry.isSaved === false || !entry.isSaved);
       if (unsavedSales.length > 0) {
         // Format entries for server
         const formattedEntries = unsavedSales.map(entry => ({
@@ -536,7 +536,7 @@ export default function Header({
         // Update local state to mark sales as saved
         const updatedSavedData = savedData.map(entry => 
           unsavedSales.some(unsaved => unsaved.Date === entry.Date) 
-            ? { ...entry, isSaved: 'true' }
+            ? { ...entry, isSaved: true }
             : entry
         );
 

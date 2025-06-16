@@ -123,7 +123,7 @@ export const getFromIndexedDB = async (dataTypes: string[] = ['all']): Promise<a
     
     return {
       employeeTimeData: results[0],
-      data: results[1].map((item: any) => ({
+      data: (results[1] as any[]).map((item: any) => ({
         ...item,
         isSaved: item.isSaved === true || item.isSaved === 'true'
       })),

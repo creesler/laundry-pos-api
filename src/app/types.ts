@@ -25,6 +25,7 @@ export interface TimeEntry {
   action: 'in' | 'out';
   employeeName: string;
   isSaved: boolean;
+  clockInTime?: string;
   clockOutTime?: string;
 }
 
@@ -45,9 +46,10 @@ export interface InventoryItem {
   name: string;
   currentStock: number;
   maxStock: number;
+  minStock: number;
   unit: string;
   lastUpdated: string;
-  isDeleted?: boolean;
+  isDeleted: boolean;
   isSaved?: boolean;
 }
 
