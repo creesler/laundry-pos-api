@@ -37,7 +37,7 @@ import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email
 import { LineChart, BarChart } from '@mui/x-charts'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
-import { GOOGLE_SHEETS_CONFIG, APP_CONFIG, API_URL } from './config'
+import { APP_CONFIG, API_URL } from './config'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -53,7 +53,6 @@ import ShareMenu from './components/ShareMenu'
 import AppSnackbar from './components/Snackbar'
 import { SnackbarState, InputValues, InventoryItem, InventoryUpdateLog } from './types'
 import { calculateDailyTotals, calculateChartWidth, calculateDuration, clearAllFields } from './utils/helpers'
-import './types/google'
 import { TimeLogEntry, TimeEntryPair } from './types/time'
 
 // Import Header with no SSR
@@ -97,8 +96,6 @@ interface Employee {
   address?: string;
   role?: string;
 }
-
-
 
 export default function Home() {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('')

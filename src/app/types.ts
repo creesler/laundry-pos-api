@@ -3,7 +3,7 @@ import { AlertColor } from '@mui/material'
 export interface SnackbarState {
   open: boolean;
   message: string;
-  severity: AlertColor;
+  severity: 'success' | 'info' | 'warning' | 'error';
 }
 
 export interface InputValues {
@@ -19,26 +19,36 @@ export interface InputValues {
 }
 
 export interface TimeEntry {
-  _id?: string;
   date: string;
   time: string;
   action: 'in' | 'out';
   employeeName: string;
   isSaved: boolean;
-  clockInTime?: string;
-  clockOutTime?: string | null;
 }
 
-export interface SalesRecord {
-  Date: string;
-  Coin: string;
-  Hopper: string;
-  Soap: string;
-  Vending: string;
-  'Drop Off Amount 1': string;
-  'Drop Off Code': string;
-  'Drop Off Amount 2': string;
+export interface FormattedTimeEntry {
+  date: string;
+  duration: string;
+  employeeName: string;
+}
+
+export interface TimesheetRecord {
+  date: string;
+  timeIn: string;
+  timeOut: string;
+  duration: string;
+  status: 'Completed' | 'Pending';
+  employeeName: string;
   isSaved: boolean;
+}
+
+export interface Employee {
+  _id: string;
+  name: string;
+  status: string;
+  contactNumber?: string;
+  address?: string;
+  role?: string;
 }
 
 export interface InventoryItem {
@@ -65,6 +75,18 @@ export interface InventoryUpdateLog {
   isSaved: boolean;
 }
 
+export interface SalesRecord {
+  Date: string;
+  Coin: string;
+  Hopper: string;
+  Soap: string;
+  Vending: string;
+  'Drop Off Amount 1': string;
+  'Drop Off Code': string;
+  'Drop Off Amount 2': string;
+  isSaved: boolean;
+}
+
 export interface InventoryLog {
   id: string;
   itemId: string;
@@ -75,21 +97,6 @@ export interface InventoryLog {
   updatedBy: string;
   notes?: string;
   isSaved: boolean;
-}
-
-export interface GoogleSheetProperties {
-  title?: string;
-  sheetId?: number;
-}
-
-export interface GoogleSheet {
-  properties?: GoogleSheetProperties;
-}
-
-export interface SpreadsheetData {
-  result: {
-    sheets?: GoogleSheet[];
-  };
 }
 
 export interface SheetRow {
