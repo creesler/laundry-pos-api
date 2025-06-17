@@ -432,7 +432,7 @@ export default function Header({
       await saveToIndexedDB({
         ...dbData,
         inventory: updatedInventory,
-        inventoryLogs: [...(dbData.inventoryLogs || []).filter((log: InventoryLog | null): log is InventoryLog => log !== null), ...updateLogs]
+        inventoryLogs: [...(dbData.inventoryLogs || []).filter((log): log is InventoryLog | null => log !== null), ...updateLogs]
       });
 
       // Update state
@@ -491,83 +491,48 @@ export default function Header({
       }
 
       // Process each employee's entries
-      Array.from(entriesByEmployee.entries()).forEach(([employeeName, entries]) => {
-        // Process entries in pairs (in/out)
-        for (let i = 0; i < entries.length; i++) {
-          const entry = entries[i];
-          if (entry.action === 'in') {
-            // Find matching clock out
-            const clockOut = entries.slice(i + 1).find((e: TimeEntry) => 
-              e.action === 'out' && 
-              e.date === entry.date
-            );
+      const processEmployeeEntries = async () => {
+        for (const [employeeName, entries] of Array.from(entriesByEmployee.entries())) {
+          const timeEntryPairs: TimeEntryPair[] = [];
 
-            if (clockOut) {
-              // Calculate duration between clock in and out
-              const duration = calculateDuration(entry.time, clockOut.time);
-              
-              // Add to employee's total hours
-              employeeHours.set(
-                employeeName,
-                (employeeHours.get(employeeName) || 0) + duration
+          // Process entries to create clock in/out pairs
+          for (let i = 0; i < entries.length; i++) {
+            const entry = entries[i] as TimeLogEntry;
+            if (entry.action === 'in') {
+              // Find matching clock out
+              const clockOut = entries.slice(i + 1).find((e: TimeLogEntry) => 
+                e.action === 'out' && 
+                e.date === entry.date
               );
+
+              if (clockOut) {
+                timeEntryPairs.push({
+                  employeeName,
+                  clockIn: new Date(`${entry.date} ${entry.time}`),
+                  clockOut: new Date(`${clockOut.date} ${clockOut.time}`)
+                });
+                i = entries.indexOf(clockOut); // Skip the out entry we just processed
+              }
+            }
+          }
+
+          // Save time entry pairs for this employee
+          if (timeEntryPairs.length > 0) {
+            try {
+              // TODO: Implement your own save logic here
+              console.log('Saving time entries:', timeEntryPairs);
+            } catch (error) {
+              console.error('Error saving time entries:', error);
+              throw error; // Re-throw to handle in the caller
             }
           }
         }
-      });
+      };
 
-      // Now sync sales data
-      const unsavedSales = savedData.filter(entry => entry.isSaved === false || !entry.isSaved);
-      if (unsavedSales.length > 0) {
-        // Format entries for server
-        const formattedEntries = unsavedSales.map(entry => ({
-          ...entry,
-          isSaved: false // Convert string to boolean
-        }));
-
-        // Send sales data to server
-        const salesResponse = await fetch(`${API_URL}/api/sales/bulk`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ entries: formattedEntries })
-        });
-
-        if (!salesResponse.ok) {
-          throw new Error('Failed to sync sales data');
-        }
-
-        // Update local state to mark sales as saved
-        const updatedSavedData = savedData.map(entry => 
-          unsavedSales.some(unsaved => unsaved.Date === entry.Date) 
-            ? { ...entry, isSaved: true }
-            : entry
-        );
-
-        // Save updated state to IndexedDB
-        const existingData = await getFromIndexedDB() || {};
-        await saveToIndexedDB({
-          ...existingData,
-          data: updatedSavedData
-        });
-
-        setSavedData(updatedSavedData);
-      }
-
-      setSnackbar({
-        open: true,
-        message: 'Successfully synced with server',
-        severity: 'info'
-      });
-
+      await processEmployeeEntries();
     } catch (error) {
-      console.error('Error syncing with server:', error);
-      setSnackbar({
-        open: true,
-        message: error instanceof Error ? error.message : 'Error syncing with server',
-        severity: 'error'
-      });
+      console.error('Error in handleSaveToServer:', error);
+      throw error;
     }
   };
 
