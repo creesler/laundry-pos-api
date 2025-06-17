@@ -444,7 +444,9 @@ export default function Home() {
   }
 
   // Add handlers for share menu
-  const handleShareClick = (_event?: React.MouseEvent<HTMLElement>) => setShareAnchorEl(null)
+  const handleShareClick = useCallback((_event?: React.MouseEvent<Element>) => {
+    // Share click handler implementation
+  }, []);
 
   // Add state for Google API
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
@@ -568,8 +570,7 @@ export default function Home() {
                 }
 
                 // Process and save entries for each employee
-                const employeeEntries = Array.from(entriesByEmployee.entries());
-                for (const [employeeName, entries] of employeeEntries) {
+                for (const [employeeName, entries] of entriesByEmployee) {
                   const timeEntryPairs = [];
 
                   // Process entries to create clock in/out pairs
@@ -1598,6 +1599,9 @@ export default function Home() {
     console.log('👤 Selected employee updated:', selectedEmployee);
   }, [selectedEmployee]);
 
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
   return (
     <>
       <Box sx={{ 
@@ -1654,20 +1658,24 @@ export default function Home() {
               pb: 0
             }
           }}>
-            <Header 
+            <Header
               onShareClick={handleShareClick}
               onOpenTimesheet={handleOpenTimesheet}
               onSaveToServer={saveToServer}
               employeeTimeData={employeeTimeData}
               setEmployeeTimeData={setEmployeeTimeData}
-              activeEmployee={selectedEmployee}
+              activeEmployee={activeEmployee}
               setActiveEmployee={setSelectedEmployee}
               onUpdateInventory={handleUpdateInventory}
               inventory={inventoryItems}
-              setInventoryItems={setInventoryItems}
+              setInventory={setInventoryItems}
+              inventoryLogs={inventoryLogs}
               setInventoryLogs={setInventoryLogs}
               savedData={savedData}
               setSavedData={setSavedData}
+              onMenuClick={() => setDrawerOpen(true)}
+              onNotificationClick={() => setNotificationsOpen(true)}
+              setInventoryItems={setInventoryItems}
             />
             
             {/* Daily Tracker */}
@@ -1689,10 +1697,10 @@ export default function Home() {
               inputValues={inputValues}
               editingIndex={editingIndex}
               onFieldSelect={setSelectedField}
+              onEmployeeSelect={handleEmployeeSelect}
+              onEmployeeChange={handleEmployeeChange}
               onNumpadClick={handleNumpadClick}
               onSave={handleSave}
-              onEmployeeSelect={handleEmployeeSelect}
-              onEmployeeChange={memoizedHandleEmployeeChange}
             />
 
             {/* Sales Overview */}

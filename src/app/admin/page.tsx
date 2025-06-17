@@ -43,6 +43,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns'
 import { blue } from '@mui/material/colors'
 import { LineChart, BarChart } from '@mui/x-charts'
+import { GoogleSheet, SheetRow, SpreadsheetData } from '../types'
 
 interface SnackbarState {
   open: boolean;
@@ -265,7 +266,7 @@ export default function AdminPage() {
   const handleSuccessfulFetch = async (result: any) => {
     // Handle main data
     const rows = result.result.values || [];
-    setData(rows.map(row => ({
+    setData(rows.map((row: SheetRow) => ({
       Date: row[0] || '',
       Coin: row[1] || '',
       Hopper: row[2] || '',
@@ -348,11 +349,11 @@ export default function AdminPage() {
       });
 
       // Check if an employee sheet with this name already exists
-      const sheetExists = spreadsheet.result.sheets?.some(
-        sheet => sheet.properties?.title === sheetName
+      const employeeSheets = spreadsheet.result.sheets?.filter((sheet: GoogleSheet) =>
+        sheet.properties?.title === sheetName
       );
 
-      if (sheetExists) {
+      if (employeeSheets.length > 0) {
         setSnackbar({
           open: true,
           message: 'An employee with this name already exists',
@@ -477,12 +478,12 @@ export default function AdminPage() {
       });
 
       // Filter out non-employee sheets (like the main data sheet)
-      const employeeSheets = spreadsheet.result.sheets?.filter(sheet => 
+      const employeeSheets = spreadsheet.result.sheets?.filter((sheet: GoogleSheet) => 
         sheet.properties?.title !== GOOGLE_SHEETS_CONFIG.RANGE.split('!')[0]
       ) || [];
 
       // Map sheet data to employee info
-      const employeeList = employeeSheets.map(sheet => ({
+      const employeeList = employeeSheets.map((sheet: GoogleSheet) => ({
         name: sheet.properties?.title || '',
         contactNumber: '',  // These will be managed in the sheet itself
         address: ''
@@ -536,11 +537,11 @@ export default function AdminPage() {
         spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID
       });
 
-      const sheet = spreadsheet.result.sheets?.find(
-        s => s.properties?.title === employeeName
+      const targetSheet = spreadsheet.result.sheets?.find((s: GoogleSheet) =>
+        s.properties?.title === employeeName
       );
 
-      if (sheet?.properties?.sheetId) {
+      if (targetSheet?.properties?.sheetId) {
         // Delete the employee's sheet
         await window.gapi.client.sheets.spreadsheets.batchUpdate({
           spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID,
@@ -548,7 +549,7 @@ export default function AdminPage() {
             requests: [
               {
                 deleteSheet: {
-                  sheetId: sheet.properties.sheetId
+                  sheetId: targetSheet.properties.sheetId
                 }
               }
             ]
@@ -607,7 +608,7 @@ export default function AdminPage() {
         
         // Check if sheet exists
         const sheetExists = spreadsheet.result.sheets?.some(
-          sheet => sheet.properties?.title === sheetName
+          (sheet: GoogleSheet) => sheet.properties?.title === sheetName
         );
 
         if (!sheetExists) {
@@ -680,11 +681,11 @@ export default function AdminPage() {
       });
 
       // Find the sheet to rename
-      const sheet = spreadsheet.result.sheets?.find(
-        s => s.properties?.title === oldSheetName
+      const existingSheet = spreadsheet.result.sheets?.find((s: GoogleSheet) =>
+        s.properties?.title === oldSheetName
       );
 
-      if (!sheet?.properties?.sheetId) {
+      if (!existingSheet?.properties?.sheetId) {
         throw new Error('Could not find employee sheet');
       }
 
@@ -702,11 +703,11 @@ export default function AdminPage() {
       }
 
       // Check if new sheet name already exists
-      const sheetExists = spreadsheet.result.sheets?.some(
-        s => s.properties?.title === newSheetName && s.properties?.title !== oldSheetName
+      const duplicateSheet = spreadsheet.result.sheets?.find((s: GoogleSheet) =>
+        s.properties?.title === newSheetName && s.properties?.title !== oldSheetName
       );
 
-      if (sheetExists) {
+      if (duplicateSheet) {
         setSnackbar({
           open: true,
           message: 'An employee with this name already exists',
@@ -724,7 +725,7 @@ export default function AdminPage() {
             {
               updateSheetProperties: {
                 properties: {
-                  sheetId: sheet.properties.sheetId,
+                  sheetId: existingSheet.properties.sheetId,
                   title: newSheetName
                 },
                 fields: 'title'

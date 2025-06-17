@@ -26,7 +26,7 @@ export interface TimeEntry {
   employeeName: string;
   isSaved: boolean;
   clockInTime?: string;
-  clockOutTime?: string;
+  clockOutTime?: string | null;
 }
 
 export interface SalesRecord {
@@ -63,4 +63,35 @@ export interface InventoryUpdateLog {
   updatedBy: string;
   notes?: string;
   isSaved: boolean;
+}
+
+export interface InventoryLog {
+  id: string;
+  itemId: string;
+  previousStock: number;
+  newStock: number;
+  updateType: 'restock' | 'usage' | 'adjustment';
+  timestamp: string;
+  updatedBy: string;
+  notes?: string;
+  isSaved: boolean;
+}
+
+export interface GoogleSheetProperties {
+  title?: string;
+  sheetId?: number;
+}
+
+export interface GoogleSheet {
+  properties?: GoogleSheetProperties;
+}
+
+export interface SpreadsheetData {
+  result: {
+    sheets?: GoogleSheet[];
+  };
+}
+
+export interface SheetRow {
+  [key: string]: string | number | boolean;
 } 

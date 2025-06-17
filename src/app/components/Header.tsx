@@ -24,53 +24,27 @@ import { blue, green, grey, red } from '@mui/material/colors'
 import ShareIcon from '@mui/icons-material/Share'
 import { Android, Menu as MenuIcon, Notifications as NotificationsIcon } from '@mui/icons-material'
 import { saveToIndexedDB, getFromIndexedDB } from '../utils/db'
-import { TimeEntry, SalesRecord } from '../types'
+import { TimeEntry, SalesRecord, InventoryItem, InventoryLog } from '../types'
 import { API_URL } from '../config'
 
-interface HeaderProps {
-  onShareClick: () => void
-  onOpenTimesheet: () => void
-  onSaveToServer: () => Promise<void>
-  employeeTimeData: TimeEntry[]
-  setEmployeeTimeData: React.Dispatch<React.SetStateAction<TimeEntry[]>>
-  activeEmployee: string
-  setActiveEmployee: React.Dispatch<React.SetStateAction<string>>
-  onUpdateInventory: (itemId: string, newStock: number, updateType: 'usage', notes?: string) => void
-  inventory: Array<{
-    id: string
-    name: string
-    currentStock: number
-    maxStock: number
-    minStock: number
-    unit: string
-    isDeleted: boolean
-    lastUpdated: string
-  }>
-  setInventoryItems: React.Dispatch<React.SetStateAction<Array<{
-    id: string
-    name: string
-    currentStock: number
-    maxStock: number
-    minStock: number
-    unit: string
-    isDeleted: boolean
-    lastUpdated: string
-  }>>>
-  setInventoryLogs: React.Dispatch<React.SetStateAction<Array<{
-    id: string
-    itemId: string
-    previousStock: number
-    newStock: number
-    updateType: 'restock' | 'usage' | 'adjustment'
-    timestamp: string
-    updatedBy: string
-    notes?: string
-    isSaved: boolean
-  }>>>
-  savedData: SalesRecord[]
-  setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>
-  onMenuClick: () => void
-  onNotificationClick: () => void
+export interface HeaderProps {
+  onMenuClick: () => void;
+  onNotificationClick: () => void;
+  onShareClick: (_event?: React.MouseEvent<Element>) => void;
+  onOpenTimesheet: () => void;
+  onSaveToServer: () => Promise<void>;
+  employeeTimeData: TimeEntry[];
+  setEmployeeTimeData: React.Dispatch<React.SetStateAction<TimeEntry[]>>;
+  inventory: InventoryItem[];
+  setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
+  inventoryLogs: InventoryLog[];
+  setInventoryLogs: React.Dispatch<React.SetStateAction<InventoryLog[]>>;
+  savedData: SalesRecord[];
+  setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>;
+  activeEmployee: string;
+  setActiveEmployee: React.Dispatch<React.SetStateAction<string>>;
+  onUpdateInventory: (itemId: string, newStock: number, updateType: 'usage', notes?: string) => void;
+  setInventoryItems: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
 }
 
 export default function Header({ 
@@ -108,14 +82,20 @@ export default function Header({
         const data = await getFromIndexedDB()
         if (data?.employeeTimeData) {
           // Filter entries for active employee
-          const employeeEntries = data.employeeTimeData.filter(entry => entry.employeeName === activeEmployee)
+          const employeeEntries = data.employeeTimeData.filter((entry: TimeEntry) => 
+            entry.employeeName === activeEmployee
+          );
           if (employeeEntries.length > 0) {
             const lastEntry = employeeEntries[employeeEntries.length - 1]
             setClockedIn(lastEntry.action === 'in')
             
             // Find last clock in and out times for this employee
-            const lastClockIn = employeeEntries.findLast((entry) => entry.action === 'in')
-            const lastClockOut = employeeEntries.findLast((entry) => entry.action === 'out')
+            const lastClockIn = employeeEntries.findLast((entry: TimeEntry) => 
+              entry.action === 'in'
+            );
+            const lastClockOut = employeeEntries.findLast((entry: TimeEntry) => 
+              entry.action === 'out'
+            );
             
             if (lastClockIn) setClockInTime(lastClockIn.time)
             if (lastClockOut) setClockOutTime(lastClockOut.time)
@@ -417,7 +397,7 @@ export default function Header({
       }).filter(Boolean);
 
       // Update all items in one go
-      const updatedInventory = currentInventory.map(item => {
+      const updatedInventory = currentInventory.map((item: InventoryItem) => {
         const update = itemsToUpdate.find(u => u.itemId === item.id);
         if (!update) return item;
 
@@ -434,16 +414,20 @@ export default function Header({
         };
       });
 
-      // Save everything to IndexedDB in one operation
+      // Update IndexedDB
+      const dbData = await getFromIndexedDB() || {};
       await saveToIndexedDB({
-        ...existingData,
+        ...dbData,
         inventory: updatedInventory,
-        inventoryLogs: [...(existingData.inventoryLogs || []), ...updateLogs]
+        inventoryLogs: [...(dbData.inventoryLogs || []).filter((log: InventoryLog | null): log is InventoryLog => log !== null), ...updateLogs]
       });
 
       // Update state
       setInventoryItems(updatedInventory);
-      setInventoryLogs(prev => [...(prev || []), ...updateLogs]);
+      setInventoryLogs(prev => {
+        const filtered = (prev || []).filter((log): log is InventoryLog => log !== null);
+        return [...filtered, ...updateLogs] as InventoryLog[];
+      });
 
       // Show success message
       setSnackbar({
@@ -516,7 +500,7 @@ export default function Header({
             entry.isSaved = true;
 
             // Find matching clock out
-            const clockOut = entries.slice(i + 1).find(e => 
+            const clockOut = entries.slice(i + 1).find((e: TimeEntry) => 
               e.action === 'out' && 
               e.date === entry.date
             );
