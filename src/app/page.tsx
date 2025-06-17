@@ -53,7 +53,6 @@ import ShareMenu from './components/ShareMenu'
 import AppSnackbar from './components/Snackbar'
 import { SnackbarState, InputValues, InventoryItem, InventoryUpdateLog } from './types'
 import { calculateDailyTotals, calculateChartWidth, calculateDuration, clearAllFields } from './utils/helpers'
-import { sheets } from '@/lib/google'
 import { google } from 'googleapis'
 import { TimeLogEntry, TimeEntryPair } from './types/time'
 
