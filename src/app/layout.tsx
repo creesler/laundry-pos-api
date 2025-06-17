@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { useEffect } from 'react'
+import ServiceWorkerRegistration from './components/ServiceWorkerRegistration'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Laundry King POS',
-  description: 'Laundry Shop POS Daily Entry System',
+  description: 'Laundry Shop POS System',
 }
 
 export default function RootLayout({
@@ -15,12 +15,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(console.error);
-    }
-  }, []);
-
   return (
     <html lang="en">
       <head>
@@ -28,9 +22,8 @@ export default function RootLayout({
         <meta name="theme-color" content="#1976d2" />
       </head>
       <body className={inter.className}>
-        <div className="min-h-screen bg-gray-100">
-          {children}
-        </div>
+        <ServiceWorkerRegistration />
+        {children}
       </body>
     </html>
   )
