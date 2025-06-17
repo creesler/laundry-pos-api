@@ -6,6 +6,7 @@ export const APP_CONFIG = {
   DATE_FORMAT: 'yyyy-MM-dd',
   TIME_FORMAT: 'HH:mm:ss',
   TIMEZONE: 'Asia/Manila',
+  EMAIL_RECIPIENT: 'creesler@gmail.com'
 };
 
 // API Configuration
