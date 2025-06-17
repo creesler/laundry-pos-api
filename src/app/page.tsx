@@ -55,15 +55,13 @@ import { SnackbarState, InputValues, InventoryItem, InventoryUpdateLog } from '.
 import { calculateDailyTotals, calculateChartWidth, calculateDuration, clearAllFields } from './utils/helpers'
 import { google } from 'googleapis'
 import { TimeLogEntry, TimeEntryPair } from './types/time'
+import './types/google'
 
 // Import Header with no SSR
 const Header = dynamic(() => import('./components/Header'), { ssr: false })
 
 // Initialize EmailJS
 emailjs.init('your_public_key') // Replace with your EmailJS public key
-
-// Add type declarations for window.gapi and window.google at the top
-
 
 // Add type for time entry
 interface TimeEntry {
@@ -610,12 +608,17 @@ export default function Home() {
                     // Save time entry pairs for this employee
                     if (timeEntryPairs.length > 0) {
                       try {
+                        const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SHEETS_ID;
+                        if (!spreadsheetId) {
+                          throw new Error('Google Sheets ID is not configured');
+                        }
+
                         const request = {
-                          spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+                          spreadsheetId,
                           range: `${employeeName}!A:F`, // Use employee-specific sheet
-                          valueInputOption: 'USER_ENTERED',
-                          insertDataOption: 'INSERT_ROWS',
-                          requestBody: {
+                          valueInputOption: 'USER_ENTERED' as const,
+                          insertDataOption: 'INSERT_ROWS' as const,
+                          resource: {
                             values: timeEntryPairs.map((pair: TimeEntryPair) => [
                               format(pair.clockIn, 'yyyy-MM-dd'),
                               format(pair.clockIn, 'hh:mm a'),
@@ -628,9 +631,9 @@ export default function Home() {
                               employeeName
                             ])
                           }
-                        };
+                        } as const;
                         
-                        await sheets.spreadsheets.values.append(request);
+                        await window.gapi.client.sheets.spreadsheets.values.append(request);
                       } catch (error) {
                         console.error('Error saving time entries:', error);
                         throw error; // Re-throw to handle in the caller
