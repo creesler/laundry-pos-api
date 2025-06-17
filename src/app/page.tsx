@@ -53,9 +53,8 @@ import ShareMenu from './components/ShareMenu'
 import AppSnackbar from './components/Snackbar'
 import { SnackbarState, InputValues, InventoryItem, InventoryUpdateLog } from './types'
 import { calculateDailyTotals, calculateChartWidth, calculateDuration, clearAllFields } from './utils/helpers'
-import { google } from 'googleapis'
-import { TimeLogEntry, TimeEntryPair } from './types/time'
 import './types/google'
+import { TimeLogEntry, TimeEntryPair } from './types/time'
 
 // Import Header with no SSR
 const Header = dynamic(() => import('./components/Header'), { ssr: false })
@@ -98,16 +97,6 @@ interface Employee {
   address?: string;
   role?: string;
 }
-
-const auth = new google.auth.GoogleAuth({
-  credentials: {
-    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  },
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-});
-
-const sheets = google.sheets({ version: 'v4', auth });
 
 export default function Home() {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('')
