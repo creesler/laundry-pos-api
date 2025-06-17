@@ -47,6 +47,18 @@ export interface HeaderProps {
   setInventoryItems: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
 }
 
+function calculateDuration(startTime: string, endTime: string): number {
+  const [startHours, startMinutes] = startTime.split(':').map(Number);
+  const [endHours, endMinutes] = endTime.split(':').map(Number);
+  
+  let duration = (endHours - startHours) * 60 + (endMinutes - startMinutes);
+  if (duration < 0) {
+    duration += 24 * 60; // Add 24 hours if end time is on next day
+  }
+  
+  return duration / 60; // Convert to hours
+}
+
 export default function Header({ 
   onShareClick, 
   onOpenTimesheet,
@@ -74,6 +86,7 @@ export default function Header({
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [itemUsages, setItemUsages] = useState<Record<string, string>>({})
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const employeeHours = new Map<string, number>();
 
   // Load initial state from IndexedDB
   useEffect(() => {
@@ -466,7 +479,7 @@ export default function Header({
       }
 
       // Group entries by employee
-      const entriesByEmployee = new Map();
+      const entriesByEmployee = new Map<string, TimeEntry[]>();
       for (const entry of unsavedEntries) {
         if (!entriesByEmployee.has(entry.employeeName)) {
           entriesByEmployee.set(entry.employeeName, []);
@@ -475,30 +488,11 @@ export default function Header({
       }
 
       // Process each employee's entries
-      for (const [employeeName, entries] of entriesByEmployee) {
+      Array.from(entriesByEmployee.entries()).forEach(([employeeName, entries]) => {
         // Process entries in pairs (in/out)
         for (let i = 0; i < entries.length; i++) {
           const entry = entries[i];
           if (entry.action === 'in') {
-            // Create clock-in entry first
-            const clockInResponse = await fetch(`${API_URL}/api/timesheets/clock-in`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                employeeName: employeeName, // Use name instead of ID
-                date: new Date(entry.date + ' ' + entry.time).toISOString()
-              })
-            });
-
-            if (!clockInResponse.ok) {
-              throw new Error(`Failed to save clock-in for ${employeeName}`);
-            }
-
-            const clockInData = await clockInResponse.json();
-            entry.isSaved = true;
-
             // Find matching clock out
             const clockOut = entries.slice(i + 1).find((e: TimeEntry) => 
               e.action === 'out' && 
@@ -506,27 +500,18 @@ export default function Header({
             );
 
             if (clockOut) {
-              // Update the timesheet with clock-out time
-              const clockOutResponse = await fetch(`${API_URL}/api/timesheets/clock-out/${clockInData._id}`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  clockOut: new Date(clockOut.date + ' ' + clockOut.time).toISOString()
-                })
-              });
-
-              if (!clockOutResponse.ok) {
-                throw new Error(`Failed to save clock-out for ${employeeName}`);
-              }
-
-              clockOut.isSaved = true;
-              i = entries.indexOf(clockOut); // Skip the out entry we just processed
+              // Calculate duration between clock in and out
+              const duration = calculateDuration(entry.time, clockOut.time);
+              
+              // Add to employee's total hours
+              employeeHours.set(
+                employeeName,
+                (employeeHours.get(employeeName) || 0) + duration
+              );
             }
           }
         }
-      }
+      });
 
       // Now sync sales data
       const unsavedSales = savedData.filter(entry => entry.isSaved === false || !entry.isSaved);
