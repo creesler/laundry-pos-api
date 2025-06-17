@@ -484,7 +484,10 @@ export default function Header({
         if (!entriesByEmployee.has(entry.employeeName)) {
           entriesByEmployee.set(entry.employeeName, []);
         }
-        entriesByEmployee.get(entry.employeeName).push(entry);
+        const entries = entriesByEmployee.get(entry.employeeName);
+        if (entries) {
+          entries.push(entry);
+        }
       }
 
       // Process each employee's entries
