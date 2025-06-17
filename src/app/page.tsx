@@ -53,6 +53,9 @@ import ShareMenu from './components/ShareMenu'
 import AppSnackbar from './components/Snackbar'
 import { SnackbarState, InputValues, InventoryItem, InventoryUpdateLog } from './types'
 import { calculateDailyTotals, calculateChartWidth, calculateDuration, clearAllFields } from './utils/helpers'
+import { sheets } from '@/lib/google'
+import { google } from 'googleapis'
+import { TimeLogEntry, TimeEntryPair } from './types/time'
 
 // Import Header with no SSR
 const Header = dynamic(() => import('./components/Header'), { ssr: false })
@@ -98,6 +101,16 @@ interface Employee {
   address?: string;
   role?: string;
 }
+
+const auth = new google.auth.GoogleAuth({
+  credentials: {
+    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  },
+  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+});
+
+const sheets = google.sheets({ version: 'v4', auth });
 
 export default function Home() {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('')
@@ -560,7 +573,7 @@ export default function Home() {
               // Process and save timesheet entries if any exist
               if (unsavedTimeEntries.length > 0) {
                 // Group entries by employee
-                const entriesByEmployee = new Map<string, any[]>();
+                const entriesByEmployee = new Map<string, TimeLogEntry[]>();
                 
                 for (const entry of unsavedTimeEntries) {
                   if (!entriesByEmployee.has(entry.employeeName)) {
@@ -569,73 +582,65 @@ export default function Home() {
                   entriesByEmployee.get(entry.employeeName)!.push(entry);
                 }
 
-                // Process and save entries for each employee
-                for (const [employeeName, entries] of entriesByEmployee) {
-                  const timeEntryPairs = [];
+                // Process each employee's entries
+                const processEmployeeEntries = async () => {
+                  for (const [employeeName, entries] of Array.from(entriesByEmployee.entries())) {
+                    const timeEntryPairs: TimeEntryPair[] = [];
 
-                  // Process entries to create clock in/out pairs
-                  for (let i = 0; i < entries.length; i++) {
-                    const entry = entries[i];
-                    if (entry.action === 'in') {
-                      // Find matching clock out
-                      const clockOut = entries.slice(i + 1).find((e: any, index: number) => 
-                        index > i && 
-                        e.action === 'out' &&
-                        e.date === entries[i].date
-                      );
+                    // Process entries to create clock in/out pairs
+                    for (let i = 0; i < entries.length; i++) {
+                      const entry = entries[i] as TimeLogEntry;
+                      if (entry.action === 'in') {
+                        // Find matching clock out
+                        const clockOut = entries.slice(i + 1).find((e: TimeLogEntry) => 
+                          e.action === 'out' && 
+                          e.date === entry.date
+                        );
 
-                      // Format date as M/D/YYYY
-                      const dateParts = entry.date.split('-');
-                      const formattedDate = dateParts.length === 3 ? 
-                        `${parseInt(dateParts[1])}/${parseInt(dateParts[2])}/${dateParts[0]}` : 
-                        entry.date;
-
-                      // Format time as h:mm AM/PM
-                      const formattedTimeIn = new Date(`2000/01/01 ${entry.time}`).toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      });
-
-                      const formattedTimeOut = clockOut ? new Date(`2000/01/01 ${clockOut.time}`).toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      }) : '';
-
-                      // Add record with exact format
-                      timeEntryPairs.push([
-                        formattedDate,
-                        formattedTimeIn,
-                        formattedTimeOut,
-                        clockOut ? calculateDuration(entry.time, clockOut.time) : '0h 0m',
-                        'Saved',
-                        employeeName
-                      ]);
-                    }
-                  }
-
-                  if (timeEntryPairs.length > 0) {
-                    try {
-                      const timeResult = await window.gapi.client.sheets.spreadsheets.values.append({
-                        spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID,
-                        range: `${employeeName}!A:F`,
-                        valueInputOption: 'USER_ENTERED',
-                        insertDataOption: 'INSERT_ROWS',
-                        resource: {
-                          values: timeEntryPairs
+                        if (clockOut) {
+                          timeEntryPairs.push({
+                            employeeName,
+                            clockIn: new Date(`${entry.date} ${entry.time}`),
+                            clockOut: new Date(`${clockOut.date} ${clockOut.time}`)
+                          });
+                          i = entries.indexOf(clockOut); // Skip the out entry we just processed
                         }
-                      });
-
-                      if (timeResult.status !== 200) {
-                        throw new Error(`Failed to save timesheet entries for ${employeeName}: ${timeResult.statusText}`);
                       }
-                    } catch (error) {
-                      console.error('Error saving timesheet entries:', error);
-                      throw new Error('Failed to save timesheet entries');
+                    }
+
+                    // Save time entry pairs for this employee
+                    if (timeEntryPairs.length > 0) {
+                      try {
+                        const request = {
+                          spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+                          range: `${employeeName}!A:F`, // Use employee-specific sheet
+                          valueInputOption: 'USER_ENTERED',
+                          insertDataOption: 'INSERT_ROWS',
+                          requestBody: {
+                            values: timeEntryPairs.map((pair: TimeEntryPair) => [
+                              format(pair.clockIn, 'yyyy-MM-dd'),
+                              format(pair.clockIn, 'hh:mm a'),
+                              format(pair.clockOut, 'hh:mm a'),
+                              calculateDuration(
+                                format(pair.clockIn, 'hh:mm a'), 
+                                format(pair.clockOut, 'hh:mm a')
+                              ),
+                              'Saved',
+                              employeeName
+                            ])
+                          }
+                        };
+                        
+                        await sheets.spreadsheets.values.append(request);
+                      } catch (error) {
+                        console.error('Error saving time entries:', error);
+                        throw error; // Re-throw to handle in the caller
+                      }
                     }
                   }
-                }
+                };
+
+                await processEmployeeEntries();
               }
 
               // If we got here, everything was saved successfully
