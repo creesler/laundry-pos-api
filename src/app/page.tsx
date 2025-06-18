@@ -1642,14 +1642,18 @@ export default function Home() {
               md: '2fr 1fr'
             },
             gridTemplateRows: {
-              xs: 'auto auto auto auto minmax(200px, 300px)',
-              md: 'auto 1fr minmax(200px, auto)'
+              xs: 'auto minmax(150px, auto) minmax(250px, auto) minmax(150px, auto) minmax(150px, 200px)',
+              md: 'auto 1fr minmax(180px, auto)'
             },
-            gap: { xs: '2vh', md: '1.5vh' },
+            gap: { xs: '1vh', md: '1.5vh' },
             maxWidth: '100%',
-            maxHeight: '100%',
-            overflow: 'hidden',
-            pb: { xs: '2vh', md: '1vh' }
+            height: '100%',
+            overflow: { xs: 'auto', md: 'hidden' },
+            pb: { xs: '1vh', md: '1vh' },
+            '& > *': {
+              minHeight: 0, // Allow children to shrink below their content size
+              maxHeight: '100%' // Prevent children from growing beyond container
+            }
           }}>
             <Header 
               onShareClick={handleShareClick}
