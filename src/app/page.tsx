@@ -30,28 +30,14 @@ import {
   TableRow,
   Select,
   CircularProgress,
-  Container,
-  Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Drawer,
-  AppBar,
-  Toolbar,
-  Divider
 } from '@mui/material'
 import { blue, green, red, yellow, grey } from '@mui/material/colors'
 import * as XLSX from 'xlsx'
-import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email as EmailIcon, Cloud as CloudIcon, Menu as MenuIcon, Notifications as NotificationsIcon, Delete as DeleteIcon, Add as AddIcon, Close as CloseIcon } from '@mui/icons-material'
+import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email as EmailIcon, Cloud as CloudIcon } from '@mui/icons-material'
 import { LineChart, BarChart } from '@mui/x-charts'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
-import { APP_CONFIG, API_URL } from './config'
+import { GOOGLE_SHEETS_CONFIG, APP_CONFIG, API_URL } from './config'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -67,16 +53,15 @@ import ShareMenu from './components/ShareMenu'
 import AppSnackbar from './components/Snackbar'
 import { SnackbarState, InputValues, InventoryItem, InventoryUpdateLog } from './types'
 import { calculateDailyTotals, calculateChartWidth, calculateDuration, clearAllFields } from './utils/helpers'
-import { TimeLogEntry, TimeEntryPair } from './types/time'
-import Header from './components/Header'
-import Numpad from './components/Numpad'
-import Chart from './components/Chart'
 
 // Import Header with no SSR
-const HeaderComponent = dynamic(() => import('./components/Header'), { ssr: false })
+const Header = dynamic(() => import('./components/Header'), { ssr: false })
 
 // Initialize EmailJS
 emailjs.init('your_public_key') // Replace with your EmailJS public key
+
+// Add type declarations for window.gapi and window.google at the top
+
 
 // Add type for time entry
 interface TimeEntry {
@@ -133,98 +118,102 @@ export default function Home() {
   // Add state for local CSV file path
   const [localCsvPath, setLocalCsvPath] = useState<string>('')
 
-  // Single initialization function to load all data from IndexedDB
-  const initializeFromIndexedDB = async () => {
-    try {
-      console.log('[INIT] Loading data from IndexedDB');
-      const indexedDBData = await getFromIndexedDB() || {};
+  // Single initialization effect to load all data from IndexedDB
+  useEffect(() => {
+    const initializeFromIndexedDB = async () => {
+      try {
+        console.log('[INIT] Loading data from IndexedDB');
+        const indexedDBData = await getFromIndexedDB() || {};
 
-      // Set employee data and selection first
-      if (indexedDBData.employeeList) {
-        console.log('👥 Found employee list in IndexedDB:', indexedDBData.employeeList);
-        setEmployeeList(indexedDBData.employeeList);
-        
-        // Restore last selected employee if valid
-        const lastSelectedEmployee = localStorage.getItem('selectedEmployee');
-        if (lastSelectedEmployee && indexedDBData.employeeList.includes(lastSelectedEmployee)) {
-          console.log('👤 Restoring last selected employee:', lastSelectedEmployee);
-          setSelectedEmployee(lastSelectedEmployee);
-        } else if (indexedDBData.employeeList.length > 0) {
-          const firstEmployee = indexedDBData.employeeList[0];
-          console.log('👤 Selecting first available employee:', firstEmployee);
-          setSelectedEmployee(firstEmployee);
-          localStorage.setItem('selectedEmployee', firstEmployee);
-        }
-      } else {
-        console.log('⚠️ No employee list found in IndexedDB');
-      }
-
-      // Set employee time data
-      if (indexedDBData.employeeTimeData) {
-        console.log('⏰ Found employee time data in IndexedDB');
-        setEmployeeTimeData(indexedDBData.employeeTimeData);
-      }
-
-      // Set sales data
-      if (indexedDBData.data) {
-        console.log('💰 Found sales data in IndexedDB');
-        setSavedData(indexedDBData.data);
-      }
-
-      // Set inventory data
-      if (indexedDBData.inventory) {
-        console.log('📦 Found inventory data in IndexedDB');
-        setInventoryItems(indexedDBData.inventory);
-      } else {
-        // Initialize with default items if none exist
-        console.log('📦 Initializing default inventory items');
-        const defaultItems: InventoryItem[] = [
-          {
-            id: 'soap-1',
-            name: 'Laundry Soap',
-            currentStock: 0,
-            maxStock: 0,
-            minStock: 0,
-            unit: 'bottles',
-            lastUpdated: new Date().toISOString(),
-            isDeleted: false
-          },
-          {
-            id: 'detergent-1',
-            name: 'Detergent',
-            currentStock: 0,
-            maxStock: 0,
-            minStock: 0,
-            unit: 'boxes',
-            lastUpdated: new Date().toISOString(),
-            isDeleted: false
+        // Set employee data and selection first
+        if (indexedDBData.employeeList) {
+          console.log('👥 Found employee list in IndexedDB:', indexedDBData.employeeList);
+          setEmployeeList(indexedDBData.employeeList);
+          
+          // Restore last selected employee if valid
+          const lastSelectedEmployee = localStorage.getItem('selectedEmployee');
+          if (lastSelectedEmployee && indexedDBData.employeeList.includes(lastSelectedEmployee)) {
+            console.log('👤 Restoring last selected employee:', lastSelectedEmployee);
+            setSelectedEmployee(lastSelectedEmployee);
+          } else if (indexedDBData.employeeList.length > 0) {
+            const firstEmployee = indexedDBData.employeeList[0];
+            console.log('👤 Selecting first available employee:', firstEmployee);
+            setSelectedEmployee(firstEmployee);
+            localStorage.setItem('selectedEmployee', firstEmployee);
           }
-        ];
-        setInventoryItems(defaultItems);
-        indexedDBData.inventory = defaultItems;
-      }
+        } else {
+          console.log('⚠️ No employee list found in IndexedDB');
+        }
 
-      // Set inventory logs
-      if (indexedDBData.inventoryLogs) {
-        console.log('📝 Found inventory logs in IndexedDB');
-        setInventoryLogs(indexedDBData.inventoryLogs);
-      }
+        // Set employee time data
+        if (indexedDBData.employeeTimeData) {
+          console.log('⏰ Found employee time data in IndexedDB');
+          setEmployeeTimeData(indexedDBData.employeeTimeData);
+        }
 
-      // Save any default data if it was created
-      if (!indexedDBData.inventory) {
-        console.log('💾 Saving default data to IndexedDB');
-        await saveToIndexedDB(indexedDBData);
-      }
+        // Set sales data
+        if (indexedDBData.data) {
+          console.log('💰 Found sales data in IndexedDB');
+          setSavedData(indexedDBData.data);
+        }
 
-    } catch (error) {
-      console.error('[INIT] Error loading data:', error);
-      setSnackbar({
-        open: true,
-        message: 'Error loading saved data',
-        severity: 'error'
-      });
-    }
-  };
+        // Set inventory data
+        if (indexedDBData.inventory) {
+          console.log('📦 Found inventory data in IndexedDB');
+          setInventoryItems(indexedDBData.inventory);
+        } else {
+          // Initialize with default items if none exist
+          console.log('📦 Initializing default inventory items');
+          const defaultItems: InventoryItem[] = [
+            {
+              id: 'soap-1',
+              name: 'Laundry Soap',
+              currentStock: 0,
+              maxStock: 0,
+              minStock: 0,
+              unit: 'bottles',
+              lastUpdated: new Date().toISOString(),
+              isDeleted: false
+            },
+            {
+              id: 'detergent-1',
+              name: 'Detergent',
+              currentStock: 0,
+              maxStock: 0,
+              minStock: 0,
+              unit: 'boxes',
+              lastUpdated: new Date().toISOString(),
+              isDeleted: false
+            }
+          ];
+          setInventoryItems(defaultItems);
+          indexedDBData.inventory = defaultItems;
+        }
+
+        // Set inventory logs
+        if (indexedDBData.inventoryLogs) {
+          console.log('📝 Found inventory logs in IndexedDB');
+          setInventoryLogs(indexedDBData.inventoryLogs);
+        }
+
+        // Save any default data if it was created
+        if (!indexedDBData.inventory) {
+          console.log('💾 Saving default data to IndexedDB');
+          await saveToIndexedDB(indexedDBData);
+        }
+
+      } catch (error) {
+        console.error('[INIT] Error loading data:', error);
+        setSnackbar({
+          open: true,
+          message: 'Error loading saved data',
+          severity: 'error'
+        });
+      }
+    };
+
+    initializeFromIndexedDB();
+  }, []); // Only run once on mount
 
   // Add states for input fields
   const [selectedField, setSelectedField] = useState<string>('')
@@ -455,31 +444,244 @@ export default function Home() {
   }
 
   // Add handlers for share menu
-  const handleShareClick = useCallback((_event?: React.MouseEvent<Element>) => {
-    // Share click handler implementation
-  }, []);
+  const handleShareClick = (_event?: React.MouseEvent<HTMLElement>) => setShareAnchorEl(null)
 
-
+  // Add state for Google API
+  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+  const [googleToken, setGoogleToken] = useState(null);
 
   useEffect(() => {
-    initializeFromIndexedDB()
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
+    // Load Google Identity Services
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      setIsGoogleLoaded(true);
+    };
+    document.body.appendChild(script);
+
     return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
+      const scriptElement = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      if (scriptElement) {
+        document.body.removeChild(scriptElement);
+      }
+    };
+  }, []);
+
+  const saveToGoogleSheets = async () => {
+    try {
+      if (!isGoogleLoaded) {
+        throw new Error('Google Identity Services not yet loaded');
+      }
+
+      // Initialize the tokenClient
+      const tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_SHEETS_CONFIG.CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/spreadsheets',
+        callback: async (tokenResponse: any) => {
+          if (tokenResponse.error) {
+            throw new Error(`Authentication failed: ${tokenResponse.error}`);
+          }
+
+          if (tokenResponse.access_token) {
+            try {
+              // Initialize the Google API client
+              await new Promise((resolve, reject) => {
+                window.gapi.load('client', async () => {
+                  try {
+                    await window.gapi.client.init({
+                      apiKey: GOOGLE_SHEETS_CONFIG.API_KEY,
+                    });
+                    await window.gapi.client.load('sheets', 'v4');
+                    resolve(null);
+                  } catch (error) {
+                    console.error('Error initializing Google API client:', error);
+                    reject(error);
+                  }
+                });
+              });
+
+              // Set the access token
+              window.gapi.client.setToken({
+                access_token: tokenResponse.access_token
+              });
+
+              // Get only unsaved daily records
+              const unsavedDailyRecords = savedData.filter(item => !item.isSaved);
+              
+              // Sort records by date
+              const sortedUnsavedRecords = unsavedDailyRecords.sort((a: any, b: any) => {
+                const dateA = new Date(a.Date.split('|')[0]);
+                const dateB = new Date(b.Date.split('|')[0]);
+                return dateA.getTime() - dateB.getTime();
+              });
+
+              // Get only unsaved employee time records
+              const unsavedTimeEntries = employeeTimeData.filter(entry => !entry.isSaved);
+
+              let saveSuccess = true;
+
+              // Save daily values if any exist
+              if (sortedUnsavedRecords.length > 0) {
+                const dailyValues = sortedUnsavedRecords.map(item => [
+                  item.Date.split('|')[0],
+                  item.Coin || '',
+                  item.Hopper || '',
+                  item.Soap || '',
+                  item.Vending || '',
+                  item['Drop Off Amount 1'] || '',
+                  item['Drop Off Code'] || '',
+                  item['Drop Off Amount 2'] || ''
+                ]);
+
+                try {
+                  const dailyResult = await window.gapi.client.sheets.spreadsheets.values.append({
+                    spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID,
+                    range: 'Sheet1!A:H',
+                    valueInputOption: 'USER_ENTERED',
+                    insertDataOption: 'INSERT_ROWS',
+                    resource: {
+                      values: dailyValues
+                    }
+                  });
+
+                  if (dailyResult.status !== 200) {
+                    throw new Error(`Failed to save daily records: ${dailyResult.statusText}`);
+                  }
+                } catch (error) {
+                  console.error('Error saving daily records:', error);
+                  throw new Error('Failed to save daily records');
+                }
+              }
+
+              // Process and save timesheet entries if any exist
+              if (unsavedTimeEntries.length > 0) {
+                // Group entries by employee
+                const entriesByEmployee = new Map<string, any[]>();
+                
+                for (const entry of unsavedTimeEntries) {
+                  if (!entriesByEmployee.has(entry.employeeName)) {
+                    entriesByEmployee.set(entry.employeeName, []);
+                  }
+                  entriesByEmployee.get(entry.employeeName)!.push(entry);
+                }
+
+                // Process and save entries for each employee
+                for (const [employeeName, entries] of entriesByEmployee) {
+                  const timeEntryPairs = [];
+
+                  // Process entries to create clock in/out pairs
+                  for (let i = 0; i < entries.length; i++) {
+                    const entry = entries[i];
+                    if (entry.action === 'in') {
+                      // Find matching clock out
+                      const clockOut = entries.slice(i + 1).find((e: any, index: number) => 
+                        index > i && 
+                        e.action === 'out' &&
+                        e.date === entries[i].date
+                      );
+
+                      // Format date as M/D/YYYY
+                      const dateParts = entry.date.split('-');
+                      const formattedDate = dateParts.length === 3 ? 
+                        `${parseInt(dateParts[1])}/${parseInt(dateParts[2])}/${dateParts[0]}` : 
+                        entry.date;
+
+                      // Format time as h:mm AM/PM
+                      const formattedTimeIn = new Date(`2000/01/01 ${entry.time}`).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      });
+
+                      const formattedTimeOut = clockOut ? new Date(`2000/01/01 ${clockOut.time}`).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      }) : '';
+
+                      // Add record with exact format
+                      timeEntryPairs.push([
+                        formattedDate,
+                        formattedTimeIn,
+                        formattedTimeOut,
+                        clockOut ? calculateDuration(entry.time, clockOut.time) : '0h 0m',
+                        'Saved',
+                        employeeName
+                      ]);
+                    }
+                  }
+
+                  if (timeEntryPairs.length > 0) {
+                    try {
+                      const timeResult = await window.gapi.client.sheets.spreadsheets.values.append({
+                        spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID,
+                        range: `${employeeName}!A:F`,
+                        valueInputOption: 'USER_ENTERED',
+                        insertDataOption: 'INSERT_ROWS',
+                        resource: {
+                          values: timeEntryPairs
+                        }
+                      });
+
+                      if (timeResult.status !== 200) {
+                        throw new Error(`Failed to save timesheet entries for ${employeeName}: ${timeResult.statusText}`);
+                      }
+                    } catch (error) {
+                      console.error('Error saving timesheet entries:', error);
+                      throw new Error('Failed to save timesheet entries');
+                    }
+                  }
+                }
+              }
+
+              // If we got here, everything was saved successfully
+              const updatedSavedData = savedData.map(item => 
+                !item.isSaved ? { ...item, isSaved: true } : item
+              );
+              setSavedData(updatedSavedData);
+
+              const updatedTimeData = employeeTimeData.map(entry => 
+                !entry.isSaved ? { ...entry, isSaved: true } : entry
+              );
+              setEmployeeTimeData(updatedTimeData);
+
+              // Update IndexedDB
+              const existingData = await getFromIndexedDB() || {};
+              await saveToIndexedDB({
+                ...existingData,
+                data: updatedSavedData,
+                employeeTimeData: updatedTimeData,
+                lastSynced: new Date().toISOString()
+              });
+
+              setSnackbar({
+                open: true,
+                message: 'Data saved to Google Sheets successfully!',
+                severity: 'success'
+              });
+
+              handleShareClick();
+            } catch (error) {
+              console.error('Error in save operation:', error);
+              throw error;
+            }
+          }
+        }
+      });
+
+      // Request access token
+      tokenClient.requestAccessToken();
+    } catch (error) {
+      console.error('Error in Google Sheets integration:', error);
+      setSnackbar({
+        open: true,
+        message: error instanceof Error ? error.message : 'Failed to save to Google Sheets',
+        severity: 'error'
+      });
     }
-  }, [])
-
-  const handleOnline = () => {
-    setIsOnline(true);
-  }
-
-  const handleOffline = () => {
-    setIsOnline(false);
-  }
-
-
+  };
 
   // Update email function to use config
   const sendEmailWithCSV = () => {
@@ -775,6 +977,28 @@ export default function Home() {
 
     return () => clearInterval(timer)
   }, [])
+
+  // Add online/offline detection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+    }
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+    }
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Initial check
+    setIsOnline(navigator.onLine);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    }
+  }, []);
 
   // Save selected employee to localStorage when it changes
   useEffect(() => {
@@ -1373,13 +1597,6 @@ export default function Home() {
     console.log('👤 Selected employee updated:', selectedEmployee);
   }, [selectedEmployee]);
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-
-  useEffect(() => {
-    initializeFromIndexedDB();
-  }, []);
-
   return (
     <>
       <Box sx={{ 
@@ -1436,24 +1653,20 @@ export default function Home() {
               pb: 0
             }
           }}>
-            <Header
+            <Header 
               onShareClick={handleShareClick}
               onOpenTimesheet={handleOpenTimesheet}
               onSaveToServer={saveToServer}
               employeeTimeData={employeeTimeData}
               setEmployeeTimeData={setEmployeeTimeData}
-              activeEmployee={activeEmployee}
+              activeEmployee={selectedEmployee}
               setActiveEmployee={setSelectedEmployee}
               onUpdateInventory={handleUpdateInventory}
               inventory={inventoryItems}
-              setInventory={setInventoryItems}
-              inventoryLogs={inventoryLogs}
+              setInventoryItems={setInventoryItems}
               setInventoryLogs={setInventoryLogs}
               savedData={savedData}
               setSavedData={setSavedData}
-              onMenuClick={() => setDrawerOpen(true)}
-              onNotificationClick={() => setNotificationsOpen(true)}
-              setInventoryItems={setInventoryItems}
             />
             
             {/* Daily Tracker */}
@@ -1475,10 +1688,10 @@ export default function Home() {
               inputValues={inputValues}
               editingIndex={editingIndex}
               onFieldSelect={setSelectedField}
-              onEmployeeSelect={handleEmployeeSelect}
-              onEmployeeChange={handleEmployeeChange}
               onNumpadClick={handleNumpadClick}
               onSave={handleSave}
+              onEmployeeSelect={handleEmployeeSelect}
+              onEmployeeChange={memoizedHandleEmployeeChange}
             />
 
             {/* Sales Overview */}

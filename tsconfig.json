@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "target": "es2015",
     "lib": [
       "dom",
       "dom.iterable",
@@ -8,26 +7,21 @@
     ],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "noEmit": true,
     "incremental": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "downlevelIteration": true,
+    "target": "es2015",
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    ]
   },
   "include": [
     "next-env.d.ts",

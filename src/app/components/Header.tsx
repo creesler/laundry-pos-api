@@ -16,53 +16,57 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  AppBar,
-  Toolbar
+  TextField
 } from '@mui/material'
 import { blue, green, grey, red } from '@mui/material/colors'
 import ShareIcon from '@mui/icons-material/Share'
-import { Android, Menu as MenuIcon, Notifications as NotificationsIcon } from '@mui/icons-material'
+import { Android as AndroidIcon } from '@mui/icons-material'
 import { saveToIndexedDB, getFromIndexedDB } from '../utils/db'
-import { 
-  TimeEntry, 
-  InventoryItem, 
-  InventoryLog, 
-  SalesRecord,
-  TimeEntryPair 
-} from '../types'
+import { TimeEntry, SalesRecord } from '../types'
 import { API_URL } from '../config'
 
-export interface HeaderProps {
-  onMenuClick: () => void;
-  onNotificationClick: () => void;
-  onShareClick: (_event?: React.MouseEvent<Element>) => void;
-  onOpenTimesheet: () => void;
-  onSaveToServer: () => Promise<void>;
-  employeeTimeData: TimeEntry[];
-  setEmployeeTimeData: React.Dispatch<React.SetStateAction<TimeEntry[]>>;
-  inventory: InventoryItem[];
-  setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
-  inventoryLogs: InventoryLog[];
-  setInventoryLogs: React.Dispatch<React.SetStateAction<InventoryLog[]>>;
-  savedData: SalesRecord[];
-  setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>;
-  activeEmployee: string;
-  setActiveEmployee: React.Dispatch<React.SetStateAction<string>>;
-  onUpdateInventory: (itemId: string, newStock: number, updateType: 'usage', notes?: string) => void;
-  setInventoryItems: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
-}
-
-function calculateDuration(startTime: string, endTime: string): number {
-  const [startHours, startMinutes] = startTime.split(':').map(Number);
-  const [endHours, endMinutes] = endTime.split(':').map(Number);
-  
-  let duration = (endHours - startHours) * 60 + (endMinutes - startMinutes);
-  if (duration < 0) {
-    duration += 24 * 60; // Add 24 hours if end time is on next day
-  }
-  
-  return duration / 60; // Convert to hours
+interface HeaderProps {
+  onShareClick: () => void
+  onOpenTimesheet: () => void
+  onSaveToServer: () => Promise<void>
+  employeeTimeData: TimeEntry[]
+  setEmployeeTimeData: React.Dispatch<React.SetStateAction<TimeEntry[]>>
+  activeEmployee: string
+  setActiveEmployee: React.Dispatch<React.SetStateAction<string>>
+  onUpdateInventory: (itemId: string, newStock: number, updateType: 'usage', notes?: string) => void
+  inventory: Array<{
+    id: string
+    name: string
+    currentStock: number
+    maxStock: number
+    minStock: number
+    unit: string
+    isDeleted: boolean
+    lastUpdated: string
+  }>
+  setInventoryItems: React.Dispatch<React.SetStateAction<Array<{
+    id: string
+    name: string
+    currentStock: number
+    maxStock: number
+    minStock: number
+    unit: string
+    isDeleted: boolean
+    lastUpdated: string
+  }>>>
+  setInventoryLogs: React.Dispatch<React.SetStateAction<Array<{
+    id: string
+    itemId: string
+    previousStock: number
+    newStock: number
+    updateType: 'restock' | 'usage' | 'adjustment'
+    timestamp: string
+    updatedBy: string
+    notes?: string
+    isSaved: boolean
+  }>>>
+  savedData: SalesRecord[]
+  setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>
 }
 
 export default function Header({ 
@@ -78,9 +82,7 @@ export default function Header({
   setInventoryItems,
   setInventoryLogs,
   savedData,
-  setSavedData,
-  onMenuClick,
-  onNotificationClick
+  setSavedData
 }: HeaderProps) {
   const [currentTime, setCurrentTime] = useState('')
   const [clockedIn, setClockedIn] = useState(false)
@@ -91,8 +93,6 @@ export default function Header({
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: AlertColor }>({ open: false, message: '', severity: 'info' })
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [itemUsages, setItemUsages] = useState<Record<string, string>>({})
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
-  const employeeHours = new Map<string, number>();
 
   // Load initial state from IndexedDB
   useEffect(() => {
@@ -101,20 +101,14 @@ export default function Header({
         const data = await getFromIndexedDB()
         if (data?.employeeTimeData) {
           // Filter entries for active employee
-          const employeeEntries = data.employeeTimeData.filter((entry: TimeEntry) => 
-            entry.employeeName === activeEmployee
-          );
+          const employeeEntries = data.employeeTimeData.filter(entry => entry.employeeName === activeEmployee)
           if (employeeEntries.length > 0) {
             const lastEntry = employeeEntries[employeeEntries.length - 1]
             setClockedIn(lastEntry.action === 'in')
             
             // Find last clock in and out times for this employee
-            const lastClockIn = employeeEntries.findLast((entry: TimeEntry) => 
-              entry.action === 'in'
-            );
-            const lastClockOut = employeeEntries.findLast((entry: TimeEntry) => 
-              entry.action === 'out'
-            );
+            const lastClockIn = employeeEntries.findLast((entry) => entry.action === 'in')
+            const lastClockOut = employeeEntries.findLast((entry) => entry.action === 'out')
             
             if (lastClockIn) setClockInTime(lastClockIn.time)
             if (lastClockOut) setClockOutTime(lastClockOut.time)
@@ -149,54 +143,6 @@ export default function Header({
     const interval = setInterval(updateTime, 1000)
     return () => clearInterval(interval)
   }, [])
-
-  // Add event listener for beforeinstallprompt
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-  }, []);
-
-  const handleInstall = async () => {
-    try {
-      if (deferredPrompt) {
-        await deferredPrompt.prompt();
-        const result = await deferredPrompt.userChoice;
-        if (result.outcome === 'accepted') {
-          setDeferredPrompt(null);
-        }
-      } else {
-        // Check if the app is already installed
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-        if (isStandalone) {
-          setSnackbar({
-            open: true,
-            message: 'App is already installed',
-            severity: 'info'
-          });
-          return;
-        }
-
-        // Show instructions for manual installation
-        setSnackbar({
-          open: true,
-          message: 'To install: Open in Chrome and tap Menu > Add to Home Screen',
-          severity: 'info'
-        });
-      }
-    } catch (error) {
-      console.error('Install error:', error);
-      setSnackbar({
-        open: true,
-        message: 'Please use Chrome browser for installation',
-        severity: 'info'
-      });
-    }
-  };
 
   const saveEmployeeTimeLocally = async (action: 'in' | 'out') => {
     if (!activeEmployee) {
@@ -305,10 +251,11 @@ export default function Header({
           .find(entry => 
             entry.employeeName === activeEmployee && 
             entry.action === 'in' && 
+            entry._id && 
             !entry.clockOutTime
           );
 
-        if (!clockInEntry || !clockInEntry._id) {
+        if (!clockInEntry?._id) {
           throw new Error('No matching clock-in entry found');
         }
 
@@ -328,10 +275,10 @@ export default function Header({
         }
 
         // Save locally after successful server save
-        const newEntry: TimeEntry = {
+        const newEntry = {
           date: now.toLocaleDateString(),
           time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
-          action: 'out',
+          action: 'out' as const,
           employeeName: activeEmployee,
           isSaved: true,
           _id: clockInEntry._id,
@@ -438,7 +385,7 @@ export default function Header({
       }).filter(Boolean);
 
       // Update all items in one go
-      const updatedInventory = currentInventory.map((item: InventoryItem) => {
+      const updatedInventory = currentInventory.map(item => {
         const update = itemsToUpdate.find(u => u.itemId === item.id);
         if (!update) return item;
 
@@ -455,20 +402,16 @@ export default function Header({
         };
       });
 
-      // Update IndexedDB
-      const dbData = await getFromIndexedDB() || {};
+      // Save everything to IndexedDB in one operation
       await saveToIndexedDB({
-        ...dbData,
+        ...existingData,
         inventory: updatedInventory,
-        inventoryLogs: [...(dbData.inventoryLogs || []).filter((log: unknown): log is InventoryLog | null => log !== null), ...updateLogs]
+        inventoryLogs: [...(existingData.inventoryLogs || []), ...updateLogs]
       });
 
       // Update state
       setInventoryItems(updatedInventory);
-      setInventoryLogs(prev => {
-        const filtered = (prev || []).filter((log): log is InventoryLog => log !== null);
-        return [...filtered, ...updateLogs] as InventoryLog[];
-      });
+      setInventoryLogs(prev => [...(prev || []), ...updateLogs]);
 
       // Show success message
       setSnackbar({
@@ -507,63 +450,120 @@ export default function Header({
       }
 
       // Group entries by employee
-      const entriesByEmployee = new Map<string, TimeEntry[]>();
+      const entriesByEmployee = new Map();
       for (const entry of unsavedEntries) {
         if (!entriesByEmployee.has(entry.employeeName)) {
           entriesByEmployee.set(entry.employeeName, []);
         }
-        const entries = entriesByEmployee.get(entry.employeeName);
-        if (entries) {
-          entries.push(entry);
-        }
+        entriesByEmployee.get(entry.employeeName).push(entry);
       }
 
       // Process each employee's entries
-      const processEmployeeEntries = async () => {
-        for (const [employeeName, entries] of Array.from(entriesByEmployee.entries())) {
-          const timeEntryPairs: TimeEntryPair[] = [];
+      for (const [employeeName, entries] of entriesByEmployee) {
+        // Process entries in pairs (in/out)
+        for (let i = 0; i < entries.length; i++) {
+          const entry = entries[i];
+          if (entry.action === 'in') {
+            // Create clock-in entry first
+            const clockInResponse = await fetch(`${API_URL}/api/timesheets/clock-in`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                employeeName: employeeName, // Use name instead of ID
+                date: new Date(entry.date + ' ' + entry.time).toISOString()
+              })
+            });
 
-          // Process entries to create clock in/out pairs
-          for (let i = 0; i < entries.length; i++) {
-            const entry = entries[i] as TimeEntry;
-            if (entry.action === 'in') {
-              // Find matching clock out
-              const clockOut = entries.slice(i + 1).find((e: TimeEntry) => 
-                e.action === 'out' && 
-                e.date === entry.date
-              );
-
-              if (clockOut) {
-                timeEntryPairs.push({
-                  clockIn: entry,
-                  clockOut: clockOut,
-                  duration: calculateDuration(
-                    `${entry.date} ${entry.time}`,
-                    `${clockOut.date} ${clockOut.time}`
-                  ).toString()
-                });
-                i = entries.indexOf(clockOut); // Skip the out entry we just processed
-              }
+            if (!clockInResponse.ok) {
+              throw new Error(`Failed to save clock-in for ${employeeName}`);
             }
-          }
 
-          // Save time entry pairs for this employee
-          if (timeEntryPairs.length > 0) {
-            try {
-              // TODO: Implement your own save logic here
-              console.log('Saving time entries:', timeEntryPairs);
-            } catch (error) {
-              console.error('Error saving time entries:', error);
-              throw error; // Re-throw to handle in the caller
+            const clockInData = await clockInResponse.json();
+            entry.isSaved = true;
+
+            // Find matching clock out
+            const clockOut = entries.slice(i + 1).find(e => 
+              e.action === 'out' && 
+              e.date === entry.date
+            );
+
+            if (clockOut) {
+              // Update the timesheet with clock-out time
+              const clockOutResponse = await fetch(`${API_URL}/api/timesheets/clock-out/${clockInData._id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  clockOut: new Date(clockOut.date + ' ' + clockOut.time).toISOString()
+                })
+              });
+
+              if (!clockOutResponse.ok) {
+                throw new Error(`Failed to save clock-out for ${employeeName}`);
+              }
+
+              clockOut.isSaved = true;
+              i = entries.indexOf(clockOut); // Skip the out entry we just processed
             }
           }
         }
-      };
+      }
 
-      await processEmployeeEntries();
+      // Now sync sales data
+      const unsavedSales = savedData.filter(entry => entry.isSaved === false || !entry.isSaved);
+      if (unsavedSales.length > 0) {
+        // Format entries for server
+        const formattedEntries = unsavedSales.map(entry => ({
+          ...entry,
+          isSaved: false // Convert string to boolean
+        }));
+
+        // Send sales data to server
+        const salesResponse = await fetch(`${API_URL}/api/sales/bulk`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ entries: formattedEntries })
+        });
+
+        if (!salesResponse.ok) {
+          throw new Error('Failed to sync sales data');
+        }
+
+        // Update local state to mark sales as saved
+        const updatedSavedData = savedData.map(entry => 
+          unsavedSales.some(unsaved => unsaved.Date === entry.Date) 
+            ? { ...entry, isSaved: true }
+            : entry
+        );
+
+        // Save updated state to IndexedDB
+        const existingData = await getFromIndexedDB() || {};
+        await saveToIndexedDB({
+          ...existingData,
+          data: updatedSavedData
+        });
+
+        setSavedData(updatedSavedData);
+      }
+
+      setSnackbar({
+        open: true,
+        message: 'Successfully synced with server',
+        severity: 'info'
+      });
+
     } catch (error) {
-      console.error('Error in handleSaveToServer:', error);
-      throw error;
+      console.error('Error syncing with server:', error);
+      setSnackbar({
+        open: true,
+        message: error instanceof Error ? error.message : 'Error syncing with server',
+        severity: 'error'
+      });
     }
   };
 
@@ -668,33 +668,19 @@ export default function Header({
               </Button>
             </Stack>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: '1vh' }}>
-            {process.env.NODE_ENV === 'production' && (
-              <IconButton
-                onClick={handleInstall}
-                sx={{
-                  width: '4vh',
-                  height: '4vh',
-                  bgcolor: grey[100],
-                  '&:hover': { bgcolor: grey[200] }
-                }}
-              >
-                <Android sx={{ fontSize: '2.2vh', color: blue[600] }} />
-              </IconButton>
-            )}
-            <Avatar 
-              sx={{ 
-                width: '4vh', 
-                height: '4vh',
-                bgcolor: blue[500],
-                color: 'white',
-                fontWeight: 'bold',
-                ml: 1
-              }}
-            >
-              LK
-            </Avatar>
-          </Box>
+          <Avatar 
+            sx={{ 
+              width: '28px', 
+              height: '28px',
+              bgcolor: blue[500],
+              color: 'white',
+              fontWeight: 'bold',
+              ml: 1,
+              borderRadius: '50%'
+            }}
+          >
+            <AndroidIcon sx={{ fontSize: 16 }} />
+          </Avatar>
         </Box>
       </Paper>
 

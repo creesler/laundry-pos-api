@@ -3,7 +3,7 @@ import { AlertColor } from '@mui/material'
 export interface SnackbarState {
   open: boolean;
   message: string;
-  severity: 'success' | 'info' | 'warning' | 'error';
+  severity: AlertColor;
 }
 
 export interface InputValues {
@@ -26,32 +26,19 @@ export interface TimeEntry {
   employeeName: string;
   isSaved: boolean;
   clockInTime?: string;
-  clockOutTime?: string | null;
+  clockOutTime?: string;
 }
 
-export interface FormattedTimeEntry {
-  date: string;
-  duration: string;
-  employeeName: string;
-}
-
-export interface TimesheetRecord {
-  date: string;
-  timeIn: string;
-  timeOut: string;
-  duration: string;
-  status: 'Completed' | 'Pending';
-  employeeName: string;
+export interface SalesRecord {
+  Date: string;
+  Coin: string;
+  Hopper: string;
+  Soap: string;
+  Vending: string;
+  'Drop Off Amount 1': string;
+  'Drop Off Code': string;
+  'Drop Off Amount 2': string;
   isSaved: boolean;
-}
-
-export interface Employee {
-  _id: string;
-  name: string;
-  status: string;
-  contactNumber?: string;
-  address?: string;
-  role?: string;
 }
 
 export interface InventoryItem {
@@ -76,38 +63,4 @@ export interface InventoryUpdateLog {
   updatedBy: string;
   notes?: string;
   isSaved: boolean;
-}
-
-export interface SalesRecord {
-  Date: string;
-  Coin: string;
-  Hopper: string;
-  Soap: string;
-  Vending: string;
-  'Drop Off Amount 1': string;
-  'Drop Off Code': string;
-  'Drop Off Amount 2': string;
-  isSaved: boolean;
-}
-
-export interface InventoryLog {
-  id: string;
-  itemId: string;
-  previousStock: number;
-  newStock: number;
-  updateType: 'restock' | 'usage' | 'adjustment';
-  timestamp: string;
-  updatedBy: string;
-  notes?: string;
-  isSaved: boolean;
-}
-
-export interface SheetRow {
-  [key: string]: string | number | boolean;
-}
-
-export interface TimeEntryPair {
-  clockIn: TimeEntry;
-  clockOut?: TimeEntry;
-  duration?: string;
 } 
