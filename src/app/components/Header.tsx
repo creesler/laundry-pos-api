@@ -162,16 +162,24 @@ export default function Header({
   }, []);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    
     try {
-      await deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
+      if (deferredPrompt) {
+        await deferredPrompt.prompt();
+        const result = await deferredPrompt.userChoice;
+        if (result.outcome === 'accepted') {
+          setDeferredPrompt(null);
+        }
+      } else {
+        // Fallback for when deferredPrompt is not available
+        window.location.href = window.location.origin + '/manifest.json';
+      }
     } catch (error) {
       console.error('Install error:', error);
+      setSnackbar({
+        open: true,
+        message: 'Please use Chrome browser for installation',
+        severity: 'info'
+      });
     }
   };
 
@@ -646,19 +654,17 @@ export default function Header({
             </Stack>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '1vh' }}>
-            {deferredPrompt && (
-              <IconButton
-                onClick={handleInstall}
-                sx={{
-                  width: '4vh',
-                  height: '4vh',
-                  bgcolor: grey[100],
-                  '&:hover': { bgcolor: grey[200] }
-                }}
-              >
-                <Android sx={{ fontSize: '2.2vh', color: blue[600] }} />
-              </IconButton>
-            )}
+            <IconButton
+              onClick={handleInstall}
+              sx={{
+                width: '4vh',
+                height: '4vh',
+                bgcolor: grey[100],
+                '&:hover': { bgcolor: grey[200] }
+              }}
+            >
+              <Android sx={{ fontSize: '2.2vh', color: blue[600] }} />
+            </IconButton>
             <Avatar 
               sx={{ 
                 width: '4vh', 
