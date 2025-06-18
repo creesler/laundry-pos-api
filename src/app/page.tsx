@@ -1634,7 +1634,8 @@ export default function Home() {
               md: `
                 "header header"
                 "tracker form"
-                "overview inventory"
+                "overview form"
+                "inventory form"
               `
             },
             gridTemplateColumns: {
@@ -1642,14 +1643,14 @@ export default function Home() {
               md: '2fr 1fr'
             },
             gridTemplateRows: {
-              xs: 'auto minmax(150px, auto) minmax(250px, auto) minmax(150px, auto) auto',
-              md: 'auto 1fr minmax(180px, auto)'
+              xs: 'auto auto 1fr auto min-content',
+              md: 'auto 1fr auto auto'
             },
-            gap: { xs: '1vh', md: '1.5vh' },
+            gap: { xs: '0.5vh', md: '1vh' },
             maxWidth: '100%',
             height: '100%',
             overflow: { xs: 'auto', md: 'hidden' },
-            pb: { xs: '1vh', md: '1vh' },
+            pb: { xs: '0.5vh', md: '1vh' },
             '& > *': {
               minHeight: 0,
               maxHeight: '100%'
