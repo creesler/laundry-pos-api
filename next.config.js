@@ -28,6 +28,37 @@ const nextConfig = {
             value: 'Content-Type, Authorization'
           }
         ]
+      },
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate'
+          }
+        ]
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate'
+          }
+        ]
+      }
+    ]
+  },
+  // Ensure service worker and manifest are served from the correct path
+  async rewrites() {
+    return [
+      {
+        source: '/sw.js',
+        destination: '/sw.js'
+      },
+      {
+        source: '/manifest.json',
+        destination: '/manifest.json'
       }
     ]
   }
