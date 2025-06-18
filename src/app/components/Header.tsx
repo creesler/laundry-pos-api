@@ -92,6 +92,7 @@ export default function Header({
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: AlertColor }>({ open: false, message: '', severity: 'info' })
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [itemUsages, setItemUsages] = useState<Record<string, string>>({})
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
 
   // Load initial state from IndexedDB
   useEffect(() => {
@@ -142,6 +143,19 @@ export default function Header({
     const interval = setInterval(updateTime, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.error);
+    }
+
+    // Handle PWA install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    });
+  }, []);
 
   const saveEmployeeTimeLocally = async (action: 'in' | 'out') => {
     if (!activeEmployee) {
@@ -567,6 +581,16 @@ export default function Header({
     }
   };
 
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+  };
+
   return (
     <>
       <Paper sx={{ 
@@ -591,6 +615,20 @@ export default function Header({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="h6" fontSize="2vh" fontWeight="bold">Laundry King</Typography>
             <Box sx={{ display: 'flex', gap: '1vh' }}>
+              <Button
+                onClick={handleInstall}
+                sx={{
+                  bgcolor: 'transparent',
+                  color: 'text.secondary',
+                  '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
+                  fontSize: '1.6vh',
+                  minWidth: 'auto',
+                  p: 0,
+                  mr: 2
+                }}
+              >
+                Download
+              </Button>
               <IconButton
                 onClick={onShareClick}
                 sx={{
