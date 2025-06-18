@@ -158,13 +158,15 @@ export default function Header({
             console.log('Unregistered existing service worker');
           }
           
-          // Get the base URL for the current environment
-          const baseUrl = window.location.origin;
-          console.log('Base URL:', baseUrl);
+          // Get the absolute path to the service worker
+          const swUrl = new URL('/sw.js', window.location.origin).href;
+          console.log('Attempting to register service worker from:', swUrl);
           
           // Try to register the service worker
-          const registration = await navigator.serviceWorker.register('/sw.js', {
+          const registration = await navigator.serviceWorker.register(swUrl, {
             scope: '/',
+            type: 'classic',
+            updateViaCache: 'none'
           });
           
           console.log('ServiceWorker registration successful:', registration.scope);
@@ -180,7 +182,7 @@ export default function Header({
           console.error('ServiceWorker registration failed:', error);
           // Log additional error details
           if (error instanceof TypeError) {
-            console.error('Network error when fetching service worker. Make sure the file exists and is accessible.');
+            console.error('Network error when fetching service worker. URL attempted:', new URL('/sw.js', window.location.origin).href);
           }
         }
       } else {
