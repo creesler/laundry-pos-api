@@ -4,12 +4,9 @@ import path from 'path';
 
 export async function GET() {
   try {
-    const swPath = path.join(process.cwd(), 'public', 'sw.js');
-    const swContent = fs.readFileSync(swPath, 'utf-8');
-
-    return new NextResponse(swContent, {
+    // Redirect to the actual service worker file
+    return NextResponse.redirect(new URL('/sw.js', 'http://localhost:3000'), {
       headers: {
-        'Content-Type': 'application/javascript',
         'Service-Worker-Allowed': '/'
       }
     });

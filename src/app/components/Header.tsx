@@ -149,36 +149,53 @@ export default function Header({
     // Register service worker
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       console.log('Service Worker is supported');
-      window.addEventListener('load', () => {
-        console.log('Window loaded, registering service worker...');
-        navigator.serviceWorker
-          .register('/api/sw')
-          .then(registration => {
-            console.log('ServiceWorker registration successful:', registration.scope);
-          })
-          .catch(error => {
-            console.error('ServiceWorker registration failed:', error);
-          });
-      });
+      
+      // Register immediately instead of waiting for load event
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then(registration => {
+          console.log('ServiceWorker registration successful:', registration.scope);
+          
+          // Check for updates
+          registration.update();
+          
+          // Log active service worker state
+          if (registration.active) {
+            console.log('Service worker is active');
+          }
+        })
+        .catch(error => {
+          console.error('ServiceWorker registration failed:', error);
+        });
     } else {
       console.log('Service Worker is not supported');
     }
 
     // Handle PWA install prompt
-    window.addEventListener('beforeinstallprompt', (e) => {
+    const handleBeforeInstallPrompt = (e: any) => {
       console.log('beforeinstallprompt event fired');
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
       setDeferredPrompt(e);
       setCanInstall(true);
-    });
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // Handle installed event
-    window.addEventListener('appinstalled', () => {
+    const handleAppInstalled = () => {
       console.log('PWA was installed');
       setDeferredPrompt(null);
       setCanInstall(false);
-    });
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
 
   const saveEmployeeTimeLocally = async (action: 'in' | 'out') => {
