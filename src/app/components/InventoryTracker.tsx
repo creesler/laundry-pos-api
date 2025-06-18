@@ -351,7 +351,7 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
         </DialogTitle>
         <DialogContent>
           <Typography fontSize="1.4vh">
-            Are you sure you want to delete "{deleteConfirmItem}"? This action will take effect when you click "Save to Server".
+            Are you sure you want to delete "{deleteConfirmItem}"? This action will take effect when you click "Sync".
           </Typography>
         </DialogContent>
         <DialogActions>

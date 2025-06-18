@@ -23,6 +23,7 @@ import ShareIcon from '@mui/icons-material/Share'
 import { saveToIndexedDB, getFromIndexedDB } from '../utils/db'
 import { TimeEntry, SalesRecord } from '../types'
 import { API_URL } from '../config'
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 
 interface HeaderProps {
   onShareClick: () => void
@@ -95,6 +96,7 @@ export default function Header({
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [isInstallable, setIsInstallable] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Load initial state from IndexedDB
   useEffect(() => {
@@ -745,14 +747,12 @@ export default function Header({
                 Timesheet
               </Button>
                 <Button
-                  variant="contained"
-                  onClick={onSaveToServer}
-                  sx={{
-                    bgcolor: green[600],
-                    '&:hover': { bgcolor: green[700] }
-                  }}
+                  color="inherit"
+                  onClick={syncWithServer}
+                  startIcon={<CloudUploadIcon />}
+                  disabled={!hasUnsavedChanges || isSaving}
                 >
-                  Save to Server
+                  {isSaving ? 'Syncing...' : 'Sync'}
                 </Button>
               </Box>
             </Box>
