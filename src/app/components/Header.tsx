@@ -669,17 +669,19 @@ export default function Header({
             </Stack>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '1vh' }}>
-            <IconButton
-              onClick={handleInstall}
-              sx={{
-                width: '4vh',
-                height: '4vh',
-                bgcolor: grey[100],
-                '&:hover': { bgcolor: grey[200] }
-              }}
-            >
-              <Android sx={{ fontSize: '2.2vh', color: blue[600] }} />
-            </IconButton>
+            {process.env.NODE_ENV === 'production' && (
+              <IconButton
+                onClick={handleInstall}
+                sx={{
+                  width: '4vh',
+                  height: '4vh',
+                  bgcolor: grey[100],
+                  '&:hover': { bgcolor: grey[200] }
+                }}
+              >
+                <Android sx={{ fontSize: '2.2vh', color: blue[600] }} />
+              </IconButton>
+            )}
             <Avatar 
               sx={{ 
                 width: '4vh', 

@@ -7,16 +7,15 @@ export default function ServiceWorkerRegistration() {
     const registerServiceWorker = async () => {
       if ('serviceWorker' in navigator) {
         try {
-          // Get the base URL from the current page
-          const baseUrl = window.location.origin;
-          const registration = await navigator.serviceWorker.register(
-            `${baseUrl}/sw.js`,
-            { scope: '/' }
-          );
-          console.log('Service Worker registered with scope:', registration.scope);
+          // Only register service worker in production
+          if (process.env.NODE_ENV === 'production') {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('Service Worker registered with scope:', registration.scope);
+          } else {
+            console.log('Service Worker registration skipped in development');
+          }
         } catch (error) {
           console.error('Service Worker registration failed:', error);
-          // Don't throw the error - we want the app to work even if SW fails
         }
       }
     };
