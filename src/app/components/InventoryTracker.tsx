@@ -120,17 +120,17 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
       border: '1px solid #e5e7eb', 
       boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
       height: '100%',
-      minHeight: { xs: '250px', md: 'auto' },
-      maxHeight: { xs: 'calc(100vh - 400px)', md: '100%' }
+      minHeight: { xs: '200px', md: 'auto' },
+      maxHeight: { xs: '300px', md: '100%' }
     }}>
       <Box sx={{
         display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
         alignItems: { xs: 'stretch', sm: 'center' },
         justifyContent: 'space-between',
-        gap: { xs: 1, sm: 2 },
-        mb: 2,
-        mt: { xs: 1, md: 0 }
+        gap: { xs: 0.5, sm: 1 },
+        mb: 1,
+        mt: { xs: 0.5, md: 0 }
       }}>
         <Typography 
           fontSize="2.2vh" 

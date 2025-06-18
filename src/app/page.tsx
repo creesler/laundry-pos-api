@@ -1642,8 +1642,8 @@ export default function Home() {
               md: '2fr 1fr'
             },
             gridTemplateRows: {
-              xs: 'auto auto auto auto minmax(300px, 1fr)',
-              md: 'auto 1fr minmax(250px, auto)'
+              xs: 'auto auto auto auto minmax(200px, 300px)',
+              md: 'auto 1fr minmax(200px, auto)'
             },
             gap: { xs: '2vh', md: '1.5vh' },
             maxWidth: '100%',
