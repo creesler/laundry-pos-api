@@ -610,28 +610,17 @@ export default function Header({
     
     if (!deferredPrompt) {
       console.log('No installation prompt available');
-      
-      // Check if running on Android
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      
       if (window.matchMedia('(display-mode: standalone)').matches) {
-        alert('App is already installed!');
-      } else if (isAndroid) {
-        // For Android devices
-        const isChrome = /Chrome/i.test(navigator.userAgent);
-        if (isChrome) {
-          alert('To install: \n1. Tap the menu button (⋮) in Chrome\n2. Select "Install app" or "Add to Home screen"');
-        } else {
-          alert('Please open this site in Chrome to install the app');
-        }
-      } else {
-        alert('App can be installed from your browser menu');
+        setSnackbar({
+          open: true,
+          message: 'App is already installed!',
+          severity: 'info'
+        });
       }
       return;
     }
 
     try {
-      console.log('Triggering installation prompt...');
       // Show the install prompt
       deferredPrompt.prompt();
       
@@ -643,11 +632,19 @@ export default function Header({
         console.log('PWA installation accepted');
         setDeferredPrompt(null);
         setCanInstall(false);
-      } else {
-        console.log('PWA installation rejected');
+        setSnackbar({
+          open: true,
+          message: 'App installed successfully!',
+          severity: 'success'
+        });
       }
     } catch (error) {
       console.error('Error during installation:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to install app. Please try again.',
+        severity: 'error'
+      });
     }
   };
 
