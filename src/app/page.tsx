@@ -568,7 +568,8 @@ export default function Home() {
                 }
 
                 // Process and save entries for each employee
-                for (const [employeeName, entries] of entriesByEmployee) {
+                const employeeEntries = Array.from(entriesByEmployee.entries());
+                for (const [employeeName, entries] of employeeEntries) {
                   const timeEntryPairs = [];
 
                   // Process entries to create clock in/out pairs
