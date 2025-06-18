@@ -1498,7 +1498,7 @@ export default function AdminPage() {
                   value={inventoryChartType}
                   exclusive
                   onChange={(e, value) => value && setInventoryChartType(value)}
-                >
+                        >
                   <ToggleButton value="stock">Stock Levels</ToggleButton>
                   <ToggleButton value="usage">Usage Trends</ToggleButton>
                 </ToggleButtonGroup>

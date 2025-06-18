@@ -93,6 +93,7 @@ export default function Header({
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [itemUsages, setItemUsages] = useState<Record<string, string>>({})
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [canInstall, setCanInstall] = useState(false)
 
   // Load initial state from IndexedDB
   useEffect(() => {
@@ -166,14 +167,17 @@ export default function Header({
     // Handle PWA install prompt
     window.addEventListener('beforeinstallprompt', (e) => {
       console.log('beforeinstallprompt event fired');
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
       setDeferredPrompt(e);
+      setCanInstall(true);
     });
 
     // Handle installed event
     window.addEventListener('appinstalled', () => {
       console.log('PWA was installed');
       setDeferredPrompt(null);
+      setCanInstall(false);
     });
   }, []);
 
@@ -603,13 +607,23 @@ export default function Header({
 
   const handleInstall = async () => {
     console.log('Install button clicked');
-    console.log('Deferred prompt value:', deferredPrompt);
     
     if (!deferredPrompt) {
       console.log('No installation prompt available');
-      // If running as standalone or already installed
+      
+      // Check if running on Android
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      
       if (window.matchMedia('(display-mode: standalone)').matches) {
         alert('App is already installed!');
+      } else if (isAndroid) {
+        // For Android devices
+        const isChrome = /Chrome/i.test(navigator.userAgent);
+        if (isChrome) {
+          alert('To install: \n1. Tap the menu button (⋮) in Chrome\n2. Select "Install app" or "Add to Home screen"');
+        } else {
+          alert('Please open this site in Chrome to install the app');
+        }
       } else {
         alert('App can be installed from your browser menu');
       }
@@ -618,13 +632,17 @@ export default function Header({
 
     try {
       console.log('Triggering installation prompt...');
+      // Show the install prompt
       deferredPrompt.prompt();
+      
+      // Wait for the user to respond to the prompt
       const { outcome } = await deferredPrompt.userChoice;
       console.log('Installation prompt outcome:', outcome);
       
       if (outcome === 'accepted') {
         console.log('PWA installation accepted');
         setDeferredPrompt(null);
+        setCanInstall(false);
       } else {
         console.log('PWA installation rejected');
       }
@@ -661,15 +679,22 @@ export default function Header({
                 onClick={handleInstall}
                 sx={{
                   bgcolor: 'transparent',
-                  color: 'text.secondary',
-                  '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
+                  color: canInstall ? 'primary.main' : 'text.secondary',
+                  '&:hover': { 
+                    bgcolor: 'transparent', 
+                    textDecoration: 'underline',
+                    color: 'primary.main'
+                  },
                   fontSize: '1.6vh',
                   minWidth: 'auto',
                   p: 0,
-                  mr: 2
+                  mr: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5
                 }}
               >
-                Download
+                {canInstall ? '📱 Install App' : 'Download'}
               </Button>
               <IconButton
                 onClick={onShareClick}

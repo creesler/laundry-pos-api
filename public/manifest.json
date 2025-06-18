@@ -2,13 +2,15 @@
   "name": "Laundry POS",
   "short_name": "LaundryPOS",
   "description": "Laundry POS System",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
+  "id": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#1976d2",
   "scope": "/",
   "prefer_related_applications": false,
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "/api/icon?size=192",
@@ -21,6 +23,15 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/api/icon?size=1080",
+      "sizes": "1080x2340",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "Laundry POS App"
     }
   ]
 } 
