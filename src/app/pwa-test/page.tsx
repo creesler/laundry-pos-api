@@ -1,3 +1,5 @@
+'use client';
+
 import { Box, Typography, IconButton, Tooltip } from '@mui/material';
 import { Android } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
