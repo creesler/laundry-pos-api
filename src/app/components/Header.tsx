@@ -146,34 +146,49 @@ export default function Header({
   }, [])
 
   useEffect(() => {
-    // Register service worker
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      console.log('Service Worker is supported');
-      
-      // Get the base URL for the current environment
-      const baseUrl = window.location.origin;
-      console.log('Base URL:', baseUrl);
-      
-      // Register immediately instead of waiting for load event
-      navigator.serviceWorker
-        .register(`${baseUrl}/sw.js`, { scope: '/' })
-        .then(registration => {
+    const registerServiceWorker = async () => {
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        console.log('Service Worker is supported');
+        
+        try {
+          // First, try to unregister any existing service worker
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            await registration.unregister();
+            console.log('Unregistered existing service worker');
+          }
+          
+          // Get the base URL for the current environment
+          const baseUrl = window.location.origin;
+          console.log('Base URL:', baseUrl);
+          
+          // Try to register the service worker
+          const registration = await navigator.serviceWorker.register('/sw.js', {
+            scope: '/',
+          });
+          
           console.log('ServiceWorker registration successful:', registration.scope);
           
           // Check for updates
-          registration.update();
+          await registration.update();
           
           // Log active service worker state
           if (registration.active) {
             console.log('Service worker is active');
           }
-        })
-        .catch(error => {
+        } catch (error) {
           console.error('ServiceWorker registration failed:', error);
-        });
-    } else {
-      console.log('Service Worker is not supported');
-    }
+          // Log additional error details
+          if (error instanceof TypeError) {
+            console.error('Network error when fetching service worker. Make sure the file exists and is accessible.');
+          }
+        }
+      } else {
+        console.log('Service Worker is not supported');
+      }
+    };
+
+    registerServiceWorker();
 
     // Handle PWA install prompt
     const handleBeforeInstallPrompt = (e: any) => {

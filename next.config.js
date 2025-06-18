@@ -2,8 +2,26 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@mui/x-date-pickers'],
+  
+  // Ensure static files are copied to the output directory
+  output: 'standalone',
+  
   async headers() {
     return [
+      {
+        // Service Worker specific headers
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate'
+          },
+          {
+            key: 'Service-Worker-Allowed',
+            value: '/'
+          }
+        ]
+      },
       {
         source: '/:path*',
         headers: [
