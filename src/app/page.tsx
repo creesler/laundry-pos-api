@@ -1642,17 +1642,14 @@ export default function Home() {
               md: '2fr 1fr'
             },
             gridTemplateRows: {
-              xs: 'auto minmax(150px, auto) minmax(150px, auto) minmax(150px, auto) minmax(150px, auto)',
-              md: 'auto 1fr 200px'
+              xs: 'auto auto auto auto minmax(300px, 1fr)',
+              md: 'auto 1fr minmax(250px, auto)'
             },
-            gap: '1.5vh', // Increased gap for better spacing
+            gap: { xs: '2vh', md: '1.5vh' },
             maxWidth: '100%',
             maxHeight: '100%',
             overflow: 'hidden',
-            '& > *': { // Add this to ensure all grid items have no bottom margin
-              mb: 0,
-              pb: 0
-            }
+            pb: { xs: '2vh', md: '1vh' }
           }}>
             <Header 
               onShareClick={handleShareClick}

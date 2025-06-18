@@ -120,38 +120,74 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
       border: '1px solid #e5e7eb', 
       boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
       height: '100%',
-      minHeight: { xs: '200px', md: 'auto' }
+      minHeight: { xs: '250px', md: 'auto' },
+      maxHeight: { xs: 'calc(100vh - 400px)', md: '100%' }
     }}>
       <Box sx={{
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: { xs: 'column', sm: 'row' },
+        alignItems: { xs: 'stretch', sm: 'center' },
         justifyContent: 'space-between',
+        gap: { xs: 1, sm: 2 },
         mb: 2,
         mt: { xs: 1, md: 0 }
       }}>
-        <Typography fontSize="2.2vh" fontWeight="medium">Inventory</Typography>
-        <Button
-          startIcon={<AddIcon />}
-          size="small"
-          onClick={() => setAddDialogOpen(true)}
-          sx={{ fontSize: '1.2vh', py: 0 }}
+        <Typography 
+          fontSize="2.2vh" 
+          fontWeight="medium"
+          sx={{ textAlign: { xs: 'center', sm: 'left' } }}
         >
-          Add Item
-        </Button>
+          Inventory
+        </Typography>
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 1,
+          justifyContent: { xs: 'center', sm: 'flex-end' },
+          flexWrap: 'wrap'
+        }}>
+          <Button
+            startIcon={<AddIcon />}
+            size="small"
+            onClick={() => setAddDialogOpen(true)}
+            variant="contained"
+            sx={{ 
+              fontSize: '1.2vh', 
+              py: 0.5,
+              minWidth: 'auto',
+              flex: { xs: '1 1 auto', sm: '0 0 auto' },
+              maxWidth: { xs: '200px', sm: 'none' }
+            }}
+          >
+            Add Item
+          </Button>
+        </Box>
       </Box>
       
       <Box sx={{ 
         display: 'flex', 
         flexDirection: 'column',
-        gap: '2vh',
+        gap: '1.5vh',
         flex: 1,
         overflowY: 'auto',
         overflowX: 'hidden',
         pr: 1,
-        mt: { xs: 1, md: 0 }
+        mt: { xs: 1, md: 0 },
+        '&::-webkit-scrollbar': {
+          width: '8px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: '#f1f1f1',
+          borderRadius: '4px',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: '#888',
+          borderRadius: '4px',
+          '&:hover': {
+            background: '#666',
+          },
+        }
       }}>
         {inventory.filter(item => !item.isDeleted).map((item) => {
-          // Ensure we're working with numbers
           const currentStock = Number(item.currentStock) || 0;
           const maxStock = Number(item.maxStock) || 0;
           const usagePercentage = maxStock > 0 ? (currentStock / maxStock) * 100 : 0;
@@ -161,19 +197,47 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
               key={item.id} 
               sx={{ 
                 display: 'flex', 
-                alignItems: 'center',
-                gap: 2,
-                p: 1,
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'stretch', sm: 'center' },
+                gap: { xs: 1, sm: 2 },
+                p: 1.5,
                 borderRadius: 1,
+                bgcolor: 'background.paper',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
                 '&:hover': {
-                  bgcolor: 'rgba(0, 0, 0, 0.04)'
+                  bgcolor: 'rgba(0, 0, 0, 0.02)'
                 }
               }}
             >
-              <Box sx={{ flex: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                  <Typography fontSize="1.8vh">{item.name}</Typography>
-                  <Typography fontSize="1.6vh" color="text.secondary">
+              <Box sx={{ 
+                flex: 1,
+                minWidth: 0 // Add this to prevent flex item from overflowing
+              }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  mb: 0.5,
+                  flexWrap: 'wrap',
+                  gap: 1
+                }}>
+                  <Typography 
+                    fontSize="1.8vh"
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {item.name}
+                  </Typography>
+                  <Typography 
+                    fontSize="1.6vh" 
+                    color="text.secondary"
+                    sx={{
+                      flexShrink: 0
+                    }}
+                  >
                     {`${currentStock} used / ${maxStock} total ${item.unit}`}
                   </Typography>
                 </Box>
@@ -190,20 +254,39 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
                   }}
                 />
               </Box>
-              <IconButton 
-                size="small"
-                onClick={(e) => handleItemClick(e, item.id)}
-                title="Set Total Stock"
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton 
-                size="small"
-                onClick={() => setDeleteConfirmItem(item.name)}
-                sx={{ p: '0.4vh' }}
-              >
-                <DeleteIcon sx={{ fontSize: '1.8vh', color: 'error.main' }} />
-              </IconButton>
+              <Box sx={{ 
+                display: 'flex', 
+                gap: 1,
+                justifyContent: { xs: 'flex-end', sm: 'center' },
+                mt: { xs: 1, sm: 0 }
+              }}>
+                <IconButton 
+                  size="small"
+                  onClick={(e) => handleItemClick(e, item.id)}
+                  title="Set Total Stock"
+                  sx={{
+                    bgcolor: 'background.default',
+                    '&:hover': {
+                      bgcolor: 'action.hover'
+                    }
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <IconButton 
+                  size="small"
+                  onClick={() => setDeleteConfirmItem(item.name)}
+                  sx={{ 
+                    p: '0.4vh',
+                    bgcolor: 'background.default',
+                    '&:hover': {
+                      bgcolor: 'error.lighter'
+                    }
+                  }}
+                >
+                  <DeleteIcon sx={{ fontSize: '1.8vh', color: 'error.main' }} />
+                </IconButton>
+              </Box>
             </Box>
           );
         })}
