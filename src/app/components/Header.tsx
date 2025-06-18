@@ -24,7 +24,13 @@ import { blue, green, grey, red } from '@mui/material/colors'
 import ShareIcon from '@mui/icons-material/Share'
 import { Android, Menu as MenuIcon, Notifications as NotificationsIcon } from '@mui/icons-material'
 import { saveToIndexedDB, getFromIndexedDB } from '../utils/db'
-import { TimeEntry, SalesRecord, InventoryItem, InventoryLog } from '../types'
+import { 
+  TimeEntry, 
+  InventoryItem, 
+  InventoryLog, 
+  SalesRecord,
+  TimeEntryPair 
+} from '../types'
 import { API_URL } from '../config'
 
 export interface HeaderProps {
@@ -276,11 +282,10 @@ export default function Header({
           .find(entry => 
             entry.employeeName === activeEmployee && 
             entry.action === 'in' && 
-            entry._id && 
             !entry.clockOutTime
           );
 
-        if (!clockInEntry?._id) {
+        if (!clockInEntry || !clockInEntry._id) {
           throw new Error('No matching clock-in entry found');
         }
 
@@ -300,10 +305,10 @@ export default function Header({
         }
 
         // Save locally after successful server save
-        const newEntry = {
+        const newEntry: TimeEntry = {
           date: now.toLocaleDateString(),
           time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
-          action: 'out' as const,
+          action: 'out',
           employeeName: activeEmployee,
           isSaved: true,
           _id: clockInEntry._id,
@@ -432,7 +437,7 @@ export default function Header({
       await saveToIndexedDB({
         ...dbData,
         inventory: updatedInventory,
-        inventoryLogs: [...(dbData.inventoryLogs || []).filter((log): log is InventoryLog | null => log !== null), ...updateLogs]
+        inventoryLogs: [...(dbData.inventoryLogs || []).filter((log: unknown): log is InventoryLog | null => log !== null), ...updateLogs]
       });
 
       // Update state
@@ -497,19 +502,22 @@ export default function Header({
 
           // Process entries to create clock in/out pairs
           for (let i = 0; i < entries.length; i++) {
-            const entry = entries[i] as TimeLogEntry;
+            const entry = entries[i] as TimeEntry;
             if (entry.action === 'in') {
               // Find matching clock out
-              const clockOut = entries.slice(i + 1).find((e: TimeLogEntry) => 
+              const clockOut = entries.slice(i + 1).find((e: TimeEntry) => 
                 e.action === 'out' && 
                 e.date === entry.date
               );
 
               if (clockOut) {
                 timeEntryPairs.push({
-                  employeeName,
-                  clockIn: new Date(`${entry.date} ${entry.time}`),
-                  clockOut: new Date(`${clockOut.date} ${clockOut.time}`)
+                  clockIn: entry,
+                  clockOut: clockOut,
+                  duration: calculateDuration(
+                    `${entry.date} ${entry.time}`,
+                    `${clockOut.date} ${clockOut.time}`
+                  ).toString()
                 });
                 i = entries.indexOf(clockOut); // Skip the out entry we just processed
               }

@@ -19,11 +19,14 @@ export interface InputValues {
 }
 
 export interface TimeEntry {
+  _id?: string;
   date: string;
   time: string;
   action: 'in' | 'out';
   employeeName: string;
   isSaved: boolean;
+  clockInTime?: string;
+  clockOutTime?: string | null;
 }
 
 export interface FormattedTimeEntry {
@@ -101,4 +104,10 @@ export interface InventoryLog {
 
 export interface SheetRow {
   [key: string]: string | number | boolean;
+}
+
+export interface TimeEntryPair {
+  clockIn: TimeEntry;
+  clockOut?: TimeEntry;
+  duration?: string;
 } 

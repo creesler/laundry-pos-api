@@ -594,7 +594,7 @@ const API_URL = window.location.hostname === 'localhost'
         const prevBtn = document.getElementById('prevPeriod');
         const nextBtn = document.getElementById('nextPeriod');
         const period = document.getElementById('periodFilter').value;
-
+        
         // Disable navigation for 'all' and 'custom' periods
         if (period === 'all' || period === 'custom') {
             prevBtn.disabled = true;
@@ -613,13 +613,13 @@ const API_URL = window.location.hostname === 'localhost'
         if (dateRangeDisplay) {
             dateRangeDisplay.textContent = formatDate(currentPeriodDate);
         }
-        }
+    }
 
     // Navigate to the next or previous day
     function navigateDay(direction) {
         // Create a new date object
         const newDate = new Date(currentPeriodDate);
-            
+        
         // Add or subtract one day
         if (direction === 'next') {
             newDate.setDate(newDate.getDate() + 1);
@@ -672,8 +672,8 @@ const API_URL = window.location.hostname === 'localhost'
             e.preventDefault();
             e.stopPropagation();
             handleNavigation('next');
-            });
-        }
+        });
+    }
 
     function initializeNavigation() {
         // Set up section navigation
