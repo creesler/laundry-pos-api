@@ -5,12 +5,12 @@ services:
     buildCommand: |
       npm install
       npm run build
-      cp public/sw.js .next/standalone/public/
-      cp -r public/icons .next/standalone/public/
-      cp public/manifest.json .next/standalone/public/
+      mkdir -p .next/standalone/public
+      cp -r public/* .next/standalone/public/
+      cp public/sw.js .next/standalone/
+      cp public/manifest.json .next/standalone/
     startCommand: node .next/standalone/server.js
     envVars:
       - key: NODE_ENV
         value: production
     autoDeploy: true
- 
