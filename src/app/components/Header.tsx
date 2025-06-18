@@ -170,8 +170,23 @@ export default function Header({
           setDeferredPrompt(null);
         }
       } else {
-        // Fallback for when deferredPrompt is not available
-        window.location.href = window.location.origin + '/manifest.json';
+        // Check if the app is already installed
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        if (isStandalone) {
+          setSnackbar({
+            open: true,
+            message: 'App is already installed',
+            severity: 'info'
+          });
+          return;
+        }
+
+        // Show instructions for manual installation
+        setSnackbar({
+          open: true,
+          message: 'To install: Open in Chrome and tap Menu > Add to Home Screen',
+          severity: 'info'
+        });
       }
     } catch (error) {
       console.error('Install error:', error);
