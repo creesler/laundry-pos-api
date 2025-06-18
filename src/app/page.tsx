@@ -1380,8 +1380,8 @@ export default function Home() {
 
       setSnackbar({
         open: true,
-        message: 'Item marked for deletion. Changes will be saved when you click "Sync".',
-        severity: 'info'
+        message: 'Item marked for deletion. Changes will be saved when you click "Save to Server".',
+        severity: 'success'
       });
     } catch (error) {
       console.error('Error marking item for deletion:', error);
@@ -1465,8 +1465,8 @@ export default function Home() {
       if (!isOnline) {
         setSnackbar({
           open: true,
-          message: 'Cannot sync while offline',
-          severity: 'error'
+          message: 'Cannot save to server while offline',
+          severity: 'warning'
         });
         return;
       }
