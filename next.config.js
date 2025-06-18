@@ -13,7 +13,7 @@ const nextConfig = {
     }
   },
   
-  // Add debugging headers
+  // Add headers for service worker
   async headers() {
     return [
       {
@@ -30,10 +30,6 @@ const nextConfig = {
           {
             key: 'Service-Worker-Allowed',
             value: '/'
-          },
-          {
-            key: 'X-Debug-Path',
-            value: 'service-worker'
           }
         ]
       },
