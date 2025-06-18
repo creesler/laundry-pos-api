@@ -158,31 +158,56 @@ export default function Header({
             console.log('Unregistered existing service worker');
           }
           
-          // Get the absolute path to the service worker
-          const swUrl = new URL('/sw.js', window.location.origin).href;
-          console.log('Attempting to register service worker from:', swUrl);
+          // Try both the API route and direct file
+          const swPaths = ['/api/sw', '/sw.js'];
+          let registered = false;
           
-          // Try to register the service worker
-          const registration = await navigator.serviceWorker.register(swUrl, {
-            scope: '/',
-            type: 'classic',
-            updateViaCache: 'none'
-          });
+          for (const swPath of swPaths) {
+            try {
+              // Get the absolute path to the service worker
+              const swUrl = new URL(swPath, window.location.origin).href;
+              console.log('Attempting to register service worker from:', swUrl);
+              
+              // Try to fetch the service worker first to check if it exists
+              const swResponse = await fetch(swUrl);
+              console.log('Service worker fetch response:', swResponse.status, swResponse.headers.get('Content-Type'));
+              
+              if (!swResponse.ok) {
+                console.log('Service worker not available at:', swUrl);
+                continue;
+              }
+              
+              // Try to register the service worker
+              const registration = await navigator.serviceWorker.register(swUrl, {
+                scope: '/',
+                type: 'classic',
+                updateViaCache: 'none'
+              });
+              
+              console.log('ServiceWorker registration successful:', registration.scope);
+              registered = true;
+              
+              // Check for updates
+              await registration.update();
+              
+              // Log active service worker state
+              if (registration.active) {
+                console.log('Service worker is active');
+              }
+              
+              break; // Exit the loop if registration succeeds
+            } catch (error) {
+              console.error(`Failed to register service worker from ${swPath}:`, error);
+            }
+          }
           
-          console.log('ServiceWorker registration successful:', registration.scope);
-          
-          // Check for updates
-          await registration.update();
-          
-          // Log active service worker state
-          if (registration.active) {
-            console.log('Service worker is active');
+          if (!registered) {
+            console.error('Failed to register service worker from any location');
           }
         } catch (error) {
           console.error('ServiceWorker registration failed:', error);
-          // Log additional error details
           if (error instanceof TypeError) {
-            console.error('Network error when fetching service worker. URL attempted:', new URL('/sw.js', window.location.origin).href);
+            console.error('Network error when fetching service worker.');
           }
         }
       } else {
