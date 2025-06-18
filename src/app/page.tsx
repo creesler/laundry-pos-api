@@ -1642,7 +1642,7 @@ export default function Home() {
               md: '2fr 1fr'
             },
             gridTemplateRows: {
-              xs: 'auto minmax(150px, auto) minmax(250px, auto) minmax(150px, auto) minmax(150px, 200px)',
+              xs: 'auto minmax(150px, auto) minmax(250px, auto) minmax(150px, auto) auto',
               md: 'auto 1fr minmax(180px, auto)'
             },
             gap: { xs: '1vh', md: '1.5vh' },
@@ -1651,8 +1651,8 @@ export default function Home() {
             overflow: { xs: 'auto', md: 'hidden' },
             pb: { xs: '1vh', md: '1vh' },
             '& > *': {
-              minHeight: 0, // Allow children to shrink below their content size
-              maxHeight: '100%' // Prevent children from growing beyond container
+              minHeight: 0,
+              maxHeight: '100%'
             }
           }}>
             <Header 
