@@ -458,8 +458,9 @@ export default function Header({
         entriesByEmployee.get(entry.employeeName).push(entry);
       }
 
-      // Process each employee's entries
-      for (const [employeeName, entries] of entriesByEmployee) {
+      // Process each employee's entries using Array.from instead of direct Map iteration
+      const employeeEntries = Array.from(entriesByEmployee.entries());
+      for (const [employeeName, entries] of employeeEntries) {
         // Process entries in pairs (in/out)
         for (let i = 0; i < entries.length; i++) {
           const entry = entries[i];
