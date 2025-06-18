@@ -458,7 +458,8 @@ export default function Header({
       }
 
       // Process each employee's entries
-      for (const [employeeName, entries] of entriesByEmployee) {
+      const employeeEntries = Array.from(entriesByEmployee.entries());
+      for (const [employeeName, entries] of employeeEntries) {
         // Process entries in pairs (in/out)
         for (let i = 0; i < entries.length; i++) {
           const entry = entries[i];
