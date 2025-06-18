@@ -5,42 +5,55 @@ const CACHE_NAME = 'laundry-pos-v1';
 const URLS_TO_CACHE = [
   '/',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/icon-192x192.png',
+  '/icon-512x512.png'
 ];
 
 // Install event - cache initial resources
 self.addEventListener('install', (event) => {
   console.log('[ServiceWorker] Install');
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
+    Promise.all([
+      self.skipWaiting(),
+      caches.open(CACHE_NAME).then((cache) => {
         console.log('[ServiceWorker] Caching app shell');
-        return cache.addAll(URLS_TO_CACHE);
+        return Promise.all(
+          URLS_TO_CACHE.map(url =>
+            fetch(url)
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error('Failed to fetch: ' + url);
+                }
+                return cache.put(url, response);
+              })
+              .catch(error => {
+                console.error('[ServiceWorker] Failed to cache:', url, error);
+                // Continue with other files even if one fails
+                return Promise.resolve();
+              })
+          )
+        );
       })
-      .catch((error) => {
-        console.error('[ServiceWorker] Cache failed:', error);
-      })
+    ])
   );
-  // Activate worker immediately
-  self.skipWaiting();
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('[ServiceWorker] Activate');
   event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) {
-          console.log('[ServiceWorker] Removing old cache', key);
-          return caches.delete(key);
-        }
-      }));
-    })
+    Promise.all([
+      caches.keys().then((keyList) => {
+        return Promise.all(keyList.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log('[ServiceWorker] Removing old cache', key);
+            return caches.delete(key);
+          }
+        }));
+      }),
+      self.clients.claim()
+    ])
   );
-  // Ensure service worker takes control immediately
-  self.clients.claim();
 });
 
 // Fetch event - serve from cache, fallback to network
@@ -55,6 +68,8 @@ self.addEventListener('fetch', (event) => {
       })
       .catch((error) => {
         console.error('[ServiceWorker] Fetch failed:', error);
+        // Return a default response or handle the error as needed
+        return new Response('Offline content not available');
       })
   );
 });
