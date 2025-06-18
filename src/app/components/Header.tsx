@@ -150,9 +150,13 @@ export default function Header({
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       console.log('Service Worker is supported');
       
+      // Get the base URL for the current environment
+      const baseUrl = window.location.origin;
+      console.log('Base URL:', baseUrl);
+      
       // Register immediately instead of waiting for load event
       navigator.serviceWorker
-        .register('/sw.js')
+        .register(`${baseUrl}/sw.js`, { scope: '/' })
         .then(registration => {
           console.log('ServiceWorker registration successful:', registration.scope);
           
