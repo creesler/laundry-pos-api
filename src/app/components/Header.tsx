@@ -20,7 +20,6 @@ import {
 } from '@mui/material'
 import { blue, green, grey, red } from '@mui/material/colors'
 import ShareIcon from '@mui/icons-material/Share'
-import { Android as AndroidIcon } from '@mui/icons-material'
 import { saveToIndexedDB, getFromIndexedDB } from '../utils/db'
 import { TimeEntry, SalesRecord } from '../types'
 import { API_URL } from '../config'
@@ -458,9 +457,8 @@ export default function Header({
         entriesByEmployee.get(entry.employeeName).push(entry);
       }
 
-      // Process each employee's entries using Array.from instead of direct Map iteration
-      const employeeEntries = Array.from(entriesByEmployee.entries());
-      for (const [employeeName, entries] of employeeEntries) {
+      // Process each employee's entries
+      for (const [employeeName, entries] of entriesByEmployee) {
         // Process entries in pairs (in/out)
         for (let i = 0; i < entries.length; i++) {
           const entry = entries[i];
@@ -671,16 +669,15 @@ export default function Header({
           </Box>
           <Avatar 
             sx={{ 
-              width: '28px', 
-              height: '28px',
+              width: '4vh', 
+              height: '4vh',
               bgcolor: blue[500],
-              color: 'white',
+              color: green[500],
               fontWeight: 'bold',
-              ml: 1,
-              borderRadius: '50%'
+              ml: 1
             }}
           >
-            <AndroidIcon sx={{ fontSize: 16 }} />
+            LK
           </Avatar>
         </Box>
       </Paper>
