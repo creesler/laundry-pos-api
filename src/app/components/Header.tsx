@@ -147,7 +147,9 @@ export default function Header({
   useEffect(() => {
     // Register service worker
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      console.log('Service Worker is supported');
       window.addEventListener('load', () => {
+        console.log('Window loaded, registering service worker...');
         navigator.serviceWorker
           .register('/api/sw')
           .then(registration => {
@@ -157,12 +159,21 @@ export default function Header({
             console.error('ServiceWorker registration failed:', error);
           });
       });
+    } else {
+      console.log('Service Worker is not supported');
     }
 
     // Handle PWA install prompt
     window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
+    });
+
+    // Handle installed event
+    window.addEventListener('appinstalled', () => {
+      console.log('PWA was installed');
+      setDeferredPrompt(null);
     });
   }, []);
 
@@ -591,12 +602,34 @@ export default function Header({
   };
 
   const handleInstall = async () => {
-    if (deferredPrompt) {
+    console.log('Install button clicked');
+    console.log('Deferred prompt value:', deferredPrompt);
+    
+    if (!deferredPrompt) {
+      console.log('No installation prompt available');
+      // If running as standalone or already installed
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        alert('App is already installed!');
+      } else {
+        alert('App can be installed from your browser menu');
+      }
+      return;
+    }
+
+    try {
+      console.log('Triggering installation prompt...');
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
+      console.log('Installation prompt outcome:', outcome);
+      
       if (outcome === 'accepted') {
+        console.log('PWA installation accepted');
         setDeferredPrompt(null);
+      } else {
+        console.log('PWA installation rejected');
       }
+    } catch (error) {
+      console.error('Error during installation:', error);
     }
   };
 
