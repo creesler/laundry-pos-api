@@ -93,7 +93,8 @@ export default function Header({
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [itemUsages, setItemUsages] = useState<Record<string, string>>({})
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
-  const [canInstall, setCanInstall] = useState(false)
+  const [isInstallable, setIsInstallable] = useState(false)
+  const [isInstalled, setIsInstalled] = useState(false)
 
   // Load initial state from IndexedDB
   useEffect(() => {
@@ -145,82 +146,46 @@ export default function Header({
     return () => clearInterval(interval)
   }, [])
 
+  // Check if app is installed
   useEffect(() => {
-    const registerServiceWorker = async () => {
-      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-        console.log('Service Worker is supported');
-        
-        try {
-          // First, try to unregister any existing service worker
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          for (const registration of registrations) {
-            await registration.unregister();
-            console.log('Unregistered existing service worker');
-          }
-          
-          // Get the absolute path to the service worker
-          const swUrl = new URL('/sw.js', window.location.origin).href;
-          console.log('Attempting to register service worker from:', swUrl);
-          
-          // Try to fetch the service worker first to check if it exists
-          const swResponse = await fetch(swUrl);
-          if (!swResponse.ok) {
-            throw new Error(`Service worker fetch failed: ${swResponse.status} ${swResponse.statusText}`);
-          }
-          
-          // Try to register the service worker
-          const registration = await navigator.serviceWorker.register(swUrl, {
-            scope: '/',
-            type: 'classic',
-            updateViaCache: 'none'
-          });
-          
-          console.log('ServiceWorker registration successful:', registration.scope);
-          
-          // Check for updates
-          await registration.update();
-          
-          // Log active service worker state
-          if (registration.active) {
-            console.log('Service worker is active');
-            setCanInstall(true);
-          }
-        } catch (error) {
-          console.error('ServiceWorker registration failed:', error);
-          setCanInstall(false);
-        }
-      } else {
-        console.log('Service Worker is not supported');
-        setCanInstall(false);
+    const checkInstalled = () => {
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('App is installed and running in standalone mode');
+        setIsInstalled(true);
       }
     };
 
-    registerServiceWorker();
+    checkInstalled();
+    window.matchMedia('(display-mode: standalone)').addListener(checkInstalled);
 
-    // Handle PWA install prompt
-    const handleBeforeInstallPrompt = (e: any) => {
+    return () => {
+      window.matchMedia('(display-mode: standalone)').removeListener(checkInstalled);
+    };
+  }, []);
+
+  // Handle beforeinstallprompt event
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
       console.log('beforeinstallprompt event fired');
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
+      // Stash the event so it can be triggered later
       setDeferredPrompt(e);
-      setCanInstall(true);
+      setIsInstallable(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Handle installed event
-    const handleAppInstalled = () => {
-      console.log('PWA was installed');
+    // Handle successful installation
+    window.addEventListener('appinstalled', () => {
+      console.log('App was successfully installed');
+      setIsInstalled(true);
       setDeferredPrompt(null);
-      setCanInstall(false);
-    };
+      setIsInstallable(false);
+    });
 
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    // Cleanup event listeners
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
@@ -650,45 +615,66 @@ export default function Header({
 
   const handleInstall = async () => {
     console.log('Install button clicked');
+    console.log('Deferred prompt available:', !!deferredPrompt);
     
-    if (!deferredPrompt) {
-      console.log('No installation prompt available');
-      if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (deferredPrompt) {
+      try {
+        // Show the prompt
+        await deferredPrompt.prompt();
+        console.log('Installation prompt shown');
+        
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('Installation prompt outcome:', outcome);
+        
+        if (outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+          setIsInstalled(true);
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        
+        // Clear the deferredPrompt for the next time
+        setDeferredPrompt(null);
+      } catch (error) {
+        console.error('Error showing install prompt:', error);
+      }
+    } else {
+      // Show installation instructions based on platform
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
+      if (isAndroid) {
         setSnackbar({
           open: true,
-          message: 'App is already installed!',
+          message: 'To install: tap the three dots menu (⋮) and select "Install app" or "Add to Home screen"',
+          severity: 'info'
+        });
+      } else if (isIOS) {
+        setSnackbar({
+          open: true,
+          message: 'To install: tap the share button and select "Add to Home Screen"',
+          severity: 'info'
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: 'App can be installed from your browser\'s menu',
           severity: 'info'
         });
       }
-      return;
     }
+  };
 
-    try {
-      // Show the install prompt
-      deferredPrompt.prompt();
-      
-      // Wait for the user to respond to the prompt
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log('Installation prompt outcome:', outcome);
-      
-      if (outcome === 'accepted') {
-        console.log('PWA installation accepted');
-        setDeferredPrompt(null);
-        setCanInstall(false);
-        setSnackbar({
-          open: true,
-          message: 'App installed successfully!',
-          severity: 'success'
-        });
-      }
-    } catch (error) {
-      console.error('Error during installation:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to install app. Please try again.',
-        severity: 'error'
-      });
+  // Get the appropriate button text
+  const getInstallButtonText = () => {
+    if (isInstalled) {
+      return '✓ App Installed';
     }
+    if (isInstallable) {
+      return '📱 Install App';
+    }
+    return '📱 Download App';
   };
 
   return (
@@ -719,7 +705,7 @@ export default function Header({
                 onClick={handleInstall}
                 sx={{
                   bgcolor: 'transparent',
-                  color: canInstall ? 'primary.main' : 'text.secondary',
+                  color: isInstalled ? 'primary.main' : isInstallable ? 'primary.main' : 'text.secondary',
                   '&:hover': { 
                     bgcolor: 'transparent', 
                     textDecoration: 'underline',
@@ -734,7 +720,7 @@ export default function Header({
                   gap: 0.5
                 }}
               >
-                {canInstall ? '📱 Install App' : 'Download'}
+                {getInstallButtonText()}
               </Button>
               <IconButton
                 onClick={onShareClick}
