@@ -749,8 +749,8 @@ export default function Header({
                 <Button
                   color="inherit"
                   onClick={syncWithServer}
-                  startIcon={<CloudUploadIcon />}
                   disabled={!hasUnsavedChanges || isSaving}
+                  startIcon={<CloudUploadIcon />}
                 >
                   {isSaving ? 'Syncing...' : 'Sync'}
                 </Button>
