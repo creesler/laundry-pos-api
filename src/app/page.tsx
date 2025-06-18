@@ -1642,10 +1642,10 @@ export default function Home() {
               md: '2fr 1fr'
             },
             gridTemplateRows: {
-              xs: 'auto auto auto auto auto',
-              md: 'auto 1fr 200px' // Increased from 150px to 200px for the bottom row
+              xs: 'auto minmax(150px, auto) minmax(150px, auto) minmax(150px, auto) minmax(150px, auto)',
+              md: 'auto 1fr 200px'
             },
-            gap: '0.8vh', // Reduced gap
+            gap: '1.5vh', // Increased gap for better spacing
             maxWidth: '100%',
             maxHeight: '100%',
             overflow: 'hidden',

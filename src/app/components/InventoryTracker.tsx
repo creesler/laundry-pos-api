@@ -111,12 +111,23 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
   };
 
   return (
-    <Paper sx={{ ...sx, p: '1.5vh', display: 'flex', flexDirection: 'column', borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+    <Paper sx={{ 
+      ...sx, 
+      p: '1.5vh', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      borderRadius: '8px', 
+      border: '1px solid #e5e7eb', 
+      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+      height: '100%',
+      minHeight: { xs: '200px', md: 'auto' }
+    }}>
       <Box sx={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        mb: 2
+        mb: 2,
+        mt: { xs: 1, md: 0 }
       }}>
         <Typography fontSize="2.2vh" fontWeight="medium">Inventory</Typography>
         <Button
@@ -136,7 +147,8 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
         flex: 1,
         overflowY: 'auto',
         overflowX: 'hidden',
-        pr: 1
+        pr: 1,
+        mt: { xs: 1, md: 0 }
       }}>
         {inventory.filter(item => !item.isDeleted).map((item) => {
           // Ensure we're working with numbers
