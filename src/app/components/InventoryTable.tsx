@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Paper } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import type { InventoryItem } from '@/hooks/useInventory';
+import type { InventoryItem } from '../../../hooks/useInventory';
 
 interface InventoryTableProps {
   items: InventoryItem[];
