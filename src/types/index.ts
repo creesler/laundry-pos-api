@@ -6,7 +6,7 @@ export interface TimeEntry {
   isSaved: boolean;
   _id?: string;
   clockInTime?: string;
-  clockOutTime?: string | null;
+  clockOutTime?: string | undefined;
 }
 
 export interface InventoryUpdate {
@@ -30,7 +30,8 @@ export interface SalesRecord {
   'Drop Off Amount 1': string;
   'Drop Off Code': string;
   'Drop Off Amount 2': string;
-  [key: string]: string;
+  isSaved?: boolean;
+  [key: string]: string | boolean | undefined;
 }
 
 export interface GoogleSheetResult {

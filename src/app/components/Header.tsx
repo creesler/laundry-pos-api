@@ -23,6 +23,7 @@ import ShareIcon from '@mui/icons-material/Share'
 import { saveToIndexedDB, getFromIndexedDB } from '../utils/db'
 import { TimeEntry, SalesRecord, InventoryUpdate } from '@/types'
 import { API_URL } from '../config'
+import { FormEvent, MouseEvent } from 'react'
 
 interface HeaderProps {
   onShareClick: () => void
@@ -684,7 +685,7 @@ export default function Header({
   };
 
   const handleInventoryUpdate = (item: InventoryUpdate) => {
-    setInventoryUpdates(prev => [...prev, item]);
+    setInventoryUpdates(prev => prev.map(i => i.id === item.id ? { ...i, isSaved: true } : i));
   };
 
   const handleSaveTimeEntry = (entry: TimeEntry) => {
