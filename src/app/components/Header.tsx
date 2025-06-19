@@ -712,11 +712,11 @@ export default function Header({
 
   // Update the filter functions
   const filterTimeEntries = (entries: TimeEntry[]) => {
-    return entries.filter(entry => /* ... */);
+    return entries.filter(entry => entry.isSaved === false);
   };
 
   const filterInventoryUpdates = (updates: InventoryUpdate[]) => {
-    return updates.filter(update => /* ... */);
+    return updates.filter(update => update.isSaved === false);
   };
 
   return (
