@@ -62,27 +62,33 @@ function SalesForm({
   }, [employeeList, selectedEmployee]);
 
   return (
-    <Paper sx={{ p: '1vh', display: 'flex', flexDirection: 'column', borderRadius: '8px', border: '1px solid #e5e7eb', minHeight: 0, overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+    <Paper sx={{ ...sx, p: '1.5vh', display: 'flex', flexDirection: 'column', borderRadius: '8px', border: '1px solid #e5e7eb', minHeight: 0, overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
       <Box sx={{ 
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        mb: '0.8vh'
+        mb: 2
       }}>
-        <Typography variant="subtitle1" component="div">
+        <Typography variant="h6" component="div">
           {currentFormDate}
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.4vh' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Select
             value={selectedEmployee}
-            onChange={(e) => onEmployeeChange(e.target.value)}
+            onChange={(e) => {
+              console.log('🔽 Dropdown selection changed:', {
+                previous: selectedEmployee,
+                new: e.target.value,
+                availableOptions: employeeList
+              });
+              onEmployeeChange(e.target.value);
+            }}
             size="small"
             sx={{ 
-              minWidth: 100,
-              height: '28px',
+              minWidth: 120,
+              height: '32px',
               '.MuiSelect-select': { 
-                py: 0.25,
-                fontSize: '1.4vh',
+                py: 0.5,
                 color: grey[600]
               }
             }}
@@ -98,11 +104,10 @@ function SalesForm({
             onClick={onEmployeeSelect}
             size="small"
             sx={{
-              fontSize: '1.2vh',
-              py: 0.25,
-              px: 1,
-              minWidth: 'auto',
-              height: '28px'
+              fontSize: '0.875rem',
+              py: 0.5,
+              px: 2,
+              minWidth: 'auto'
             }}
           >
             Select
@@ -114,8 +119,7 @@ function SalesForm({
                 color: 'warning.main',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 0.5,
-                fontSize: '1.2vh'
+                gap: 0.5
               }}
             >
               (Offline Mode)
@@ -126,8 +130,8 @@ function SalesForm({
       <Box sx={{ 
         display: 'grid',
         gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: '0.2vh',
-        mb: '0.2vh'
+        gap: '0.8vh',
+        mb: '0.8vh'
       }}>
         {['Coin', 'Hopper', 'Soap', 'Vending'].map((label) => (
           <TextField
@@ -137,13 +141,13 @@ function SalesForm({
             value={inputValues[label]}
             onClick={() => onFieldSelect(label)}
             inputProps={{ 
-              style: { fontSize: '1.2vh' },
+              style: { fontSize: '1.6vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '2.5vh',
-                borderRadius: '2px',
+                height: '3.5vh',
+                borderRadius: '4px',
                 bgcolor: selectedField === label ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
                   borderColor: selectedField === label ? blue[500] : '#e5e7eb'
@@ -152,20 +156,20 @@ function SalesForm({
             }}
           />
         ))}
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.2vh', gridColumn: 'span 2' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.8vh', gridColumn: 'span 2' }}>
           <TextField
             size="small"
             placeholder="Drop Off Amount"
             value={inputValues['Drop Off Amount 1']}
             onClick={() => onFieldSelect('Drop Off Amount 1')}
             inputProps={{ 
-              style: { fontSize: '1.2vh' },
+              style: { fontSize: '1.6vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '2.5vh',
-                borderRadius: '2px',
+                height: '3.5vh',
+                borderRadius: '4px',
                 bgcolor: selectedField === 'Drop Off Amount 1' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
                   borderColor: selectedField === 'Drop Off Amount 1' ? blue[500] : '#e5e7eb'
@@ -179,13 +183,13 @@ function SalesForm({
             value={inputValues['Drop Off Code']}
             onClick={() => onFieldSelect('Drop Off Code')}
             inputProps={{ 
-              style: { fontSize: '1.2vh' },
+              style: { fontSize: '1.6vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '2.5vh',
-                borderRadius: '2px',
+                height: '3.5vh',
+                borderRadius: '4px',
                 bgcolor: selectedField === 'Drop Off Code' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
                   borderColor: selectedField === 'Drop Off Code' ? blue[500] : '#e5e7eb'
@@ -199,13 +203,13 @@ function SalesForm({
             value={inputValues['Drop Off Amount 2']}
             onClick={() => onFieldSelect('Drop Off Amount 2')}
             inputProps={{ 
-              style: { fontSize: '1.2vh' },
+              style: { fontSize: '1.6vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '2.5vh',
-                borderRadius: '2px',
+                height: '3.5vh',
+                borderRadius: '4px',
                 bgcolor: selectedField === 'Drop Off Amount 2' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
                   borderColor: selectedField === 'Drop Off Amount 2' ? blue[500] : '#e5e7eb'
@@ -216,43 +220,40 @@ function SalesForm({
         </Box>
       </Box>
       <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        gap: '0.15vh',
-        mb: '0.15vh',
-        '& .MuiTextField-root': {
-          '& .MuiInputBase-input': {
-            height: '2vh',
-            fontSize: '1vh',
-            padding: '0 0.5vh',
-          },
-          '& .MuiOutlinedInput-root': {
-            borderRadius: '2px'
-          }
+        display: 'grid',
+        gridTemplateColumns: 'repeat(5, 1fr)',
+        gap: '0.8vh',
+        flex: 1,
+        '& .MuiButton-root': {
+          fontSize: '2.5vh',
+          minHeight: '5vh',
+          borderRadius: '6px',
+          fontWeight: 'bold'
         }
       }}>
-        {[7, 8, 9, 'CLR', 4, 5, 6, 'SAVE', 1, 2, 3, 'DEL', 0, '.'].map((num) => (
+        {[7, 8, 9, 'Del', 'Clr', 4, 5, 6, '.', 'Save', 1, 2, 3, 0].map((num, index) => (
           <Button
-            key={num}
+            key={index}
             variant="contained"
-            onClick={() => onNumpadClick(num.toString())}
+            onClick={() => num === 'Save' ? onSave() : onNumpadClick(num.toString())}
             sx={{
               bgcolor: typeof num === 'number' ? grey[100] : 
-                num === 'CLR' ? grey[500] :
-                num === 'SAVE' ? blue[600] :
-                num === 'DEL' ? red[500] :
-                num === '.' ? yellow[700] : green[500],
-              color: typeof num === 'number' ? grey[900] : 'white',
+                num === 'Del' ? red[500] :
+                num === 'Clr' ? grey[500] :
+                num === '.' ? yellow[700] :
+                num === 'Save' ? blue[600] : grey[100],
+              color: typeof num === 'number' ? grey[900] :
+                num === 'Save' || num === '.' || num === 'Del' || num === 'Clr' ? 'white' : grey[900],
               '&:hover': { 
                 bgcolor: typeof num === 'number' ? grey[200] :
-                  num === 'CLR' ? grey[600] :
-                  num === 'SAVE' ? blue[700] :
-                  num === 'DEL' ? red[600] :
-                  num === '.' ? yellow[800] : green[600]
+                  num === 'Del' ? red[600] :
+                  num === 'Clr' ? grey[600] :
+                  num === '.' ? yellow[800] :
+                  num === 'Save' ? blue[700] : grey[200]
               }
             }}
           >
-            {num === '.' ? '•' : num}
+            {num === '.' ? '•' : num === 'Save' ? (editingIndex !== null ? 'Update' : 'Save') : num}
           </Button>
         ))}
       </Box>

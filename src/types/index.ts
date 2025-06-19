@@ -1,12 +1,12 @@
 export interface TimeEntry {
-  _id?: string;
   date: string;
   time: string;
   action: 'in' | 'out';
   employeeName: string;
   isSaved: boolean;
+  _id?: string;
   clockInTime?: string;
-  clockOutTime?: string;
+  clockOutTime?: string | undefined;
 }
 
 export interface InventoryUpdate {
@@ -18,7 +18,7 @@ export interface InventoryUpdate {
   timestamp: string;
   updatedBy: string;
   notes?: string;
-  isSaved?: boolean;
+  isSaved: boolean;
 }
 
 export interface SalesRecord {
@@ -30,29 +30,14 @@ export interface SalesRecord {
   'Drop Off Amount 1': string;
   'Drop Off Code': string;
   'Drop Off Amount 2': string;
-  isSaved: boolean;
-}
-
-export interface SheetData {
-  Date: string;
-  Coin: string;
-  Hopper: string;
-  Soap: string;
-  Vending: string;
-  'Drop Off Amount 1': string;
-  'Drop Off Code': string;
-  'Drop Off Amount 2': string;
-  [key: string]: string; // Add index signature for dynamic keys
+  isSaved?: boolean;
+  [key: string]: string | boolean | undefined;
 }
 
 export interface GoogleSheetResult {
   result: {
-    values?: any[][];
-    sheets?: Array<{
-      properties?: {
-        title?: string;
-        sheetId?: number;
-      };
-    }>;
+    values: any[][];
   };
-} 
+}
+
+export type SheetData = SalesRecord; 

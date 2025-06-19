@@ -1635,8 +1635,8 @@ export default function Home() {
               md: '2fr 1fr'
             },
             gridTemplateRows: {
-              xs: 'auto auto 1fr auto min-content',
-              md: 'auto 1fr auto auto'
+              xs: 'auto auto 1fr auto auto',
+              md: 'auto 1fr auto 120px'
             },
             gap: { xs: '0.5vh', md: '1vh' },
             maxWidth: '100%',
@@ -1719,9 +1719,11 @@ export default function Home() {
             {/* Inventory */}
             <InventoryTracker
               sx={{
-              gridArea: 'inventory',
-                height: '100%',
-              overflow: 'hidden',
+                gridArea: 'inventory',
+                height: { xs: 'auto', md: '120px' },
+                minHeight: { xs: '100px', md: '120px' },
+                maxHeight: { xs: '200px', md: '120px' },
+                overflow: 'hidden',
                 mb: 0,
                 pb: 0
               }}
