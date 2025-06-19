@@ -22,13 +22,20 @@ export interface InventoryUpdate {
 
 export interface SalesRecord {
   id: string;
-  date: string;
-  items: Array<{
+  Date: string;
+  Coin: string;
+  Hopper: string;
+  Soap: string;
+  Vending: string;
+  'Drop Off Amount 1': string;
+  'Drop Off Code': string;
+  'Drop Off Amount 2': string;
+  items?: Array<{
     name: string;
     quantity: number;
     price: number;
   }>;
-  total: number;
+  total?: number;
   isSaved?: boolean;
 }
 
