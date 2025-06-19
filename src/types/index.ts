@@ -1,9 +1,10 @@
 export interface TimeEntry {
-  employeeName: string;
+  _id?: string;
+  date: string;
   time: string;
   action: 'in' | 'out';
-  isSaved?: boolean;
-  _id?: string;
+  employeeName: string;
+  isSaved: boolean;
   clockInTime?: string;
   clockOutTime?: string;
 }
@@ -21,7 +22,6 @@ export interface InventoryUpdate {
 }
 
 export interface SalesRecord {
-  id: string;
   Date: string;
   Coin: string;
   Hopper: string;
@@ -30,13 +30,7 @@ export interface SalesRecord {
   'Drop Off Amount 1': string;
   'Drop Off Code': string;
   'Drop Off Amount 2': string;
-  items?: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-  total?: number;
-  isSaved?: boolean;
+  isSaved: boolean;
 }
 
 export interface SheetData {

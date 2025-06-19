@@ -1627,12 +1627,12 @@ export default function Home() {
                 "header header"
                 "tracker form"
                 "overview form"
-                "inventory form"
+                "overview inventory"
               `
             },
             gridTemplateColumns: {
               xs: '1fr',
-              md: '1.5fr 1fr'
+              md: '2fr 1fr'
             },
             gridTemplateRows: {
               xs: 'auto auto 1fr auto min-content',
