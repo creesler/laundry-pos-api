@@ -1,6 +1,6 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Stack } from '@mui/material';
 import { useState, useEffect } from 'react';
-import type { InventoryItem } from '@/hooks/useInventory';
+import type { InventoryItem } from '../../hooks/useInventory';
 
 interface InventoryDialogProps {
   open: boolean;
