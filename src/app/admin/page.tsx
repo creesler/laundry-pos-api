@@ -82,6 +82,14 @@ interface ProcessedData {
   'Drop Off Amount 2': string;
 }
 
+interface SheetHandlerProps {
+  sheet: GoogleSheetResult;
+}
+
+interface SearchHandlerProps {
+  s: string;
+}
+
 const DEFAULT_CREDENTIALS = {
   username: 'admin',
   password: '123456'
@@ -292,18 +300,18 @@ export default function AdminPage() {
     'Drop Off Amount 2': row[7] || ''
   });
 
-  const handleSheetData = (sheet: GoogleSheetResult): void => {
+  const handleSheetData = ({ sheet }: SheetHandlerProps): void => {
     const rows = sheet.result.values || [];
     const processedData = rows.map(processRow);
     setData(processedData);
     setFilteredData(processedData);
   };
 
-  const handleSheetProcess = (sheet: GoogleSheetResult): void => {
-    handleSheetData(sheet);
+  const handleSheetProcess = ({ sheet }: SheetHandlerProps): void => {
+    handleSheetData({ sheet });
   };
 
-  const handleSearch = (s: string): void => {
+  const handleSearch = ({ s }: SearchHandlerProps): void => {
     if (!s.trim()) {
       setFilteredData(data);
       return;
@@ -316,15 +324,15 @@ export default function AdminPage() {
     setFilteredData(filtered);
   };
 
-  const handleSheetSelect = (sheet: GoogleSheetResult): void => {
-    handleSheetData(sheet);
+  const handleSheetSelect = ({ sheet }: SheetHandlerProps): void => {
+    handleSheetData({ sheet });
   };
 
-  const handleFilterSearch = (s: string): void => {
-    handleSearch(s);
+  const handleFilterSearch = ({ s }: SearchHandlerProps): void => {
+    handleSearch({ s });
   };
 
-  const handleDateSearch = (s: string): void => {
+  const handleDateSearch = ({ s }: SearchHandlerProps): void => {
     if (!s.trim()) {
       setFilteredData(data);
       return;

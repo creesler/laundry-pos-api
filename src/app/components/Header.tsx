@@ -714,7 +714,7 @@ export default function Header({
     });
   };
 
-  const handleShare = async (e: MouseEvent<HTMLButtonElement>) => {
+  const handleShare = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     // ... rest of implementation
   };
