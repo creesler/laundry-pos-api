@@ -230,9 +230,9 @@ export default memo(function SalesForm({
       </Box>
       <Box sx={{ 
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '0.8vh',
-        mb: '0.8vh',
+        flex: 1,
         '& .MuiButton-root': {
           fontSize: '2vh',
           minHeight: '5vh',
@@ -240,83 +240,74 @@ export default memo(function SalesForm({
           fontWeight: 'bold'
         }
       }}>
-        {[1, 2, 3, 'DEL', 4, 5, 6, 'CLR', 7, 8, 9, 'SAVE', 0, '.', '', ''].map((num) => (
-          <Button
-            key={num}
-            variant="contained"
-            onClick={() => num === 'SAVE' ? onSave() : num === 'CLR' ? onNumpadClick('Clr') : onNumpadClick(num.toString())}
-            sx={{
-              bgcolor: num === 0 ? green[500] : 
-                      num === '.' ? yellow[700] : 
-                      num === 'DEL' ? red[500] :
-                      num === 'CLR' ? grey[500] :
-                      num === 'SAVE' ? blue[600] :
-                      num === '' ? 'transparent' :
-                      grey[100],
-              color: num === '.' ? 'white' : 
-                     num === 'DEL' ? 'white' : 
-                     num === 'CLR' ? 'white' :
-                     num === 'SAVE' ? 'white' :
-                     num === 0 ? 'white' : 
-                     grey[900],
-              '&:hover': { 
-                bgcolor: num === 0 ? green[600] : 
-                         num === '.' ? yellow[800] : 
-                         num === 'DEL' ? red[600] :
-                         num === 'CLR' ? grey[600] :
-                         num === 'SAVE' ? blue[700] :
-                         num === '' ? 'transparent' :
-                         grey[200] 
-              },
-              visibility: num === '' ? 'hidden' : 'visible'
-            }}
-          >
-            {num === '.' ? '•' : num === 'SAVE' ? (editingIndex !== null ? 'Update' : 'Save') : num}
-          </Button>
+        {[
+          [1, 2, 3, 'DEL'],
+          [4, 5, 6, '.'],
+          [7, 8, 9, 0]
+        ].map((row, rowIndex) => (
+          <Box key={rowIndex} sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.8vh' }}>
+            {row.map((num) => (
+              <Button
+                key={num}
+                variant="contained"
+                onClick={() => onNumpadClick(num.toString())}
+                sx={{
+                  bgcolor: num === 0 ? green[500] : 
+                          num === '.' ? yellow[700] : 
+                          num === 'DEL' ? red[500] : 
+                          grey[100],
+                  color: num === '.' ? 'white' : 
+                         num === 'DEL' ? 'white' : 
+                         num === 0 ? 'white' : 
+                         grey[900],
+                  '&:hover': { 
+                    bgcolor: num === 0 ? green[600] : 
+                             num === '.' ? yellow[800] : 
+                             num === 'DEL' ? red[600] : 
+                             grey[200] 
+                  }
+                }}
+              >
+                {num === '.' ? '•' : num}
+              </Button>
+            ))}
+          </Box>
         ))}
       </Box>
       <Box sx={{ 
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.8vh'
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '0.8vh',
+        mt: '0.8vh'
       }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: grey[700] }}>
-          Inventory
-        </Typography>
-        <Box sx={{ 
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '0.8vh'
-        }}>
-          <Button
-            variant="contained"
-            onClick={() => onNumpadClick('Clr')}
-            sx={{
-              bgcolor: grey[500],
-              color: 'white',
-              '&:hover': { bgcolor: grey[600] },
-              fontSize: '1.8vh',
-              minHeight: '5vh',
-              borderRadius: '6px'
-            }}
-          >
-            CLR
-          </Button>
-          <Button
-            variant="contained"
-            onClick={onSave}
-            sx={{
-              bgcolor: blue[600],
-              color: 'white',
-              '&:hover': { bgcolor: blue[700] },
-              fontSize: '1.8vh',
-              minHeight: '5vh',
-              borderRadius: '6px'
-            }}
-          >
-            {editingIndex !== null ? 'Update' : 'Save'}
-          </Button>
-        </Box>
+        <Button
+          variant="contained"
+          onClick={() => onNumpadClick('Clr')}
+          sx={{
+            bgcolor: grey[500],
+            color: 'white',
+            '&:hover': { bgcolor: grey[600] },
+            fontSize: '1.8vh',
+            minHeight: '5vh',
+            borderRadius: '6px'
+          }}
+        >
+          CLR
+        </Button>
+        <Button
+          variant="contained"
+          onClick={onSave}
+          sx={{
+            bgcolor: blue[600],
+            color: 'white',
+            '&:hover': { bgcolor: blue[700] },
+            fontSize: '1.8vh',
+            minHeight: '5vh',
+            borderRadius: '6px'
+          }}
+        >
+          {editingIndex !== null ? 'Update' : 'Save'}
+        </Button>
       </Box>
     </Paper>
   );
