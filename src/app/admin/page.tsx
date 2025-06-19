@@ -43,7 +43,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns'
 import { blue } from '@mui/material/colors'
 import { LineChart, BarChart } from '@mui/x-charts'
-import { SheetData, Sheet } from '@/types'
+import { SheetData, Sheet, GoogleSheetResult } from '@/types'
 
 interface SnackbarState {
   open: boolean;
@@ -62,12 +62,6 @@ interface EmployeeHours {
     startDate: Date | null;
     endDate: Date | null;
     totalHours: number;
-  };
-}
-
-interface GoogleSheetResult {
-  result: {
-    values: any[][];
   };
 }
 
@@ -95,6 +89,7 @@ const DEFAULT_CREDENTIALS = {
 
 export default function AdminPage() {
   const [data, setData] = useState<SheetData[]>([]);
+  const [filteredData, setFilteredData] = useState<SheetData[]>([]);
   const [employeeData, setEmployeeData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -286,7 +281,7 @@ export default function AdminPage() {
     }
   };
 
-  const processRow = (row: any[]): ProcessedData => ({
+  const processRow = (row: any[]): SheetData => ({
     Date: row[0] || '',
     Coin: row[1] || '',
     Hopper: row[2] || '',
@@ -297,39 +292,53 @@ export default function AdminPage() {
     'Drop Off Amount 2': row[7] || ''
   });
 
-  const processSheet = (sheet: GoogleSheetResult): ProcessedData[] => {
-    const rows = sheet.result.values || [];
-    return rows.map(processRow);
-  };
-
   const handleSheetData = (sheet: GoogleSheetResult): void => {
-    setData(processSheet(sheet));
+    const rows = sheet.result.values || [];
+    const processedData = rows.map(processRow);
+    setData(processedData);
+    setFilteredData(processedData);
   };
 
   const handleSheetProcess = (sheet: GoogleSheetResult): void => {
-    const processedData = processSheet(sheet);
-    // ... rest of implementation
+    handleSheetData(sheet);
   };
 
   const handleSearch = (s: string): void => {
-    // ... implementation
+    if (!s.trim()) {
+      setFilteredData(data);
+      return;
+    }
+    const filtered = data.filter(item => 
+      Object.values(item).some(value => 
+        typeof value === 'string' && value.toLowerCase().includes(s.toLowerCase())
+      )
+    );
+    setFilteredData(filtered);
   };
 
   const handleSheetSelect = (sheet: GoogleSheetResult): void => {
-    // ... implementation
+    handleSheetData(sheet);
   };
 
   const handleFilterSearch = (s: string): void => {
-    // ... implementation
+    handleSearch(s);
   };
 
   const handleDateSearch = (s: string): void => {
-    // ... implementation
+    if (!s.trim()) {
+      setFilteredData(data);
+      return;
+    }
+    const filtered = data.filter(item => 
+      item.Date.toLowerCase().includes(s.toLowerCase())
+    );
+    setFilteredData(filtered);
   };
 
   const handleSuccessfulFetch = (result: GoogleSheetResult) => {
     const rows = result.result.values || [];
     setData(rows.map(processRow));
+    setFilteredData(rows.map(processRow));
     setSnackbar({
       open: true,
       message: 'Data loaded successfully',

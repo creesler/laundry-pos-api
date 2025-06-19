@@ -681,19 +681,42 @@ export default function Header({
   };
 
   const handleTimeEntry = (entry: TimeEntry) => {
-    setTimeEntries(prev => [...prev, entry]);
+    setTimeEntries(prev => {
+      const newEntry = { ...entry };
+      if (newEntry.clockOutTime === null) {
+        newEntry.clockOutTime = undefined;
+      }
+      return [...prev, newEntry];
+    });
   };
 
   const handleInventoryUpdate = (item: InventoryUpdate) => {
-    setInventoryUpdates(prev => prev.map(i => i.id === item.id ? { ...i, isSaved: true } : i));
+    setInventoryUpdates(prev => {
+      const newItem = { ...item };
+      return prev.map(i => i.id === newItem.id ? { ...i, isSaved: true } : i);
+    });
   };
 
   const handleSaveTimeEntry = (entry: TimeEntry) => {
-    setTimeEntries(prev => prev.map(e => e._id === entry._id ? { ...e, isSaved: true } : e));
+    setTimeEntries(prev => {
+      const newEntry = { ...entry };
+      if (newEntry.clockOutTime === null) {
+        newEntry.clockOutTime = undefined;
+      }
+      return prev.map(e => e._id === newEntry._id ? { ...newEntry, isSaved: true } : e);
+    });
   };
 
   const handleSaveInventoryUpdate = (item: InventoryUpdate) => {
-    setInventoryUpdates(prev => prev.map(i => i.id === item.id ? { ...i, isSaved: true } : i));
+    setInventoryUpdates(prev => {
+      const newItem = { ...item };
+      return prev.map(i => i.id === newItem.id ? { ...newItem, isSaved: true } : i);
+    });
+  };
+
+  const handleShare = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    // ... rest of implementation
   };
 
   // Update the filter functions
