@@ -25,48 +25,60 @@ import { TimeEntry, SalesRecord, InventoryUpdate } from '@/types'
 import { API_URL } from '../config'
 import { FormEvent, MouseEvent } from 'react'
 
+// Type for inventory item
+interface InventoryItem {
+  id: string;
+  name: string;
+  currentStock: number;
+  maxStock: number;
+  minStock: number;
+  unit: string;
+  isDeleted: boolean;
+  lastUpdated: string;
+}
+
+// Type for inventory log
+interface InventoryLog {
+  id: string;
+  itemId: string;
+  previousStock: number;
+  newStock: number;
+  updateType: 'restock' | 'usage' | 'adjustment';
+  timestamp: string;
+  updatedBy: string;
+  notes?: string;
+  isSaved: boolean;
+}
+
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed';
+    platform: string;
+  }>;
+  prompt(): Promise<void>;
+}
+
+declare global {
+  interface WindowEventMap {
+    beforeinstallprompt: BeforeInstallPromptEvent;
+  }
+}
+
 interface HeaderProps {
-  onShareClick: () => void
-  onOpenTimesheet: () => void
-  onSaveToServer: () => Promise<void>
-  employeeTimeData: TimeEntry[]
-  setEmployeeTimeData: React.Dispatch<React.SetStateAction<TimeEntry[]>>
-  activeEmployee: string
-  setActiveEmployee: React.Dispatch<React.SetStateAction<string>>
-  onUpdateInventory: (itemId: string, newStock: number, updateType: 'usage', notes?: string) => void
-  inventory: Array<{
-    id: string
-    name: string
-    currentStock: number
-    maxStock: number
-    minStock: number
-    unit: string
-    isDeleted: boolean
-    lastUpdated: string
-  }>
-  setInventoryItems: React.Dispatch<React.SetStateAction<Array<{
-    id: string
-    name: string
-    currentStock: number
-    maxStock: number
-    minStock: number
-    unit: string
-    isDeleted: boolean
-    lastUpdated: string
-  }>>>
-  setInventoryLogs: React.Dispatch<React.SetStateAction<Array<{
-    id: string
-    itemId: string
-    previousStock: number
-    newStock: number
-    updateType: 'restock' | 'usage' | 'adjustment'
-    timestamp: string
-    updatedBy: string
-    notes?: string
-    isSaved: boolean
-  }>>>
-  savedData: SalesRecord[]
-  setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>
+  onShareClick: () => void;
+  onOpenTimesheet: () => void;
+  onSaveToServer: () => Promise<void>;
+  employeeTimeData: TimeEntry[];
+  setEmployeeTimeData: React.Dispatch<React.SetStateAction<TimeEntry[]>>;
+  activeEmployee: string;
+  setActiveEmployee: React.Dispatch<React.SetStateAction<string>>;
+  onUpdateInventory: (itemId: string, newStock: number, updateType: 'usage', notes?: string) => void;
+  inventory: InventoryItem[];
+  setInventoryItems: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
+  setInventoryLogs: React.Dispatch<React.SetStateAction<InventoryLog[]>>;
+  savedData: SalesRecord[];
+  setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>;
 }
 
 export default function Header({ 
@@ -93,7 +105,7 @@ export default function Header({
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: AlertColor }>({ open: false, message: '', severity: 'info' })
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [itemUsages, setItemUsages] = useState<Record<string, string>>({})
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isInstallable, setIsInstallable] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([])
@@ -106,14 +118,14 @@ export default function Header({
         const data = await getFromIndexedDB()
         if (data?.employeeTimeData) {
           // Filter entries for active employee
-          const employeeEntries = data.employeeTimeData.filter(entry => entry.employeeName === activeEmployee)
+          const employeeEntries = data.employeeTimeData.filter((entry: TimeEntry) => entry.employeeName === activeEmployee)
           if (employeeEntries.length > 0) {
             const lastEntry = employeeEntries[employeeEntries.length - 1]
             setClockedIn(lastEntry.action === 'in')
             
             // Find last clock in and out times for this employee
-            const lastClockIn = employeeEntries.findLast((entry) => entry.action === 'in')
-            const lastClockOut = employeeEntries.findLast((entry) => entry.action === 'out')
+            const lastClockIn = employeeEntries.findLast((entry: TimeEntry) => entry.action === 'in')
+            const lastClockOut = employeeEntries.findLast((entry: TimeEntry) => entry.action === 'out')
             
             if (lastClockIn) setClockInTime(lastClockIn.time)
             if (lastClockOut) setClockOutTime(lastClockOut.time)
@@ -168,7 +180,7 @@ export default function Header({
 
   // Handle beforeinstallprompt event
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
+    const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
       console.log('beforeinstallprompt event fired');
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
@@ -177,7 +189,7 @@ export default function Header({
       setIsInstallable(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
 
     // Handle successful installation
     window.addEventListener('appinstalled', () => {
@@ -188,7 +200,7 @@ export default function Header({
     });
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
     };
   }, []);
 
@@ -258,31 +270,31 @@ export default function Header({
         const clockInData = await clockInResponse.json();
         
         // Save locally after successful server save
-      const newEntry = {
-        date: now.toLocaleDateString(),
-        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
-          action: 'in' as const,
-        employeeName: activeEmployee,
+        const newEntry: TimeEntry = {
+          date: now.toLocaleDateString(),
+          time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
+          action: 'in',
+          employeeName: activeEmployee,
           isSaved: true,
           _id: clockInData._id,
           clockInTime: now.toISOString(),
-          clockOutTime: null
-      }
+          clockOutTime: undefined
+        }
 
-      // Get existing data from IndexedDB
-      const existingData = await getFromIndexedDB() || {}
-      
-      // Create updated time data array
-      const updatedTimeData = [...(employeeTimeData || []), newEntry]
-      
-      // Save to IndexedDB while preserving other data
-      await saveToIndexedDB({
-        ...existingData,
-        employeeTimeData: updatedTimeData
-      })
+        // Get existing data from IndexedDB
+        const existingData = await getFromIndexedDB() || {}
+        
+        // Create updated time data array
+        const updatedTimeData = [...(employeeTimeData || []), newEntry]
+        
+        // Save to IndexedDB while preserving other data
+        await saveToIndexedDB({
+          ...existingData,
+          employeeTimeData: updatedTimeData
+        })
 
-      // Update state
-      setEmployeeTimeData(updatedTimeData)
+        // Update state
+        setEmployeeTimeData(updatedTimeData)
         setClockedIn(true)
         setClockInTime(newEntry.time)
         setClockOutTime('--')
@@ -433,7 +445,14 @@ export default function Header({
       }).filter(Boolean);
 
       // Update all items in one go
-      const updatedInventory = currentInventory.map(item => {
+      const updatedInventory = currentInventory.map((item: { 
+        id: string;
+        currentStock: number;
+        maxStock: number;
+        unit: string;
+        lastUpdated: string;
+        isSaved: boolean;
+      }) => {
         const update = itemsToUpdate.find(u => u.itemId === item.id);
         if (!update) return item;
 
@@ -459,7 +478,7 @@ export default function Header({
 
       // Update state
       setInventoryItems(updatedInventory);
-      setInventoryLogs(prev => [...(prev || []), ...updateLogs]);
+      setInventoryLogs(prev => [...(prev || []), ...updateLogs].filter((log): log is NonNullable<typeof log> => log !== null));
 
       // Show success message
       setSnackbar({
@@ -533,7 +552,7 @@ export default function Header({
             entry.isSaved = true;
 
             // Find matching clock out
-            const clockOut = entries.slice(i + 1).find(e => 
+            const clockOut = entries.slice(i + 1).find((e: TimeEntry) => 
               e.action === 'out' && 
               e.date === entry.date
             );
@@ -562,10 +581,10 @@ export default function Header({
       }
 
       // Now sync sales data
-      const unsavedSales = savedData.filter(entry => entry.isSaved === false || !entry.isSaved);
+      const unsavedSales = savedData.filter((entry: SalesRecord) => entry.isSaved === false || !entry.isSaved);
       if (unsavedSales.length > 0) {
         // Format entries for server
-        const formattedEntries = unsavedSales.map(entry => ({
+        const formattedEntries = unsavedSales.map((entry: SalesRecord) => ({
           ...entry,
           isSaved: false // Convert string to boolean
         }));
@@ -584,7 +603,7 @@ export default function Header({
         }
 
         // Update local state to mark sales as saved
-        const updatedSavedData = savedData.map(entry => 
+        const updatedSavedData = savedData.map((entry: SalesRecord) => 
           unsavedSales.some(unsaved => unsaved.Date === entry.Date) 
             ? { ...entry, isSaved: true }
             : entry
@@ -616,7 +635,7 @@ export default function Header({
     }
   };
 
-  const handleInstall = async () => {
+  const handleInstall = async (e: React.MouseEvent<HTMLButtonElement>) => {
     console.log('Install button clicked');
     console.log('Deferred prompt available:', !!deferredPrompt);
     
@@ -681,52 +700,33 @@ export default function Header({
   };
 
   const handleTimeEntry = (entry: TimeEntry) => {
-    setTimeEntries(prev => {
-      const newEntry = { ...entry };
-      if (newEntry.clockOutTime === null) {
-        newEntry.clockOutTime = undefined;
-      }
-      return [...prev, newEntry];
-    });
+    setTimeEntries(prev => [...prev, entry])
+  }
+
+  const handleInventoryUpdate = (item: InventoryLog) => {
+    setInventoryLogs(prev => prev.map(existingItem => 
+      existingItem.id === item.id ? item : existingItem
+    ));
   };
 
-  const handleInventoryUpdate = (item: InventoryUpdate) => {
-    setInventoryUpdates(prev => {
-      const newItem = { ...item };
-      return prev.map(i => i.id === newItem.id ? { ...i, isSaved: true } : i);
-    });
+  const handleSaveInventoryUpdate = (update: InventoryLog) => {
+    setInventoryLogs(prev => prev.map(item => 
+      item.id === update.id ? update : item
+    ));
   };
 
-  const handleSaveTimeEntry = (entry: TimeEntry) => {
-    setTimeEntries(prev => {
-      const newEntry = { ...entry };
-      if (newEntry.clockOutTime === null) {
-        newEntry.clockOutTime = undefined;
-      }
-      return prev.map(e => e._id === newEntry._id ? { ...newEntry, isSaved: true } : e);
-    });
-  };
-
-  const handleSaveInventoryUpdate = (item: InventoryUpdate) => {
-    setInventoryUpdates(prev => {
-      const newItem = { ...item };
-      return prev.map(i => i.id === newItem.id ? { ...newItem, isSaved: true } : i);
-    });
-  };
-
-  const handleShare = (e: MouseEvent<HTMLButtonElement>) => {
+  const handleShare = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    // ... rest of implementation
+    onShareClick();
   };
 
-  // Update the filter functions
   const filterTimeEntries = (entries: TimeEntry[]) => {
-    return entries.filter(entry => entry.isSaved === false);
-  };
+    return entries.filter(entry => !entry.isSaved)
+  }
 
   const filterInventoryUpdates = (updates: InventoryUpdate[]) => {
-    return updates.filter(update => update.isSaved === false);
-  };
+    return updates.filter(update => !update.isSaved)
+  }
 
   return (
     <>
@@ -774,7 +774,7 @@ export default function Header({
                 {getInstallButtonText()}
               </Button>
               <IconButton
-                onClick={onShareClick}
+                onClick={handleShare}
                 sx={{
                   bgcolor: grey[100],
                   '&:hover': { bgcolor: grey[200] },
