@@ -43,6 +43,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns'
 import { blue } from '@mui/material/colors'
 import { LineChart, BarChart } from '@mui/x-charts'
+import { SheetData, Sheet } from '@/types'
 
 interface SnackbarState {
   open: boolean;
@@ -64,18 +65,7 @@ interface EmployeeHours {
   };
 }
 
-interface SheetData {
-  Date: string;
-  Coin: string;
-  Hopper: string;
-  Soap: string;
-  Vending: string;
-  'Drop Off Amount 1': string;
-  'Drop Off Code': string;
-  'Drop Off Amount 2': string;
-}
-
-interface Sheet {
+interface GoogleSheetResult {
   result: {
     values: any[][];
   };
@@ -87,13 +77,24 @@ interface Employee {
   status?: string;
 }
 
+interface ProcessedData {
+  Date: string;
+  Coin: string;
+  Hopper: string;
+  Soap: string;
+  Vending: string;
+  'Drop Off Amount 1': string;
+  'Drop Off Code': string;
+  'Drop Off Amount 2': string;
+}
+
 const DEFAULT_CREDENTIALS = {
   username: 'admin',
   password: '123456'
 };
 
 export default function AdminPage() {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<SheetData[]>([]);
   const [employeeData, setEmployeeData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -285,20 +286,50 @@ export default function AdminPage() {
     }
   };
 
-  const handleSuccessfulFetch = async (result: any) => {
-    // Handle main data
-    const rows = result.result.values || [];
-    setData(rows.map(row => ({
-      Date: row[0] || '',
-      Coin: row[1] || '',
-      Hopper: row[2] || '',
-      Soap: row[3] || '',
-      Vending: row[4] || '',
-      'Drop Off Amount 1': row[5] || '',
-      'Drop Off Code': row[6] || '',
-      'Drop Off Amount 2': row[7] || ''
-    })));
+  const processRow = (row: any[]): ProcessedData => ({
+    Date: row[0] || '',
+    Coin: row[1] || '',
+    Hopper: row[2] || '',
+    Soap: row[3] || '',
+    Vending: row[4] || '',
+    'Drop Off Amount 1': row[5] || '',
+    'Drop Off Code': row[6] || '',
+    'Drop Off Amount 2': row[7] || ''
+  });
 
+  const processSheet = (sheet: GoogleSheetResult): ProcessedData[] => {
+    const rows = sheet.result.values || [];
+    return rows.map(processRow);
+  };
+
+  const handleSheetData = (sheet: GoogleSheetResult): void => {
+    setData(processSheet(sheet));
+  };
+
+  const handleSheetProcess = (sheet: GoogleSheetResult): void => {
+    const processedData = processSheet(sheet);
+    // ... rest of implementation
+  };
+
+  const handleSearch = (s: string): void => {
+    // ... implementation
+  };
+
+  const handleSheetSelect = (sheet: GoogleSheetResult): void => {
+    // ... implementation
+  };
+
+  const handleFilterSearch = (s: string): void => {
+    // ... implementation
+  };
+
+  const handleDateSearch = (s: string): void => {
+    // ... implementation
+  };
+
+  const handleSuccessfulFetch = (result: GoogleSheetResult) => {
+    const rows = result.result.values || [];
+    setData(rows.map(processRow));
     setSnackbar({
       open: true,
       message: 'Data loaded successfully',

@@ -21,7 +21,7 @@ import {
 import { blue, green, grey, red } from '@mui/material/colors'
 import ShareIcon from '@mui/icons-material/Share'
 import { saveToIndexedDB, getFromIndexedDB } from '../utils/db'
-import { TimeEntry, SalesRecord } from '../types'
+import { TimeEntry, SalesRecord, InventoryUpdate } from '@/types'
 import { API_URL } from '../config'
 
 interface HeaderProps {
@@ -66,29 +66,6 @@ interface HeaderProps {
   }>>>
   savedData: SalesRecord[]
   setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>
-}
-
-interface TimeEntry {
-  date: string;
-  time: string;
-  action: 'in' | 'out';
-  employeeName: string;
-  isSaved: boolean;
-  _id: string;
-  clockInTime: string;
-  clockOutTime: string | null;
-}
-
-interface InventoryUpdate {
-  id: string;
-  itemId: string;
-  previousStock: number;
-  newStock: number;
-  updateType: 'restock' | 'usage' | 'adjustment';
-  timestamp: string;
-  updatedBy: string;
-  notes?: string;
-  isSaved: boolean;
 }
 
 export default function Header({ 
@@ -703,11 +680,19 @@ export default function Header({
   };
 
   const handleTimeEntry = (entry: TimeEntry) => {
-    // ... implementation
+    setTimeEntries(prev => [...prev, entry]);
   };
 
   const handleInventoryUpdate = (item: InventoryUpdate) => {
-    // ... implementation
+    setInventoryUpdates(prev => [...prev, item]);
+  };
+
+  const handleSaveTimeEntry = (entry: TimeEntry) => {
+    setTimeEntries(prev => prev.map(e => e._id === entry._id ? { ...e, isSaved: true } : e));
+  };
+
+  const handleSaveInventoryUpdate = (item: InventoryUpdate) => {
+    setInventoryUpdates(prev => prev.map(i => i.id === item.id ? { ...i, isSaved: true } : i));
   };
 
   // Update the filter functions
