@@ -21,7 +21,7 @@ import {
 import { blue, green, grey, red } from '@mui/material/colors'
 import ShareIcon from '@mui/icons-material/Share'
 import { saveToIndexedDB, getFromIndexedDB } from '../utils/db'
-import { TimeEntry, SalesRecord, InventoryUpdate } from '@/types'
+import { TimeEntry, SalesRecord, InventoryUpdate } from '../../types'
 import { API_URL } from '../config'
 import { FormEvent, MouseEvent } from 'react'
 
