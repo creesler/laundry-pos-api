@@ -232,7 +232,7 @@ export default memo(function SalesForm({
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '0.8vh',
-        flex: 1,
+        mb: '0.8vh',
         '& .MuiButton-root': {
           fontSize: '2vh',
           minHeight: '5vh',
@@ -274,6 +274,49 @@ export default memo(function SalesForm({
             {num === '.' ? '•' : num === 'SAVE' ? (editingIndex !== null ? 'Update' : 'Save') : num}
           </Button>
         ))}
+      </Box>
+      <Box sx={{ 
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.8vh'
+      }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: grey[700] }}>
+          Inventory
+        </Typography>
+        <Box sx={{ 
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '0.8vh'
+        }}>
+          <Button
+            variant="contained"
+            onClick={() => onNumpadClick('Clr')}
+            sx={{
+              bgcolor: grey[500],
+              color: 'white',
+              '&:hover': { bgcolor: grey[600] },
+              fontSize: '1.8vh',
+              minHeight: '5vh',
+              borderRadius: '6px'
+            }}
+          >
+            CLR
+          </Button>
+          <Button
+            variant="contained"
+            onClick={onSave}
+            sx={{
+              bgcolor: blue[600],
+              color: 'white',
+              '&:hover': { bgcolor: blue[700] },
+              fontSize: '1.8vh',
+              minHeight: '5vh',
+              borderRadius: '6px'
+            }}
+          >
+            {editingIndex !== null ? 'Update' : 'Save'}
+          </Button>
+        </Box>
       </Box>
     </Paper>
   );
