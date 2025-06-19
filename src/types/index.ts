@@ -14,7 +14,7 @@ export interface InventoryUpdate {
   itemId: string;
   previousStock: number;
   newStock: number;
-  updateType: 'restock' | 'usage' | 'adjustment';
+  updateType: 'restock' | 'use' | 'adjustment';
   timestamp: string;
   updatedBy: string;
   notes?: string;
@@ -35,9 +35,35 @@ export interface SalesRecord {
 }
 
 export interface GoogleSheetResult {
-  result: {
-    values: any[][];
-  };
+  range: string;
+  majorDimension: string;
+  values: any[][];
 }
 
-export type SheetData = SalesRecord; 
+export interface SheetData {
+  Date: string;
+  Coin: string;
+  Hopper: string;
+  Soap: string;
+  Vending: string;
+  'Drop Off Amount 1': string;
+  'Drop Off Code': string;
+  'Drop Off Amount 2': string;
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  currentStock: number;
+  minStock: number;
+  maxStock: number;
+  unit: string;
+  lastUpdated: string;
+}
+
+export interface SalesRecord {
+  date: string;
+  amount: string;
+  type: string;
+  notes?: string;
+} 
