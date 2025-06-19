@@ -126,8 +126,8 @@ function SalesForm({
       <Box sx={{ 
         display: 'grid',
         gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: '0.4vh',
-        mb: '0.4vh'
+        gap: '0.2vh',
+        mb: '0.2vh'
       }}>
         {['Coin', 'Hopper', 'Soap', 'Vending'].map((label) => (
           <TextField
@@ -137,13 +137,13 @@ function SalesForm({
             value={inputValues[label]}
             onClick={() => onFieldSelect(label)}
             inputProps={{ 
-              style: { fontSize: '1.4vh' },
+              style: { fontSize: '1.2vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '3vh',
-                borderRadius: '4px',
+                height: '2.5vh',
+                borderRadius: '2px',
                 bgcolor: selectedField === label ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
                   borderColor: selectedField === label ? blue[500] : '#e5e7eb'
@@ -152,20 +152,20 @@ function SalesForm({
             }}
           />
         ))}
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4vh', gridColumn: 'span 2' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.2vh', gridColumn: 'span 2' }}>
           <TextField
             size="small"
             placeholder="Drop Off Amount"
             value={inputValues['Drop Off Amount 1']}
             onClick={() => onFieldSelect('Drop Off Amount 1')}
             inputProps={{ 
-              style: { fontSize: '1.4vh' },
+              style: { fontSize: '1.2vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '3vh',
-                borderRadius: '4px',
+                height: '2.5vh',
+                borderRadius: '2px',
                 bgcolor: selectedField === 'Drop Off Amount 1' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
                   borderColor: selectedField === 'Drop Off Amount 1' ? blue[500] : '#e5e7eb'
@@ -179,13 +179,13 @@ function SalesForm({
             value={inputValues['Drop Off Code']}
             onClick={() => onFieldSelect('Drop Off Code')}
             inputProps={{ 
-              style: { fontSize: '1.4vh' },
+              style: { fontSize: '1.2vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '3vh',
-                borderRadius: '4px',
+                height: '2.5vh',
+                borderRadius: '2px',
                 bgcolor: selectedField === 'Drop Off Code' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
                   borderColor: selectedField === 'Drop Off Code' ? blue[500] : '#e5e7eb'
@@ -199,13 +199,13 @@ function SalesForm({
             value={inputValues['Drop Off Amount 2']}
             onClick={() => onFieldSelect('Drop Off Amount 2')}
             inputProps={{ 
-              style: { fontSize: '1.4vh' },
+              style: { fontSize: '1.2vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '3vh',
-                borderRadius: '4px',
+                height: '2.5vh',
+                borderRadius: '2px',
                 bgcolor: selectedField === 'Drop Off Amount 2' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
                   borderColor: selectedField === 'Drop Off Amount 2' ? blue[500] : '#e5e7eb'
@@ -218,14 +218,16 @@ function SalesForm({
       <Box sx={{ 
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '0.3vh',
+        gap: '0.2vh',
         flex: 1,
         '& .MuiButton-root': {
-          fontSize: '1.3vh',
-          minHeight: '3vh',
-          padding: '0.2vh',
-          borderRadius: '3px',
-          fontWeight: 'bold'
+          fontSize: '1.2vh',
+          minHeight: '2.5vh',
+          padding: '0.1vh',
+          borderRadius: '2px',
+          fontWeight: 'bold',
+          minWidth: 0,
+          lineHeight: 1
         }
       }}>
         {[7, 8, 9, 'CLR', 4, 5, 6, 'SAVE', 1, 2, 3, 'DEL', 0, '.'].map((num) => (
