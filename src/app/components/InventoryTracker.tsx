@@ -165,10 +165,10 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
           justifyContent: 'flex-end',
           flexShrink: 0
         }}>
-          <Button
-            startIcon={<AddIcon />}
-            size="small"
-            onClick={() => setAddDialogOpen(true)}
+        <Button
+          startIcon={<AddIcon />}
+          size="small"
+          onClick={() => setAddDialogOpen(true)}
             variant="contained"
             sx={{ 
               fontSize: '1.2vh', 
@@ -176,20 +176,20 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
               minWidth: 'auto',
               height: 'auto'
             }}
-          >
-            Add Item
-          </Button>
+        >
+          Add Item
+        </Button>
         </Box>
       </Box>
       
       <Collapse in={isExpanded} sx={{ display: { md: 'block' } }}>
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column',
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column',
           gap: '1vh',
-          flex: 1,
-          overflowY: 'auto',
-          overflowX: 'hidden',
+        flex: 1,
+        overflowY: 'auto',
+        overflowX: 'hidden',
           pr: 1,
           '&::-webkit-scrollbar': {
             width: '6px',
@@ -205,29 +205,29 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
               background: '#666',
             },
           }
-        }}>
-          {inventory.filter(item => !item.isDeleted).map((item) => {
-            const currentStock = Number(item.currentStock) || 0;
-            const maxStock = Number(item.maxStock) || 0;
-            const usagePercentage = maxStock > 0 ? (currentStock / maxStock) * 100 : 0;
-            
-            return (
-              <Box 
-                key={item.id} 
-                sx={{ 
-                  display: 'flex', 
+      }}>
+        {inventory.filter(item => !item.isDeleted).map((item) => {
+          const currentStock = Number(item.currentStock) || 0;
+          const maxStock = Number(item.maxStock) || 0;
+          const usagePercentage = maxStock > 0 ? (currentStock / maxStock) * 100 : 0;
+          
+          return (
+            <Box 
+              key={item.id} 
+              sx={{ 
+                display: 'flex', 
                   flexDirection: 'row',
-                  alignItems: 'center',
+                alignItems: 'center',
                   gap: 1,
                   p: 0.75,
-                  borderRadius: 1,
+                borderRadius: 1,
                   bgcolor: 'background.paper',
                   boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                  '&:hover': {
+                '&:hover': {
                     bgcolor: 'rgba(0, 0, 0, 0.02)'
-                  }
-                }}
-              >
+                }
+              }}
+            >
                 <Box sx={{ 
                   flex: 1,
                   minWidth: 0,
@@ -260,30 +260,30 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
                       }}
                     >
                       {`${currentStock}/${maxStock} ${item.unit}`}
-                    </Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={usagePercentage}
-                    sx={{
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={usagePercentage}
+                  sx={{
                       height: '1.2vh',
                       borderRadius: '3px',
-                      bgcolor: grey[200],
-                      '& .MuiLinearProgress-bar': {
-                        bgcolor: getStockLevelColor(item)
-                      }
-                    }}
-                  />
-                </Box>
+                    bgcolor: grey[200],
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: getStockLevelColor(item)
+                    }
+                  }}
+                />
+              </Box>
                 <Box sx={{ 
                   display: 'flex', 
                   gap: 0.5,
                   flexShrink: 0
                 }}>
-                  <IconButton 
-                    size="small"
-                    onClick={(e) => handleItemClick(e, item.id)}
-                    title="Set Total Stock"
+              <IconButton 
+                size="small"
+                onClick={(e) => handleItemClick(e, item.id)}
+                title="Set Total Stock"
                     sx={{
                       p: '3px',
                       bgcolor: 'background.default',
@@ -291,12 +291,12 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
                         bgcolor: 'action.hover'
                       }
                     }}
-                  >
+              >
                     <EditIcon sx={{ fontSize: '1.6vh' }} />
-                  </IconButton>
-                  <IconButton 
-                    size="small"
-                    onClick={() => setDeleteConfirmItem(item.name)}
+              </IconButton>
+              <IconButton 
+                size="small"
+                onClick={() => setDeleteConfirmItem(item.name)}
                     sx={{ 
                       p: '3px',
                       bgcolor: 'background.default',
@@ -304,14 +304,14 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
                         bgcolor: 'error.lighter'
                       }
                     }}
-                  >
+              >
                     <DeleteIcon sx={{ fontSize: '1.6vh', color: 'error.main' }} />
-                  </IconButton>
+              </IconButton>
                 </Box>
-              </Box>
-            );
-          })}
-        </Box>
+            </Box>
+          );
+        })}
+      </Box>
       </Collapse>
 
       <Menu
