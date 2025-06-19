@@ -4,9 +4,9 @@ export interface TimeEntry {
   action: 'in' | 'out';
   employeeName: string;
   isSaved: boolean;
-  _id: string;
-  clockInTime: string;
-  clockOutTime: string | null;
+  _id?: string;
+  clockInTime?: string;
+  clockOutTime?: string | null;
 }
 
 export interface InventoryUpdate {
@@ -21,7 +21,7 @@ export interface InventoryUpdate {
   isSaved: boolean;
 }
 
-export interface SheetData {
+export interface SalesRecord {
   Date: string;
   Coin: string;
   Hopper: string;
@@ -33,8 +33,10 @@ export interface SheetData {
   [key: string]: string;
 }
 
-export interface Sheet {
+export interface GoogleSheetResult {
   result: {
     values: any[][];
   };
-} 
+}
+
+export type SheetData = SalesRecord; 

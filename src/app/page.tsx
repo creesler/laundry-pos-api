@@ -51,7 +51,7 @@ import InventoryTracker from './components/InventoryTracker'
 import TimesheetModal from './components/TimesheetModal'
 import ShareMenu from './components/ShareMenu'
 import AppSnackbar from './components/Snackbar'
-import { SnackbarState, InputValues, InventoryItem, InventoryUpdateLog } from './types'
+import { SnackbarState, InputValues, InventoryItem, InventoryUpdateLog, TimeEntry } from './types'
 import { calculateDailyTotals, calculateChartWidth, calculateDuration, clearAllFields } from './utils/helpers'
 
 // Import Header with no SSR
@@ -64,14 +64,6 @@ emailjs.init('your_public_key') // Replace with your EmailJS public key
 
 
 // Add type for time entry
-interface TimeEntry {
-  date: string;
-  time: string;
-  action: 'in' | 'out';
-  employeeName: string;
-  isSaved: boolean;
-}
-
 interface FormattedTimeEntry {
   date: string;
   duration: string;
