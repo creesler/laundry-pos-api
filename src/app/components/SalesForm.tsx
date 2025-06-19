@@ -230,7 +230,7 @@ export default memo(function SalesForm({
       </Box>
       <Box sx={{ 
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '0.8vh',
         flex: 1,
         '& .MuiButton-root': {
