@@ -64,6 +64,29 @@ interface EmployeeHours {
   };
 }
 
+interface SheetData {
+  Date: string;
+  Coin: string;
+  Hopper: string;
+  Soap: string;
+  Vending: string;
+  'Drop Off Amount 1': string;
+  'Drop Off Code': string;
+  'Drop Off Amount 2': string;
+}
+
+interface Sheet {
+  result: {
+    values: any[][];
+  };
+}
+
+interface Employee {
+  name: string;
+  role?: string;
+  status?: string;
+}
+
 const DEFAULT_CREDENTIALS = {
   username: 'admin',
   password: '123456'

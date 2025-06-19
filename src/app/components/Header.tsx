@@ -68,6 +68,29 @@ interface HeaderProps {
   setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>
 }
 
+interface TimeEntry {
+  date: string;
+  time: string;
+  action: 'in' | 'out';
+  employeeName: string;
+  isSaved: boolean;
+  _id: string;
+  clockInTime: string;
+  clockOutTime: string | null;
+}
+
+interface InventoryUpdate {
+  id: string;
+  itemId: string;
+  previousStock: number;
+  newStock: number;
+  updateType: 'restock' | 'usage' | 'adjustment';
+  timestamp: string;
+  updatedBy: string;
+  notes?: string;
+  isSaved: boolean;
+}
+
 export default function Header({ 
   onShareClick, 
   onOpenTimesheet,
@@ -95,6 +118,8 @@ export default function Header({
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [isInstallable, setIsInstallable] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([])
+  const [inventoryUpdates, setInventoryUpdates] = useState<InventoryUpdate[]>([])
 
   // Load initial state from IndexedDB
   useEffect(() => {
@@ -675,6 +700,23 @@ export default function Header({
       return '📱 Install App';
     }
     return '📱 Download App';
+  };
+
+  const handleTimeEntry = (entry: TimeEntry) => {
+    // ... implementation
+  };
+
+  const handleInventoryUpdate = (item: InventoryUpdate) => {
+    // ... implementation
+  };
+
+  // Update the filter functions
+  const filterTimeEntries = (entries: TimeEntry[]) => {
+    return entries.filter(entry => /* ... */);
+  };
+
+  const filterInventoryUpdates = (updates: InventoryUpdate[]) => {
+    return updates.filter(update => /* ... */);
   };
 
   return (

@@ -51,13 +51,13 @@ export async function GET() {
       }
     });
   } catch (error) {
-    console.error('Error serving service worker:', error);
-    return new NextResponse('Error serving service worker', { 
+    if (error instanceof Error) {
+      return new Response(`Failed to generate service worker: ${error.message}`, {
+        status: 500,
+      });
+    }
+    return new Response('Failed to generate service worker', {
       status: 500,
-      headers: {
-        'Content-Type': 'text/plain',
-        'X-Debug-Info': error.message
-      }
     });
   }
 } 

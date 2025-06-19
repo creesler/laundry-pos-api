@@ -3,22 +3,25 @@ import { blue, green, yellow, red, grey } from '@mui/material/colors'
 import { SxProps, Theme } from '@mui/material/styles'
 import { useEffect, memo } from 'react'
 
+interface SalesRecord {
+  Date: string;
+  Coin: string;
+  Hopper: string;
+  Soap: string;
+  Vending: string;
+  'Drop Off Amount 1': string;
+  'Drop Off Code': string;
+  'Drop Off Amount 2': string;
+  [key: string]: string; // Add index signature
+}
+
 interface SalesFormProps {
   currentFormDate: string
   selectedEmployee: string
   employeeList: string[]
   isOnline: boolean
   selectedField: string
-  inputValues: {
-    Date: string
-    Coin: string
-    Hopper: string
-    Soap: string
-    Vending: string
-    'Drop Off Amount 1': string
-    'Drop Off Code': string
-    'Drop Off Amount 2': string
-  }
+  inputValues: SalesRecord
   editingIndex: number | null
   onFieldSelect: (field: string) => void
   onNumpadClick: (value: string) => void
