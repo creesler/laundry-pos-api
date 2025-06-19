@@ -3,6 +3,9 @@ export interface TimeEntry {
   time: string;
   action: 'in' | 'out';
   isSaved?: boolean;
+  _id?: string;
+  clockInTime?: string;
+  clockOutTime?: string;
 }
 
 export interface InventoryUpdate {
