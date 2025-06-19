@@ -1,10 +1,7 @@
-import { TimeEntry, SalesRecord, InventoryItem, InventoryUpdate } from '@/types'
+import { EmployeeTimeEntry } from './timesheet'
 
 export interface DBData {
-  employeeTimeData: TimeEntry[];
-  savedData: SalesRecord[];
-  inventoryItems: InventoryItem[];
-  inventoryLogs: InventoryUpdate[];
+  employeeTimeData: EmployeeTimeEntry[];
   data: any[];
   employeeList: string[];
   lastSynced?: string;

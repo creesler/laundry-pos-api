@@ -308,14 +308,14 @@ export default function AdminPage() {
   };
 
   const processRow = (row: any[]): SheetData => ({
-    Date: row[0] || '',
-    Coin: row[1] || '',
-    Hopper: row[2] || '',
-    Soap: row[3] || '',
-    Vending: row[4] || '',
-    'Drop Off Amount 1': row[5] || '',
-    'Drop Off Code': row[6] || '',
-    'Drop Off Amount 2': row[7] || ''
+      Date: row[0] || '',
+      Coin: row[1] || '',
+      Hopper: row[2] || '',
+      Soap: row[3] || '',
+      Vending: row[4] || '',
+      'Drop Off Amount 1': row[5] || '',
+      'Drop Off Code': row[6] || '',
+      'Drop Off Amount 2': row[7] || ''
   });
 
   const handleSheetData = ({ sheet }: SheetHandlerProps): void => {

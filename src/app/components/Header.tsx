@@ -21,7 +21,7 @@ import {
 import { blue, green, grey, red } from '@mui/material/colors'
 import ShareIcon from '@mui/icons-material/Share'
 import { saveToIndexedDB, getFromIndexedDB } from '../utils/db'
-import { TimeEntry, SalesRecord, InventoryUpdate, InventoryItem } from '@/types'
+import { TimeEntry, SalesRecord, InventoryUpdate } from '@/types'
 import { API_URL } from '../config'
 import { FormEvent, MouseEvent } from 'react'
 
@@ -34,9 +34,37 @@ interface HeaderProps {
   activeEmployee: string
   setActiveEmployee: React.Dispatch<React.SetStateAction<string>>
   onUpdateInventory: (itemId: string, newStock: number, updateType: 'usage', notes?: string) => void
-  inventory: InventoryItem[]
-  setInventoryItems: React.Dispatch<React.SetStateAction<InventoryItem[]>>
-  setInventoryLogs: React.Dispatch<React.SetStateAction<InventoryUpdate[]>>
+  inventory: Array<{
+    id: string
+    name: string
+    currentStock: number
+    maxStock: number
+    minStock: number
+    unit: string
+    isDeleted: boolean
+    lastUpdated: string
+  }>
+  setInventoryItems: React.Dispatch<React.SetStateAction<Array<{
+    id: string
+    name: string
+    currentStock: number
+    maxStock: number
+    minStock: number
+    unit: string
+    isDeleted: boolean
+    lastUpdated: string
+  }>>>
+  setInventoryLogs: React.Dispatch<React.SetStateAction<Array<{
+    id: string
+    itemId: string
+    previousStock: number
+    newStock: number
+    updateType: 'restock' | 'usage' | 'adjustment'
+    timestamp: string
+    updatedBy: string
+    notes?: string
+    isSaved: boolean
+  }>>>
   savedData: SalesRecord[]
   setSavedData: React.Dispatch<React.SetStateAction<SalesRecord[]>>
 }
@@ -78,14 +106,14 @@ export default function Header({
         const data = await getFromIndexedDB()
         if (data?.employeeTimeData) {
           // Filter entries for active employee
-          const employeeEntries = data.employeeTimeData.filter((entry: TimeEntry) => entry.employeeName === activeEmployee)
+          const employeeEntries = data.employeeTimeData.filter(entry => entry.employeeName === activeEmployee)
           if (employeeEntries.length > 0) {
             const lastEntry = employeeEntries[employeeEntries.length - 1]
             setClockedIn(lastEntry.action === 'in')
             
             // Find last clock in and out times for this employee
-            const lastClockIn = employeeEntries.findLast((entry: TimeEntry) => entry.action === 'in')
-            const lastClockOut = employeeEntries.findLast((entry: TimeEntry) => entry.action === 'out')
+            const lastClockIn = employeeEntries.findLast((entry) => entry.action === 'in')
+            const lastClockOut = employeeEntries.findLast((entry) => entry.action === 'out')
             
             if (lastClockIn) setClockInTime(lastClockIn.time)
             if (lastClockOut) setClockOutTime(lastClockOut.time)
@@ -125,44 +153,44 @@ export default function Header({
   useEffect(() => {
     const checkInstalled = () => {
       if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log('App is installed and running in standalone mode')
-        setIsInstalled(true)
+        console.log('App is installed and running in standalone mode');
+        setIsInstalled(true);
       }
-    }
+    };
 
-    checkInstalled()
-    window.matchMedia('(display-mode: standalone)').addListener(checkInstalled)
+    checkInstalled();
+    window.matchMedia('(display-mode: standalone)').addListener(checkInstalled);
 
     return () => {
-      window.matchMedia('(display-mode: standalone)').removeListener(checkInstalled)
-    }
-  }, [])
+      window.matchMedia('(display-mode: standalone)').removeListener(checkInstalled);
+    };
+  }, []);
 
   // Handle beforeinstallprompt event
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      console.log('beforeinstallprompt event fired')
+      console.log('beforeinstallprompt event fired');
       // Prevent Chrome 67 and earlier from automatically showing the prompt
-      e.preventDefault()
+      e.preventDefault();
       // Stash the event so it can be triggered later
-      setDeferredPrompt(e)
-      setIsInstallable(true)
-    }
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // Handle successful installation
     window.addEventListener('appinstalled', () => {
-      console.log('App was successfully installed')
-      setIsInstalled(true)
-      setDeferredPrompt(null)
-      setIsInstallable(false)
-    })
+      console.log('App was successfully installed');
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+      setIsInstallable(false);
+    });
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    }
-  }, [])
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
 
   const saveEmployeeTimeLocally = async (action: 'in' | 'out') => {
     if (!activeEmployee) {
@@ -182,12 +210,12 @@ export default function Header({
       const now = new Date()
       
       // Check for pending timesheets first
-      const pendingResponse = await fetch(`${API_URL}/api/timesheets?employeeName=${activeEmployee}&status=pending`)
-      const pendingTimesheets = await pendingResponse.json()
+      const pendingResponse = await fetch(`${API_URL}/api/timesheets?employeeName=${activeEmployee}&status=pending`);
+      const pendingTimesheets = await pendingResponse.json();
       
       // If trying to clock in and there's a pending timesheet, clock out first
       if (action === 'in' && pendingTimesheets.length > 0) {
-        const pendingTimesheet = pendingTimesheets[0]
+        const pendingTimesheet = pendingTimesheets[0];
         
         // Clock out from the pending timesheet first
         const clockOutResponse = await fetch(`${API_URL}/api/timesheets/clock-out/${pendingTimesheet._id}`, {
@@ -198,66 +226,161 @@ export default function Header({
           body: JSON.stringify({
             clockOut: now.toISOString()
           })
-        })
+        });
 
         if (!clockOutResponse.ok) {
-          throw new Error('Failed to clock out from pending timesheet')
+          const error = await clockOutResponse.json();
+          throw new Error(error.message || 'Failed to resolve pending clock-in');
         }
+
+        // Add a small delay to ensure the clock-out is processed
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      // Create new timesheet entry
-      const response = await fetch(`${API_URL}/api/timesheets/${action === 'in' ? 'clock-in' : 'clock-out'}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          employeeName: activeEmployee,
-          [action === 'in' ? 'clockIn' : 'clockOut']: now.toISOString()
-        })
-      })
+      // Now proceed with the requested action
+      if (action === 'in') {
+        const clockInResponse = await fetch(`${API_URL}/api/timesheets/clock-in`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            employeeName: activeEmployee,
+            date: now.toISOString()
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to clock ${action}`)
-      }
+        if (!clockInResponse.ok) {
+          const error = await clockInResponse.json();
+          throw new Error(error.message || 'Failed to clock in');
+        }
 
-      const newEntry: TimeEntry = {
+        const clockInData = await clockInResponse.json();
+        
+        // Save locally after successful server save
+      const newEntry = {
         date: now.toLocaleDateString(),
         time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
-        action,
+          action: 'in' as const,
         employeeName: activeEmployee,
-        isSaved: false,
-        clockInTime: action === 'in' ? now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : undefined,
-        clockOutTime: action === 'out' ? now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : null
+          isSaved: true,
+          _id: clockInData._id,
+          clockInTime: now.toISOString(),
+          clockOutTime: null
       }
 
-      setEmployeeTimeData(prev => [...prev, newEntry])
+      // Get existing data from IndexedDB
+      const existingData = await getFromIndexedDB() || {}
       
-      // Update state based on action
-      if (action === 'in') {
+      // Create updated time data array
+      const updatedTimeData = [...(employeeTimeData || []), newEntry]
+      
+      // Save to IndexedDB while preserving other data
+      await saveToIndexedDB({
+        ...existingData,
+        employeeTimeData: updatedTimeData
+      })
+
+      // Update state
+      setEmployeeTimeData(updatedTimeData)
         setClockedIn(true)
         setClockInTime(newEntry.time)
+        setClockOutTime('--')
+        
+        setSnackbar({
+          open: true,
+          message: `${activeEmployee} successfully clocked in!`,
+          severity: 'success'
+        })
       } else {
+        // For clock out, find the matching clock-in entry
+        const clockInEntry = [...employeeTimeData]
+          .reverse()
+          .find(entry => 
+            entry.employeeName === activeEmployee && 
+            entry.action === 'in' && 
+            entry._id && 
+            !entry.clockOutTime
+          );
+
+        if (!clockInEntry?._id) {
+          throw new Error('No matching clock-in entry found');
+        }
+
+        const clockOutResponse = await fetch(`${API_URL}/api/timesheets/clock-out/${clockInEntry._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            clockOut: now.toISOString()
+          })
+        });
+
+        if (!clockOutResponse.ok) {
+          const error = await clockOutResponse.json();
+          throw new Error(error.message || 'Failed to clock out');
+        }
+
+        // Save locally after successful server save
+        const newEntry = {
+          date: now.toLocaleDateString(),
+          time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
+          action: 'out' as const,
+          employeeName: activeEmployee,
+          isSaved: true,
+          _id: clockInEntry._id,
+          clockInTime: clockInEntry.clockInTime,
+          clockOutTime: now.toISOString()
+        }
+
+        // Get existing data from IndexedDB
+        const existingData = await getFromIndexedDB() || {}
+        
+        // Update the clock-in entry with clock-out time
+        const updatedTimeData = employeeTimeData.map(entry => 
+          entry._id === clockInEntry._id 
+            ? { ...entry, clockOutTime: now.toISOString() }
+            : entry
+        );
+        updatedTimeData.push(newEntry);
+
+        // Save to IndexedDB while preserving other data
+        await saveToIndexedDB({
+          ...existingData,
+          employeeTimeData: updatedTimeData
+        })
+
+        // Update state
+        setEmployeeTimeData(updatedTimeData)
         setClockedIn(false)
         setClockOutTime(newEntry.time)
+
+        setSnackbar({
+          open: true,
+          message: `${activeEmployee} successfully clocked out!`,
+          severity: 'success'
+        })
+
+        // Clear employee after successful clock out (with delay)
+        setTimeout(() => {
+          setClockInTime('--')
+          setClockOutTime('--')
+          setActiveEmployee('')
+        }, 2000)
       }
 
-      setSnackbar({
-        open: true,
-        message: `Successfully clocked ${action}`,
-        severity: 'success'
-      })
     } catch (error) {
-      console.error(`Error clocking ${action}:`, error)
+      console.error('Error saving time:', error)
       setSnackbar({
         open: true,
-        message: `Failed to clock ${action}`,
+        message: error instanceof Error ? error.message : `Error while clocking ${action}`,
         severity: 'error'
       })
     } finally {
-      // Reset loading state
-      if (action === 'in') setIsClockingIn(false)
-      else setIsClockingOut(false)
+    // Always reset loading state
+    if (action === 'in') setIsClockingIn(false)
+    else setIsClockingOut(false)
     }
   }
 
@@ -266,297 +389,526 @@ export default function Header({
   }
 
   const handleClockOut = async () => {
-    await saveEmployeeTimeLocally('out')
+    setUsageDialogOpen(true)
   }
 
   const handleUsageSubmit = async () => {
     try {
-      // Create inventory updates
-      const updates = Object.entries(itemUsages)
-        .map(([itemId, usage]) => {
-          const item = inventory.find(i => i.id === itemId)
-          if (!item || !usage) return null
+      // Get all items that need to be updated
+      const itemsToUpdate = Object.entries(itemUsages)
+        .filter(([_, usage]) => usage && Number(usage) > 0)
+        .map(([itemId, usage]) => ({
+          itemId,
+          usage: Number(usage)
+        }));
 
-          const numericUsage = parseFloat(usage)
-          if (isNaN(numericUsage)) return null
+      if (itemsToUpdate.length === 0) {
+        // If no updates, just close and clock out
+        setUsageDialogOpen(false);
+        setItemUsages({});
+        await saveEmployeeTimeLocally('out');
+        return;
+      }
 
-          const newStock = item.currentStock - numericUsage
-          const update: InventoryUpdate = {
-            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            itemId,
-            previousStock: item.currentStock,
-            newStock,
-            updateType: 'usage' as const,
-            timestamp: new Date().toISOString(),
-            updatedBy: activeEmployee,
-            notes: `Used ${numericUsage} ${item.unit}`,
-            isSaved: false
-          }
-          return update
-        })
-        .filter((update): update is InventoryUpdate => update !== null)
+      // Get current inventory state from IndexedDB
+      const existingData = await getFromIndexedDB() || {};
+      const currentInventory = existingData.inventory || [];
 
-      setInventoryUpdates(prev => [...prev, ...updates])
+      // Create all the update logs
+      const updateLogs = itemsToUpdate.map(({ itemId, usage }) => {
+        const item = inventory.find(i => i.id === itemId);
+        if (!item) return null;
+        
+        return {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          itemId,
+          previousStock: item.currentStock,
+          newStock: Number(item.currentStock) + usage,
+          updateType: 'usage' as const,
+          timestamp: new Date().toISOString(),
+          updatedBy: activeEmployee,
+          notes: `Used ${usage} ${item.unit} by ${activeEmployee}`,
+          isSaved: false
+        };
+      }).filter(Boolean);
 
-      // Update inventory items
-      updates.forEach(update => {
-        const itemIndex = inventory.findIndex(i => i.id === update.itemId)
-        if (itemIndex !== -1) {
-          const updatedItem = {
-            ...inventory[itemIndex],
-            currentStock: update.newStock,
-            lastUpdated: update.timestamp
-          }
-          setInventoryItems(prev => {
-            const newItems = [...prev]
-            newItems[itemIndex] = updatedItem
-            return newItems
-          })
+      // Update all items in one go
+      const updatedInventory = currentInventory.map(item => {
+        const update = itemsToUpdate.find(u => u.itemId === item.id);
+        if (!update) return item;
+
+        const newStock = Number(item.currentStock) + update.usage;
+        if (newStock > item.maxStock) {
+          throw new Error(`Cannot use ${update.usage} ${item.unit}. Only ${item.maxStock - item.currentStock} available.`);
         }
-      })
 
-      // Clear usage inputs
-      setItemUsages({})
-      setUsageDialogOpen(false)
+        return {
+          ...item,
+          currentStock: newStock,
+          lastUpdated: new Date().toISOString(),
+          isSaved: false
+        };
+      });
+
+      // Save everything to IndexedDB in one operation
+      await saveToIndexedDB({
+        ...existingData,
+        inventory: updatedInventory,
+        inventoryLogs: [...(existingData.inventoryLogs || []), ...updateLogs]
+      });
+
+      // Update state
+      setInventoryItems(updatedInventory);
+      setInventoryLogs(prev => [...(prev || []), ...updateLogs]);
+
+      // Show success message
       setSnackbar({
         open: true,
         message: 'Usage recorded successfully',
-        severity: 'success'
-      })
-    } catch (e: unknown) {
-      console.error('Error submitting usage:', e)
+        severity: 'info'
+      });
+
+      // Close dialog and proceed with clock out
+      setUsageDialogOpen(false);
+      setItemUsages({}); // Reset all usages
+      await saveEmployeeTimeLocally('out');
+    } catch (error) {
+      console.error('Error updating inventory usage:', error);
       setSnackbar({
         open: true,
-        message: 'Error recording usage',
+        message: error instanceof Error ? error.message : 'Error updating inventory usage',
         severity: 'error'
-      })
+      });
     }
-  }
+  };
 
+  // Add this new function to handle server sync
   const syncWithServer = async () => {
     try {
-      // Get unsaved time entries
-      const unsavedTimeEntries = timeEntries.filter(entry => !entry.isSaved)
+      // Get all unsaved entries
+      const unsavedEntries = employeeTimeData.filter(entry => !entry.isSaved);
       
-      // Get unsaved inventory updates
-      const unsavedInventoryUpdates = inventoryUpdates.filter(update => !update.isSaved)
-      
-      // Sync time entries
-      for (const entry of unsavedTimeEntries) {
-        try {
-          const response = await fetch(`${API_URL}/api/timesheets`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(entry)
-          })
-          
-          if (!response.ok) {
-            throw new Error(`Failed to sync time entry: ${response.statusText}`)
+      if (unsavedEntries.length === 0) {
+        setSnackbar({
+          open: true,
+          message: 'No new entries to sync',
+          severity: 'info'
+        });
+        return;
+      }
+
+      // Group entries by employee
+      const entriesByEmployee = new Map();
+      for (const entry of unsavedEntries) {
+        if (!entriesByEmployee.has(entry.employeeName)) {
+          entriesByEmployee.set(entry.employeeName, []);
+        }
+        entriesByEmployee.get(entry.employeeName).push(entry);
+      }
+
+      // Process each employee's entries
+      const employeeEntries = Array.from(entriesByEmployee.entries());
+      for (const [employeeName, entries] of employeeEntries) {
+        // Process entries in pairs (in/out)
+        for (let i = 0; i < entries.length; i++) {
+          const entry = entries[i];
+          if (entry.action === 'in') {
+            // Create clock-in entry first
+            const clockInResponse = await fetch(`${API_URL}/api/timesheets/clock-in`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                employeeName: employeeName, // Use name instead of ID
+                date: new Date(entry.date + ' ' + entry.time).toISOString()
+              })
+            });
+
+            if (!clockInResponse.ok) {
+              throw new Error(`Failed to save clock-in for ${employeeName}`);
+            }
+
+            const clockInData = await clockInResponse.json();
+            entry.isSaved = true;
+
+            // Find matching clock out
+            const clockOut = entries.slice(i + 1).find(e => 
+              e.action === 'out' && 
+              e.date === entry.date
+            );
+
+            if (clockOut) {
+              // Update the timesheet with clock-out time
+              const clockOutResponse = await fetch(`${API_URL}/api/timesheets/clock-out/${clockInData._id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  clockOut: new Date(clockOut.date + ' ' + clockOut.time).toISOString()
+                })
+              });
+
+              if (!clockOutResponse.ok) {
+                throw new Error(`Failed to save clock-out for ${employeeName}`);
+              }
+
+              clockOut.isSaved = true;
+              i = entries.indexOf(clockOut); // Skip the out entry we just processed
+            }
           }
-          
-          // Mark as saved
-          setTimeEntries(prev => 
-            prev.map(e => e._id === entry._id ? { ...e, isSaved: true } : e)
-          )
-        } catch (error) {
-          console.error('Error syncing time entry:', error)
         }
       }
-      
-      // Sync inventory updates
-      for (const update of unsavedInventoryUpdates) {
-        try {
-          const response = await fetch(`${API_URL}/api/inventory/updates`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(update)
-          })
-          
-          if (!response.ok) {
-            throw new Error(`Failed to sync inventory update: ${response.statusText}`)
-          }
-          
-          // Mark as saved
-          setInventoryUpdates(prev =>
-            prev.map(u => u.id === update.id ? { ...u, isSaved: true } : u)
-          )
-        } catch (error) {
-          console.error('Error syncing inventory update:', error)
+
+      // Now sync sales data
+      const unsavedSales = savedData.filter(entry => entry.isSaved === false || !entry.isSaved);
+      if (unsavedSales.length > 0) {
+        // Format entries for server
+        const formattedEntries = unsavedSales.map(entry => ({
+          ...entry,
+          isSaved: false // Convert string to boolean
+        }));
+
+        // Send sales data to server
+        const salesResponse = await fetch(`${API_URL}/api/sales/bulk`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ entries: formattedEntries })
+        });
+
+        if (!salesResponse.ok) {
+          throw new Error('Failed to sync sales data');
         }
+
+        // Update local state to mark sales as saved
+        const updatedSavedData = savedData.map(entry => 
+          unsavedSales.some(unsaved => unsaved.Date === entry.Date) 
+            ? { ...entry, isSaved: true }
+            : entry
+        );
+
+        // Save updated state to IndexedDB
+        const existingData = await getFromIndexedDB() || {};
+        await saveToIndexedDB({
+          ...existingData,
+          data: updatedSavedData
+        });
+
+        setSavedData(updatedSavedData);
       }
-      
+
       setSnackbar({
         open: true,
         message: 'Successfully synced with server',
-        severity: 'success'
-      })
+        severity: 'info'
+      });
+
     } catch (error) {
-      console.error('Error syncing with server:', error)
+      console.error('Error syncing with server:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to sync with server',
+        message: error instanceof Error ? error.message : 'Error syncing with server',
         severity: 'error'
-      })
+      });
     }
-  }
+  };
 
   const handleInstall = async () => {
-    if (!deferredPrompt) {
-      console.log('No installation prompt available')
-      return
-    }
-
-    try {
-      // Show the installation prompt
-      deferredPrompt.prompt()
-      
-      // Wait for the user to respond to the prompt
-      const choiceResult = await deferredPrompt.userChoice
-      
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the installation prompt')
-        setIsInstalled(true)
-      } else {
-        console.log('User dismissed the installation prompt')
+    console.log('Install button clicked');
+    console.log('Deferred prompt available:', !!deferredPrompt);
+    
+    if (deferredPrompt) {
+      try {
+        // Show the prompt
+        await deferredPrompt.prompt();
+        console.log('Installation prompt shown');
+        
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('Installation prompt outcome:', outcome);
+        
+        if (outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+          setIsInstalled(true);
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        
+        // Clear the deferredPrompt for the next time
+        setDeferredPrompt(null);
+      } catch (error) {
+        console.error('Error showing install prompt:', error);
       }
+    } else {
+      // Show installation instructions based on platform
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       
-      // Clear the saved prompt since it can't be used again
-      setDeferredPrompt(null)
-      setIsInstallable(false)
-    } catch (error) {
-      console.error('Error during installation:', error)
-      setSnackbar({
-        open: true,
-        message: 'Failed to install the app',
-        severity: 'error'
-      })
+      if (isAndroid) {
+        setSnackbar({
+          open: true,
+          message: 'To install: tap the three dots menu (⋮) and select "Install app" or "Add to Home screen"',
+          severity: 'info'
+        });
+      } else if (isIOS) {
+        setSnackbar({
+          open: true,
+          message: 'To install: tap the share button and select "Add to Home Screen"',
+          severity: 'info'
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: 'App can be installed from your browser\'s menu',
+          severity: 'info'
+        });
+      }
     }
-  }
+  };
 
+  // Get the appropriate button text
   const getInstallButtonText = () => {
-    if (isInstalled) return 'App Installed'
-    if (isInstallable) return 'Install App'
-    return 'Not Installable'
-  }
+    if (isInstalled) {
+      return '✓ App Installed';
+    }
+    if (isInstallable) {
+      return '📱 Install App';
+    }
+    return '📱 Download App';
+  };
 
   const handleTimeEntry = (entry: TimeEntry) => {
-    setTimeEntries(prev => [...prev, entry])
-  }
+    setTimeEntries(prev => {
+      const newEntry = { ...entry };
+      if (newEntry.clockOutTime === null) {
+        newEntry.clockOutTime = undefined;
+      }
+      return [...prev, newEntry];
+    });
+  };
 
   const handleInventoryUpdate = (item: InventoryUpdate) => {
-    setInventoryUpdates(prev => [...prev, item])
-  }
+    setInventoryUpdates(prev => {
+      const newItem = { ...item };
+      return prev.map(i => i.id === newItem.id ? { ...i, isSaved: true } : i);
+    });
+  };
 
   const handleSaveTimeEntry = (entry: TimeEntry) => {
-    setTimeEntries(prev => prev.map(e => e._id === entry._id ? { ...e, isSaved: true } : e))
-  }
+    setTimeEntries(prev => {
+      const newEntry = { ...entry };
+      if (newEntry.clockOutTime === null) {
+        newEntry.clockOutTime = undefined;
+      }
+      return prev.map(e => e._id === newEntry._id ? { ...newEntry, isSaved: true } : e);
+    });
+  };
 
   const handleSaveInventoryUpdate = (item: InventoryUpdate) => {
-    setInventoryUpdates(prev => prev.map(u => u.id === item.id ? { ...u, isSaved: true } : u))
-  }
+    setInventoryUpdates(prev => {
+      const newItem = { ...item };
+      return prev.map(i => i.id === newItem.id ? { ...newItem, isSaved: true } : i);
+    });
+  };
 
-  const handleShare = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    onShareClick()
-  }
+  const handleShare = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    // ... rest of implementation
+  };
 
+  // Update the filter functions
   const filterTimeEntries = (entries: TimeEntry[]) => {
-    return entries.filter(entry => entry.employeeName === activeEmployee)
-  }
+    return entries.filter(entry => entry.isSaved === false);
+  };
 
   const filterInventoryUpdates = (updates: InventoryUpdate[]) => {
-    return updates.filter(item => !item.isSaved)
-  }
+    return updates.filter(update => update.isSaved === false);
+  };
 
   return (
-    <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        spacing={2}
-        sx={{ p: 2 }}
-      >
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Avatar sx={{ bgcolor: clockedIn ? green[500] : grey[500] }}>
-            {activeEmployee ? activeEmployee[0].toUpperCase() : 'G'}
+    <>
+      <Paper sx={{ 
+        gridArea: 'header',
+        p: '1vh',
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        alignItems: { xs: 'stretch', md: 'center' },
+        justifyContent: 'space-between',
+        gap: { xs: '0.5vh', md: 0 },
+        borderRadius: '8px',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+        minHeight: { xs: 'auto', md: '6vh' }
+      }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '1vh',
+          flex: 1
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6" fontSize="2vh" fontWeight="bold">Laundry King</Typography>
+            <Box sx={{ display: 'flex', gap: '1vh' }}>
+              <Button
+                onClick={handleInstall}
+                sx={{
+                  bgcolor: 'transparent',
+                  color: isInstalled ? 'primary.main' : isInstallable ? 'primary.main' : 'text.secondary',
+                  '&:hover': { 
+                    bgcolor: 'transparent', 
+                    textDecoration: 'underline',
+                    color: 'primary.main'
+                  },
+                  fontSize: '1.6vh',
+                  minWidth: 'auto',
+                  p: 0,
+                  mr: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5
+                }}
+              >
+                {getInstallButtonText()}
+              </Button>
+              <IconButton
+                onClick={onShareClick}
+                sx={{
+                  bgcolor: grey[100],
+                  '&:hover': { bgcolor: grey[200] },
+                  width: '4vh',
+                  height: '4vh'
+                }}
+              >
+                <ShareIcon sx={{ fontSize: '2.2vh', color: blue[600] }} />
+              </IconButton>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Button
+                  variant="contained"
+                onClick={onOpenTimesheet}
+                sx={{
+                  bgcolor: blue[600],
+                    '&:hover': { bgcolor: blue[700] }
+                }}
+              >
+                Timesheet
+              </Button>
+                <Button
+                  variant="contained"
+                  onClick={onSaveToServer}
+                  sx={{
+                    bgcolor: green[600],
+                    '&:hover': { bgcolor: green[700] }
+                  }}
+                >
+                  Sync
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+          <Typography fontSize="1.6vh" color="textSecondary">
+            Laundry Shop POS Daily Entry
+          </Typography>
+        </Box>
+        <Box display="flex" alignItems="center" gap="1vh" justifyContent={{ xs: 'space-between', md: 'flex-end' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '1vh' }}>
+            <Box>
+              <Typography fontSize="2.2vh" color={blue[600]}>
+                {currentTime || '\u00A0'}
+              </Typography>
+              <Typography fontSize="1.4vh">
+                Time In: {clockInTime} • Time Out: {clockOutTime}
+              </Typography>
+            </Box>
+            <Typography fontSize="2.8vh" fontWeight="bold" color={grey[600]} sx={{ ml: 2, mr: 1 }}>
+              Hi{activeEmployee ? ` ${activeEmployee}` : ''}
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              <Button 
+                variant="contained" 
+                onClick={() => saveEmployeeTimeLocally('in')}
+                disabled={clockedIn || isClockingIn}
+                sx={{ 
+                  bgcolor: green[600],
+                  '&:hover': { bgcolor: green[700] }
+                }}
+              >
+                Clock In
+              </Button>
+              <Button 
+                variant="contained"
+                onClick={handleClockOut}
+                disabled={!clockedIn || isClockingOut}
+                sx={{ 
+                  bgcolor: red[600],
+                  '&:hover': { bgcolor: red[700] }
+                }}
+              >
+                Clock Out
+              </Button>
+            </Stack>
+          </Box>
+          <Avatar 
+            sx={{ 
+              width: '4vh', 
+              height: '4vh',
+              bgcolor: blue[500],
+              color: green[500],
+              fontWeight: 'bold',
+              ml: 1
+            }}
+          >
+            LK
           </Avatar>
-          <Stack>
-            <Typography variant="h6" component="div">
-              {activeEmployee || 'Guest'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {currentTime}
-            </Typography>
-          </Stack>
-        </Stack>
-
-        <Stack direction="row" spacing={2}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => saveEmployeeTimeLocally('in')}
-            disabled={clockedIn || isClockingIn || !activeEmployee}
-          >
-            Clock In
-          </Button>
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={handleClockOut}
-            disabled={!clockedIn || isClockingOut || !activeEmployee}
-          >
-            Clock Out
-          </Button>
-          <IconButton
-            color="primary"
-            onClick={handleShare}
-            sx={{ bgcolor: blue[50] }}
-          >
-            <ShareIcon />
-          </IconButton>
-        </Stack>
-      </Stack>
-
-      <Paper elevation={0} sx={{ p: 2, bgcolor: grey[100] }}>
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2">
-            Last Clock In: <strong>{clockInTime}</strong>
-          </Typography>
-          <Typography variant="body2">
-            Last Clock Out: <strong>{clockOutTime}</strong>
-          </Typography>
-        </Stack>
+        </Box>
       </Paper>
 
-      <Dialog open={usageDialogOpen} onClose={() => setUsageDialogOpen(false)}>
-        <DialogTitle>Record Usage</DialogTitle>
+      {/* Usage Dialog */}
+      <Dialog 
+        open={usageDialogOpen} 
+        onClose={() => {
+          setUsageDialogOpen(false);
+          setItemUsages({});
+        }}
+      >
+        <DialogTitle>Record Today's Usage</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            {inventory.map((item) => (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Please record how many items were used today before clocking out.
+          </Typography>
+          {inventory.filter(item => !item.isDeleted).map(item => {
+            const available = item.maxStock - item.currentStock;
+            return (
               <TextField
                 key={item.id}
-                label={`${item.name} (${item.unit})`}
+                margin="dense"
+                label={`${item.name} Used (${available} ${item.unit} available)`}
                 type="number"
+                fullWidth
                 value={itemUsages[item.id] || ''}
-                onChange={(e) => setItemUsages(prev => ({
-                  ...prev,
-                  [item.id]: e.target.value
-                }))}
+                onChange={(e) => setItemUsages(prev => ({ ...prev, [item.id]: e.target.value }))}
+                disabled={available <= 0}
+                helperText={available <= 0 ? "No stock available" : ""}
                 InputProps={{
-                  inputProps: { min: 0, max: item.currentStock }
+                  inputProps: { min: 0, max: available }
                 }}
               />
-            ))}
-          </Stack>
+            );
+          })}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setUsageDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleUsageSubmit} variant="contained">Submit</Button>
+          <Button onClick={() => {
+            setUsageDialogOpen(false);
+            setItemUsages({});
+          }}>Cancel</Button>
+          <Button 
+            onClick={handleUsageSubmit}
+            variant="contained"
+          >
+            Submit & Clock Out
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -565,14 +917,10 @@ export default function Header({
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
       >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity}>
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </>
   )
 } 

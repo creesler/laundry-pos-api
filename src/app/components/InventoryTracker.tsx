@@ -3,7 +3,7 @@ import { Box, Paper, Typography, LinearProgress, IconButton, Menu, MenuItem, Dia
 import { blue, green, red, yellow, grey } from '@mui/material/colors';
 import { SxProps, Theme } from '@mui/material/styles';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
-import { InventoryItem, InventoryUpdate } from '@/types';
+import { InventoryItem } from '../types';
 
 interface InventoryTrackerProps {
   inventory: InventoryItem[];

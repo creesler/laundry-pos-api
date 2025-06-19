@@ -51,7 +51,7 @@ import InventoryTracker from './components/InventoryTracker'
 import TimesheetModal from './components/TimesheetModal'
 import ShareMenu from './components/ShareMenu'
 import AppSnackbar from './components/Snackbar'
-import { TimeEntry, SalesRecord, InventoryItem, InventoryUpdate, SnackbarState, InputValues } from '@/types'
+import { SnackbarState, InputValues, InventoryItem, InventoryUpdateLog, TimeEntry } from './types'
 import { calculateDailyTotals, calculateChartWidth, calculateDuration, clearAllFields } from './utils/helpers'
 
 // Import Header with no SSR
@@ -99,7 +99,7 @@ export default function Home() {
   const [isOnline, setIsOnline] = useState<boolean>(true)
   const [employeeList, setEmployeeList] = useState<string[]>([])
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
-  const [inventoryLogs, setInventoryLogs] = useState<InventoryUpdate[]>([])
+  const [inventoryLogs, setInventoryLogs] = useState<InventoryUpdateLog[]>([])
   const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'info' })
   const theme = useTheme()
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'))
@@ -1215,7 +1215,7 @@ export default function Home() {
       });
 
       // Create update log
-      const updateLog: InventoryUpdate = {
+      const updateLog: InventoryUpdateLog = {
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         itemId,
         previousStock: currentItem.currentStock,
@@ -1346,7 +1346,7 @@ export default function Home() {
       // Create deletion log
       const itemToDelete = inventoryItems.find(item => item.name === itemName);
       if (itemToDelete) {
-        const deleteLog: InventoryUpdate = {
+        const deleteLog: InventoryUpdateLog = {
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           itemId: itemName,
           previousStock: itemToDelete.currentStock,
