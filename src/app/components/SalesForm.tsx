@@ -31,7 +31,7 @@ interface SalesFormProps {
   sx?: SxProps<Theme>
 }
 
-function SalesForm({
+export default memo(function SalesForm({
   currentFormDate,
   selectedEmployee,
   employeeList,
@@ -62,7 +62,16 @@ function SalesForm({
   }, [employeeList, selectedEmployee]);
 
   return (
-    <Paper sx={{ ...sx, p: '1.5vh', display: 'flex', flexDirection: 'column', borderRadius: '8px', border: '1px solid #e5e7eb', minHeight: 0, overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+    <Paper sx={{ 
+      p: '1vh',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.8vh',
+      height: '100%',
+      maxWidth: { xs: '100%', md: '400px' },
+      margin: '0 auto',
+      ...sx 
+    }}>
       <Box sx={{ 
         display: 'flex',
         justifyContent: 'space-between',
@@ -221,7 +230,7 @@ function SalesForm({
       </Box>
       <Box sx={{ 
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '0.8vh',
         flex: 1,
         '& .MuiButton-root': {
@@ -231,53 +240,31 @@ function SalesForm({
           fontWeight: 'bold'
         }
       }}>
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, '.', 'DEL'].map((num) => (
           <Button
             key={num}
             variant="contained"
             onClick={() => onNumpadClick(num.toString())}
             sx={{
-              bgcolor: grey[100],
-              color: grey[900],
-              '&:hover': { bgcolor: grey[200] }
+              bgcolor: num === 0 ? green[500] : 
+                      num === '.' ? yellow[700] : 
+                      num === 'DEL' ? red[500] : 
+                      grey[100],
+              color: num === '.' ? 'white' : 
+                     num === 'DEL' ? 'white' : 
+                     num === 0 ? 'white' : 
+                     grey[900],
+              '&:hover': { 
+                bgcolor: num === 0 ? green[600] : 
+                         num === '.' ? yellow[800] : 
+                         num === 'DEL' ? red[600] : 
+                         grey[200] 
+              }
             }}
           >
-            {num}
+            {num === '.' ? '•' : num}
           </Button>
         ))}
-        <Button
-          variant="contained"
-          onClick={() => onNumpadClick('0')}
-          sx={{
-            bgcolor: green[500],
-            color: 'white',
-            '&:hover': { bgcolor: green[600] }
-          }}
-        >
-          0
-        </Button>
-        <Button
-          variant="contained"
-          onClick={() => onNumpadClick('.')}
-          sx={{
-            bgcolor: yellow[700],
-            color: 'white',
-            '&:hover': { bgcolor: yellow[800] }
-          }}
-        >
-          •
-        </Button>
-        <Button
-          variant="contained"
-          onClick={() => onNumpadClick('Del')}
-          sx={{
-            bgcolor: red[500],
-            color: 'white',
-            '&:hover': { bgcolor: red[600] }
-          }}
-        >
-          DEL
-        </Button>
       </Box>
       <Box sx={{ 
         display: 'grid',
@@ -316,7 +303,4 @@ function SalesForm({
       </Box>
     </Paper>
   );
-} 
-
-// Memoize the component to prevent unnecessary re-renders
-export default memo(SalesForm); 
+}); 
