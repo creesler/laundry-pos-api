@@ -216,18 +216,19 @@ function SalesForm({
         </Box>
       </Box>
       <Box sx={{ 
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '0.2vh',
-        flex: 1,
-        '& .MuiButton-root': {
-          fontSize: '1.2vh',
-          minHeight: '2.5vh',
-          padding: '0.1vh',
-          borderRadius: '2px',
-          fontWeight: 'bold',
-          minWidth: 0,
-          lineHeight: 1
+        display: 'flex', 
+        flexDirection: 'column',
+        gap: '0.15vh',
+        mb: '0.15vh',
+        '& .MuiTextField-root': {
+          '& .MuiInputBase-input': {
+            height: '2vh',
+            fontSize: '1vh',
+            padding: '0 0.5vh',
+          },
+          '& .MuiOutlinedInput-root': {
+            borderRadius: '2px'
+          }
         }
       }}>
         {[7, 8, 9, 'CLR', 4, 5, 6, 'SAVE', 1, 2, 3, 'DEL', 0, '.'].map((num) => (
