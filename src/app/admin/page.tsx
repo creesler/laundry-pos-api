@@ -43,7 +43,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns'
 import { blue } from '@mui/material/colors'
 import { LineChart, BarChart } from '@mui/x-charts'
-import type { SheetData, GoogleSheetResult } from '../../../types'
+import { SheetData, GoogleSheetResult } from '@/types'
 
 interface SnackbarState {
   open: boolean;

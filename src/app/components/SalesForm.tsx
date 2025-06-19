@@ -231,7 +231,7 @@ function SalesForm({
           fontWeight: 'bold'
         }
       }}>
-        {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
           <Button
             key={num}
             variant="contained"
@@ -250,6 +250,7 @@ function SalesForm({
           onClick={() => onNumpadClick('0')}
           sx={{
             bgcolor: green[500],
+            color: 'white',
             '&:hover': { bgcolor: green[600] }
           }}
         >
@@ -260,28 +261,40 @@ function SalesForm({
           onClick={() => onNumpadClick('.')}
           sx={{
             bgcolor: yellow[700],
+            color: 'white',
             '&:hover': { bgcolor: yellow[800] }
           }}
         >
-          .
+          •
         </Button>
         <Button
           variant="contained"
-          onClick={() => onNumpadClick('del')}
+          onClick={() => onNumpadClick('Del')}
           sx={{
             bgcolor: red[500],
+            color: 'white',
             '&:hover': { bgcolor: red[600] }
           }}
         >
           DEL
         </Button>
+      </Box>
+      <Box sx={{ 
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '0.8vh',
+        mt: '0.8vh'
+      }}>
         <Button
           variant="contained"
-          onClick={() => onNumpadClick('clr')}
+          onClick={() => onNumpadClick('Clr')}
           sx={{
-            gridColumn: 'span 2',
             bgcolor: grey[500],
-            '&:hover': { bgcolor: grey[600] }
+            color: 'white',
+            '&:hover': { bgcolor: grey[600] },
+            fontSize: '1.8vh',
+            minHeight: '5vh',
+            borderRadius: '6px'
           }}
         >
           CLR
@@ -290,12 +303,15 @@ function SalesForm({
           variant="contained"
           onClick={onSave}
           sx={{
-            gridColumn: 'span 2',
-            bgcolor: blue[500],
-            '&:hover': { bgcolor: blue[600] }
+            bgcolor: blue[600],
+            color: 'white',
+            '&:hover': { bgcolor: blue[700] },
+            fontSize: '1.8vh',
+            minHeight: '5vh',
+            borderRadius: '6px'
           }}
         >
-          SAVE
+          {editingIndex !== null ? 'Update' : 'Save'}
         </Button>
       </Box>
     </Paper>
