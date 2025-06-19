@@ -585,7 +585,7 @@ export default function Header({
 
         // Update local state to mark sales as saved
         const updatedSavedData = savedData.map(entry => 
-          unsavedSales.some(unsaved => unsaved.date === entry.date) 
+          unsavedSales.some(unsaved => unsaved.Date === entry.Date) 
             ? { ...entry, isSaved: true }
             : entry
         );
