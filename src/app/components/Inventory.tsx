@@ -1,14 +1,29 @@
 import { Box, Button, IconButton, Typography, useTheme, useMediaQuery, Collapse } from '@mui/material';
 import { Add as AddIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
 import { useState } from 'react';
-// ... existing code ...
+import { useInventory } from '@/hooks/useInventory';
+import { InventoryDialog } from './InventoryDialog';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { InventoryTable } from './InventoryTable';
 
 export default function Inventory() {
   const [expanded, setExpanded] = useState(true);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
-  // ... existing state and handlers ...
+  
+  const {
+    items,
+    selectedItem,
+    isDialogOpen,
+    isDeleteDialogOpen,
+    handleAddClick,
+    handleEditClick,
+    handleDeleteClick,
+    handleDialogClose,
+    handleDeleteDialogClose,
+    handleDeleteConfirm,
+    handleSave,
+  } = useInventory();
 
   return (
     <Box
@@ -64,11 +79,26 @@ export default function Inventory() {
             maxHeight: isMobile ? '60vh' : '100%',
           }}
         >
-          {/* ... existing inventory items list ... */}
+          <InventoryTable
+            items={items}
+            onEdit={handleEditClick}
+            onDelete={handleDeleteClick}
+          />
         </Box>
       </Collapse>
 
-      {/* ... existing dialogs ... */}
+      <InventoryDialog
+        open={isDialogOpen}
+        onClose={handleDialogClose}
+        onSave={handleSave}
+        item={selectedItem}
+      />
+
+      <DeleteConfirmationDialog
+        open={isDeleteDialogOpen}
+        onClose={handleDeleteDialogClose}
+        onConfirm={handleDeleteConfirm}
+      />
     </Box>
   );
 }
