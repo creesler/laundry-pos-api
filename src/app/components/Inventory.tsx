@@ -1,7 +1,7 @@
 import { Box, Button, IconButton, Typography, useTheme, useMediaQuery, Collapse } from '@mui/material';
 import { Add as AddIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
 import { useState } from 'react';
-import { useInventory } from '../../../hooks/useInventory';
+import { useInventory } from '../../hooks/useInventory';
 import { InventoryDialog } from './InventoryDialog';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { InventoryTable } from './InventoryTable';
