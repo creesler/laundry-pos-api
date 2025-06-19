@@ -34,10 +34,26 @@ export interface SalesRecord {
   [key: string]: string | boolean | undefined;
 }
 
-export interface GoogleSheetResult {
-  result: {
-    values: any[][];
-  };
+export interface SheetData {
+  Date: string;
+  Coin: string;
+  Hopper: string;
+  Soap: string;
+  Vending: string;
+  'Drop Off Amount 1': string;
+  'Drop Off Code': string;
+  'Drop Off Amount 2': string;
+  [key: string]: string; // Add index signature for dynamic keys
 }
 
-export type SheetData = SalesRecord; 
+export interface GoogleSheetResult {
+  result: {
+    values?: any[][];
+    sheets?: Array<{
+      properties?: {
+        title?: string;
+        sheetId?: number;
+      };
+    }>;
+  };
+} 
