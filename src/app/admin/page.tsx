@@ -43,7 +43,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns'
 import { blue } from '@mui/material/colors'
 import { LineChart, BarChart } from '@mui/x-charts'
-import { SheetData, Sheet, GoogleSheetResult } from '@/types'
+import { SheetData, GoogleSheetResult } from '@/types'
 
 interface SnackbarState {
   open: boolean;
@@ -86,8 +86,26 @@ interface SheetHandlerProps {
   sheet: GoogleSheetResult;
 }
 
-interface SearchHandlerProps {
+interface SearchProps {
   s: string;
+}
+
+interface DateSearchProps {
+  startDate: Date | null;
+  endDate: Date | null;
+}
+
+interface GoogleSheet {
+  properties?: {
+    title?: string;
+    sheetId?: number;
+  };
+}
+
+interface GoogleSpreadsheet {
+  result: {
+    sheets?: GoogleSheet[];
+  };
 }
 
 const DEFAULT_CREDENTIALS = {
@@ -311,7 +329,7 @@ export default function AdminPage() {
     handleSheetData({ sheet });
   };
 
-  const handleSearch = ({ s }: SearchHandlerProps): void => {
+  const handleSearch = ({ s }: SearchProps): void => {
     if (!s.trim()) {
       setFilteredData(data);
       return;
@@ -324,23 +342,24 @@ export default function AdminPage() {
     setFilteredData(filtered);
   };
 
-  const handleSheetSelect = ({ sheet }: SheetHandlerProps): void => {
-    handleSheetData({ sheet });
-  };
-
-  const handleFilterSearch = ({ s }: SearchHandlerProps): void => {
+  const handleFilterSearch = ({ s }: SearchProps): void => {
     handleSearch({ s });
   };
 
-  const handleDateSearch = ({ s }: SearchHandlerProps): void => {
-    if (!s.trim()) {
+  const handleDateSearch = ({ startDate, endDate }: DateSearchProps): void => {
+    if (!startDate || !endDate) {
       setFilteredData(data);
       return;
     }
-    const filtered = data.filter(item => 
-      item.Date.toLowerCase().includes(s.toLowerCase())
-    );
+    const filtered = data.filter(item => {
+      const itemDate = new Date(item.Date);
+      return isWithinInterval(itemDate, { start: startDate, end: endDate });
+    });
     setFilteredData(filtered);
+  };
+
+  const handleSheetSelect = ({ sheet }: SheetHandlerProps): void => {
+    handleSheetData({ sheet });
   };
 
   const handleSuccessfulFetch = (result: GoogleSheetResult) => {
@@ -414,13 +433,13 @@ export default function AdminPage() {
       const sheetName = sanitizeSheetName(newEmployee.name);
 
       // Get spreadsheet metadata
-      const spreadsheet = await window.gapi.client.sheets.spreadsheets.get({
+      const spreadsheet: GoogleSpreadsheet = await window.gapi.client.sheets.spreadsheets.get({
         spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID
       });
 
       // Check if an employee sheet with this name already exists
       const sheetExists = spreadsheet.result.sheets?.some(
-        sheet => sheet.properties?.title === sheetName
+        (sheet: GoogleSheet) => sheet.properties?.title === sheetName
       );
 
       if (sheetExists) {
@@ -543,17 +562,17 @@ export default function AdminPage() {
   const fetchEmployeeListData = async () => {
     try {
       // Get all sheets to find employee sheets
-      const spreadsheet = await window.gapi.client.sheets.spreadsheets.get({
+      const spreadsheet: GoogleSpreadsheet = await window.gapi.client.sheets.spreadsheets.get({
         spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID
       });
 
       // Filter out non-employee sheets (like the main data sheet)
-      const employeeSheets = spreadsheet.result.sheets?.filter(sheet => 
+      const employeeSheets = spreadsheet.result.sheets?.filter((sheet: GoogleSheet) => 
         sheet.properties?.title !== GOOGLE_SHEETS_CONFIG.RANGE.split('!')[0]
       ) || [];
 
       // Map sheet data to employee info
-      const employeeList = employeeSheets.map(sheet => ({
+      const employeeList = employeeSheets.map((sheet: GoogleSheet) => ({
         name: sheet.properties?.title || '',
         contactNumber: '',  // These will be managed in the sheet itself
         address: ''
@@ -603,12 +622,12 @@ export default function AdminPage() {
       setLoading(true);
 
       // Get the spreadsheet metadata to find the sheet ID
-      const spreadsheet = await window.gapi.client.sheets.spreadsheets.get({
+      const spreadsheet: GoogleSpreadsheet = await window.gapi.client.sheets.spreadsheets.get({
         spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID
       });
 
       const sheet = spreadsheet.result.sheets?.find(
-        s => s.properties?.title === employeeName
+        (s: GoogleSheet) => s.properties?.title === employeeName
       );
 
       if (sheet?.properties?.sheetId) {
@@ -668,7 +687,7 @@ export default function AdminPage() {
       const timesheets: {[key: string]: any[]} = {};
       
       // Get spreadsheet metadata first
-      const spreadsheet = await window.gapi.client.sheets.spreadsheets.get({
+      const spreadsheet: GoogleSpreadsheet = await window.gapi.client.sheets.spreadsheets.get({
         spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID
       });
       
@@ -678,7 +697,7 @@ export default function AdminPage() {
         
         // Check if sheet exists
         const sheetExists = spreadsheet.result.sheets?.some(
-          sheet => sheet.properties?.title === sheetName
+          (sheet: GoogleSheet) => sheet.properties?.title === sheetName
         );
 
         if (!sheetExists) {
@@ -746,13 +765,13 @@ export default function AdminPage() {
       const newSheetName = sanitizeSheetName(newEmployee.name);
 
       // Get the spreadsheet metadata
-      const spreadsheet = await window.gapi.client.sheets.spreadsheets.get({
+      const spreadsheet: GoogleSpreadsheet = await window.gapi.client.sheets.spreadsheets.get({
         spreadsheetId: GOOGLE_SHEETS_CONFIG.SHEET_ID
       });
 
       // Find the sheet to rename
       const sheet = spreadsheet.result.sheets?.find(
-        s => s.properties?.title === oldSheetName
+        (s: GoogleSheet) => s.properties?.title === oldSheetName
       );
 
       if (!sheet?.properties?.sheetId) {
@@ -774,7 +793,7 @@ export default function AdminPage() {
 
       // Check if new sheet name already exists
       const sheetExists = spreadsheet.result.sheets?.some(
-        s => s.properties?.title === newSheetName && s.properties?.title !== oldSheetName
+        (s: GoogleSheet) => s.properties?.title === newSheetName && s.properties?.title !== oldSheetName
       );
 
       if (sheetExists) {
