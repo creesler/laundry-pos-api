@@ -221,26 +221,28 @@ function SalesForm({
       </Box>
       <Box sx={{ 
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: 'repeat(5, 1fr)',
         gap: '1vh',
         flex: 1,
         '& .MuiButton-root': {
           fontSize: '3vh',
           minHeight: '6vh',
-          borderRadius: '6px',
-          fontWeight: 'bold'
+          borderRadius: '8px',
+          fontWeight: 'bold',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+          bgcolor: '#FFFFFF',
+          color: '#000000',
+          '&:hover': { 
+            bgcolor: '#F8F9FA'
+          }
         }
       }}>
-        {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
+        {/* First row */}
+        {[7, 8, 9].map((num) => (
           <Button
             key={num}
             variant="contained"
             onClick={() => onNumpadClick(num.toString())}
-            sx={{
-              bgcolor: grey[200],
-              color: 'black',
-              '&:hover': { bgcolor: grey[300] }
-            }}
           >
             {num}
           </Button>
@@ -249,57 +251,73 @@ function SalesForm({
           variant="contained"
           onClick={() => onNumpadClick('Del')}
           sx={{
-            bgcolor: red[500],
-            color: 'white',
-            '&:hover': { bgcolor: red[600] }
+            bgcolor: '#FF4D4D !important',
+            color: 'white !important',
+            '&:hover': { bgcolor: '#FF3333 !important' }
           }}
         >
-          Del
+          DEL
         </Button>
         <Button
           variant="contained"
-          onClick={() => onNumpadClick('0')}
+          onClick={() => onNumpadClick('Clr')}
           sx={{
-            bgcolor: grey[200],
-            color: 'black',
-            '&:hover': { bgcolor: grey[300] }
+            bgcolor: '#CCCCCC !important',
+            color: 'white !important',
+            '&:hover': { bgcolor: '#BFBFBF !important' }
           }}
         >
-          0
+          CLR
         </Button>
+
+        {/* Second row */}
+        {[4, 5, 6].map((num) => (
+          <Button
+            key={num}
+            variant="contained"
+            onClick={() => onNumpadClick(num.toString())}
+          >
+            {num}
+          </Button>
+        ))}
         <Button
           variant="contained"
           onClick={() => onNumpadClick('.')}
           sx={{
-            bgcolor: yellow[500],
-            color: 'black',
-            '&:hover': { bgcolor: yellow[600] }
+            bgcolor: '#FFCC00 !important',
+            color: 'black !important',
+            '&:hover': { bgcolor: '#F2C200 !important' }
           }}
         >
           •
         </Button>
         <Button
           variant="contained"
-          onClick={() => onNumpadClick('Clr')}
-          sx={{
-            bgcolor: blue[500],
-            color: 'white',
-            '&:hover': { bgcolor: blue[600] }
-          }}
-        >
-          Clr
-        </Button>
-        <Button
-          variant="contained"
           onClick={onSave}
           sx={{
-            gridColumn: 'span 2',
-            bgcolor: green[500],
-            color: 'white',
-            '&:hover': { bgcolor: green[600] }
+            bgcolor: '#1A8CFF !important',
+            color: 'white !important',
+            '&:hover': { bgcolor: '#0066CC !important' }
           }}
         >
-          {editingIndex !== null ? 'Update' : 'Save'}
+          SAVE
+        </Button>
+
+        {/* Third row */}
+        {[1, 2, 3].map((num) => (
+          <Button
+            key={num}
+            variant="contained"
+            onClick={() => onNumpadClick(num.toString())}
+          >
+            {num}
+          </Button>
+        ))}
+        <Button
+          variant="contained"
+          onClick={() => onNumpadClick('0')}
+        >
+          0
         </Button>
       </Box>
     </Paper>
