@@ -1,6 +1,6 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Stack } from '@mui/material';
 import { useState, useEffect } from 'react';
-import type { InventoryItem } from '@/hooks/useInventory';
+import type { InventoryItem } from '../../hooks/useInventory';
 
 interface InventoryDialogProps {
   open: boolean;
@@ -46,17 +46,16 @@ export function InventoryDialog({ open, onClose, onSave, item }: InventoryDialog
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>{item ? 'Edit Item' : 'Add Item'}</DialogTitle>
       <form onSubmit={handleSubmit}>
-        <DialogTitle>{item ? 'Edit Item' : 'Add New Item'}</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          <Stack spacing={2}>
             <TextField
               label="Name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              fullWidth
             />
             <TextField
               label="Quantity"
@@ -64,7 +63,6 @@ export function InventoryDialog({ open, onClose, onSave, item }: InventoryDialog
               value={formData.quantity}
               onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
               required
-              fullWidth
             />
             <TextField
               label="Price"
@@ -72,14 +70,12 @@ export function InventoryDialog({ open, onClose, onSave, item }: InventoryDialog
               value={formData.price}
               onChange={(e) => setFormData({ ...formData, price: e.target.value })}
               required
-              fullWidth
             />
             <TextField
               label="Category"
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               required
-              fullWidth
             />
           </Stack>
         </DialogContent>
@@ -90,4 +86,4 @@ export function InventoryDialog({ open, onClose, onSave, item }: InventoryDialog
       </form>
     </Dialog>
   );
-} 
+}
