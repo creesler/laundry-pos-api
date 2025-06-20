@@ -74,7 +74,12 @@ function SalesForm({
       },
       mx: 'auto',
       boxSizing: 'border-box',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      '& > *:last-child': {
+        mb: 0
+      },
+      height: 'fit-content',
+      minHeight: 'unset'
     }}>
       {/* Header Section */}
       <Box sx={{ 
@@ -82,7 +87,8 @@ function SalesForm({
         justifyContent: 'space-between',
         alignItems: 'center',
         px: 0.5,
-        mb: 0.5
+        mb: 0.5,
+        height: 'fit-content'
       }}>
         <Typography 
           variant="subtitle1" 
@@ -161,7 +167,8 @@ function SalesForm({
         flexDirection: 'column',
         gap: 0.5,
         width: '100%',
-        px: 0.5
+        px: 0.5,
+        height: 'fit-content'
       }}>
         {/* Top row fields */}
         <Box sx={{ 
@@ -274,18 +281,26 @@ function SalesForm({
           width: '100%',
           height: '32px',
           minWidth: 'unset',
+          minHeight: 'unset',
           p: 0,
           borderRadius: '4px',
           fontWeight: 'bold',
           boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
           fontSize: '14px',
-          minHeight: 'unset',
-          lineHeight: 1
+          lineHeight: 1,
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+          }
         },
         '& .MuiButton-root.number': {
-          bgcolor: '#FFFFFF',
-          color: '#000000',
-          '&:hover': { bgcolor: '#F8F9FA' }
+          bgcolor: '#f8fafc', // Light grayish blue
+          color: '#334155', // Slate 700
+          border: '1px solid #e2e8f0', // Slate 200
+          '&:hover': {
+            bgcolor: '#f1f5f9' // Slate 100
+          }
         }
       }}>
         {/* First row */}
@@ -303,10 +318,13 @@ function SalesForm({
           variant="contained"
           onClick={() => onNumpadClick('Del')}
           sx={{
-            bgcolor: '#FF4D4D !important',
+            bgcolor: '#f43f5e !important', // Rose 500
             color: 'white !important',
             fontSize: '12px !important',
-            '&:hover': { bgcolor: '#FF3333 !important' }
+            border: '1px solid #e11d48', // Rose 600
+            '&:hover': { 
+              bgcolor: '#e11d48 !important' // Rose 600
+            }
           }}
         >
           DEL
@@ -315,10 +333,13 @@ function SalesForm({
           variant="contained"
           onClick={() => onNumpadClick('Clr')}
           sx={{
-            bgcolor: '#CCCCCC !important',
+            bgcolor: '#94a3b8 !important', // Slate 400
             color: 'white !important',
             fontSize: '12px !important',
-            '&:hover': { bgcolor: '#BFBFBF !important' }
+            border: '1px solid #64748b', // Slate 500
+            '&:hover': { 
+              bgcolor: '#64748b !important' // Slate 500
+            }
           }}
         >
           CLR
@@ -339,9 +360,12 @@ function SalesForm({
           variant="contained"
           onClick={() => onNumpadClick('.')}
           sx={{
-            bgcolor: '#FFCC00 !important',
-            color: 'black !important',
-            '&:hover': { bgcolor: '#F2C200 !important' }
+            bgcolor: '#fbbf24 !important', // Amber 400
+            color: '#92400e !important', // Amber 800
+            border: '1px solid #f59e0b', // Amber 500
+            '&:hover': { 
+              bgcolor: '#f59e0b !important' // Amber 500
+            }
           }}
         >
           •
@@ -350,10 +374,13 @@ function SalesForm({
           variant="contained"
           onClick={onSave}
           sx={{
-            bgcolor: '#1A8CFF !important',
+            bgcolor: '#3b82f6 !important', // Blue 500
             color: 'white !important',
             fontSize: '12px !important',
-            '&:hover': { bgcolor: '#0066CC !important' }
+            border: '1px solid #2563eb', // Blue 600
+            '&:hover': { 
+              bgcolor: '#2563eb !important' // Blue 600
+            }
           }}
         >
           SAVE

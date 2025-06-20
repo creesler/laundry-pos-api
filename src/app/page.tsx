@@ -1620,13 +1620,12 @@ export default function Home() {
                 "header"
                 "tracker"
                 "form"
-                "overview"
                 "inventory"
+                "overview"
               `,
               md: `
                 "header header"
                 "tracker form"
-                "overview form"
                 "overview inventory"
               `
             },
@@ -1635,8 +1634,8 @@ export default function Home() {
               md: '2fr 1fr'
             },
             gridTemplateRows: {
-              xs: 'auto auto 1fr auto auto',
-              md: 'auto 1fr auto 120px'
+              xs: 'auto auto auto auto 1fr',
+              md: 'auto auto 1fr'
             },
             gap: { xs: '0.5vh', md: '1vh' },
             maxWidth: '100%',
@@ -1674,30 +1673,49 @@ export default function Home() {
 
             {/* Form Section */}
             <SalesForm
-              sx={{ gridArea: 'form' }}
+              sx={{ 
+                gridArea: 'form',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1
+              }}
               currentFormDate={currentFormDate}
               selectedEmployee={selectedEmployee}
               employeeList={employeeList}
+              onEmployeeChange={handleEmployeeChange}
+              onEmployeeSelect={handleEmployeeSelect}
               isOnline={isOnline}
-              selectedField={selectedField}
               inputValues={inputValues}
-              editingIndex={editingIndex}
+              selectedField={selectedField}
               onFieldSelect={setSelectedField}
               onNumpadClick={handleNumpadClick}
               onSave={handleSave}
-              onEmployeeSelect={handleEmployeeSelect}
-              onEmployeeChange={memoizedHandleEmployeeChange}
+              editingIndex={null}
             />
 
-            {/* Sales Overview */}
+            {/* Inventory section - positioned under form on the right */}
+            <InventoryTracker
+              sx={{
+                gridArea: 'inventory',
+                height: { xs: '140px', md: '200px' },
+                minHeight: { xs: '140px', md: '200px' },
+                maxHeight: { xs: '140px', md: '200px' },
+                mt: { xs: 0, md: 0 },
+                mb: { xs: 0, md: 0 }
+              }}
+              inventory={inventoryItems}
+              onUpdateStock={handleUpdateInventory}
+              onAddItem={handleAddInventoryItem}
+              onDeleteItem={handleDeleteInventoryItem}
+            />
+
+            {/* Sales chart section - moved to bottom on mobile */}
             <SalesChart
               sx={{ 
                 gridArea: 'overview',
-                height: '100%', // Changed from fixed height
-              display: 'flex',
-              flexDirection: 'column',
-                mb: 0,
-                pb: 0
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column'
               }}
               viewType={viewType}
               chartType={chartType}
@@ -1714,23 +1732,6 @@ export default function Home() {
               onChartTypeChange={setChartType}
               calculateDailyTotals={() => calculateDailyTotals(savedData, viewType === 'week' ? 'month' : viewType, selectedMonth, selectedYear)}
               yearItems={yearItems}
-            />
-
-            {/* Inventory */}
-            <InventoryTracker
-              sx={{
-                gridArea: 'inventory',
-                height: { xs: 'auto', md: '120px' },
-                minHeight: { xs: '100px', md: '120px' },
-                maxHeight: { xs: '200px', md: '120px' },
-                overflow: 'hidden',
-                mb: 0,
-                pb: 0
-              }}
-              inventory={inventoryItems}
-              onUpdateStock={handleUpdateInventory}
-              onAddItem={handleAddInventoryItem}
-              onDeleteItem={handleDeleteInventoryItem}
             />
             
             <AppSnackbar

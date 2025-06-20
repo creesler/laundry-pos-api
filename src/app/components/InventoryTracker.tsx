@@ -114,15 +114,15 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
   return (
     <Paper sx={{ 
       ...sx, 
-      p: '1vh', 
+      p: 0.5,
       display: 'flex', 
       flexDirection: 'column', 
       borderRadius: '8px', 
       border: '1px solid #e5e7eb', 
       boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
       height: '100%',
-      minHeight: { xs: isExpanded ? '150px' : 'auto', md: 'auto' },
-      maxHeight: { xs: isExpanded ? '200px' : 'auto', md: '100%' },
+      minHeight: { xs: isExpanded ? '80px' : 'auto', md: 'auto' },
+      maxHeight: '100%',
       overflow: 'hidden'
     }}>
       <Box sx={{
@@ -130,26 +130,26 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 1,
+        gap: 0.5,
         mb: 0.5,
         flexShrink: 0
       }}>
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
-          gap: 1 
+          gap: 0.5
         }}>
           <IconButton 
             onClick={() => setIsExpanded(!isExpanded)}
             sx={{ 
               display: { xs: 'flex', md: 'none' },
-              p: '3px'
+              p: '2px'
             }}
           >
             {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           </IconButton>
           <Typography 
-            fontSize="2vh" 
+            fontSize="14px"
             fontWeight="medium"
             sx={{ 
               flexShrink: 0,
@@ -161,73 +161,77 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
         </Box>
         <Box sx={{ 
           display: 'flex', 
-          gap: 1,
+          gap: 0.5,
           justifyContent: 'flex-end',
           flexShrink: 0
         }}>
-        <Button
-          startIcon={<AddIcon />}
-          size="small"
-          onClick={() => setAddDialogOpen(true)}
+          <Button
+            startIcon={<AddIcon />}
+            size="small"
+            onClick={() => setAddDialogOpen(true)}
             variant="contained"
             sx={{ 
-              fontSize: '1.2vh', 
+              fontSize: '12px',
               py: 0.25,
               minWidth: 'auto',
-              height: 'auto'
+              height: '24px'
             }}
-        >
-          Add Item
-        </Button>
+          >
+            Add Item
+          </Button>
         </Box>
       </Box>
       
-      <Collapse in={isExpanded} sx={{ display: { md: 'block' } }}>
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-          gap: '1vh',
+      <Collapse in={isExpanded} sx={{ 
+        display: { md: 'block' },
         flex: 1,
-        overflowY: 'auto',
-        overflowX: 'hidden',
+        minHeight: 0
+      }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          gap: 0.5,
+          height: '100%',
+          overflowY: 'auto',
+          overflowX: 'hidden',
           pr: 1,
           '&::-webkit-scrollbar': {
-            width: '6px',
+            width: '4px',
           },
           '&::-webkit-scrollbar-track': {
             background: '#f1f1f1',
-            borderRadius: '3px',
+            borderRadius: '2px',
           },
           '&::-webkit-scrollbar-thumb': {
             background: '#888',
-            borderRadius: '3px',
+            borderRadius: '2px',
             '&:hover': {
               background: '#666',
             },
           }
-      }}>
-        {inventory.filter(item => !item.isDeleted).map((item) => {
-          const currentStock = Number(item.currentStock) || 0;
-          const maxStock = Number(item.maxStock) || 0;
-          const usagePercentage = maxStock > 0 ? (currentStock / maxStock) * 100 : 0;
-          
-          return (
-            <Box 
-              key={item.id} 
-              sx={{ 
-                display: 'flex', 
+        }}>
+          {inventory.filter(item => !item.isDeleted).map((item) => {
+            const currentStock = Number(item.currentStock) || 0;
+            const maxStock = Number(item.maxStock) || 0;
+            const usagePercentage = maxStock > 0 ? (currentStock / maxStock) * 100 : 0;
+            
+            return (
+              <Box 
+                key={item.id} 
+                sx={{ 
+                  display: 'flex', 
                   flexDirection: 'row',
-                alignItems: 'center',
-                  gap: 1,
-                  p: 0.75,
-                borderRadius: 1,
+                  alignItems: 'center',
+                  gap: 0.5,
+                  p: 0.5,
+                  borderRadius: 1,
                   bgcolor: 'background.paper',
                   boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                '&:hover': {
+                  '&:hover': {
                     bgcolor: 'rgba(0, 0, 0, 0.02)'
-                }
-              }}
-            >
+                  }
+                }}
+              >
                 <Box sx={{ 
                   flex: 1,
                   minWidth: 0,
@@ -239,10 +243,10 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
-                    gap: 1
+                    gap: 0.5
                   }}>
                     <Typography 
-                      fontSize="1.6vh"
+                      fontSize="13px"
                       sx={{
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -252,7 +256,7 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
                       {item.name}
                     </Typography>
                     <Typography 
-                      fontSize="1.4vh" 
+                      fontSize="12px"
                       color="text.secondary"
                       sx={{
                         flexShrink: 0,
@@ -260,58 +264,58 @@ export default function InventoryTracker({ inventory, onUpdateStock, onAddItem, 
                       }}
                     >
                       {`${currentStock}/${maxStock} ${item.unit}`}
-                  </Typography>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={usagePercentage}
-                  sx={{
-                      height: '1.2vh',
+                    </Typography>
+                  </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={usagePercentage}
+                    sx={{
+                      height: '6px',
                       borderRadius: '3px',
-                    bgcolor: grey[200],
-                    '& .MuiLinearProgress-bar': {
-                      bgcolor: getStockLevelColor(item)
-                    }
-                  }}
-                />
-              </Box>
+                      bgcolor: grey[200],
+                      '& .MuiLinearProgress-bar': {
+                        bgcolor: getStockLevelColor(item)
+                      }
+                    }}
+                  />
+                </Box>
                 <Box sx={{ 
                   display: 'flex', 
                   gap: 0.5,
                   flexShrink: 0
                 }}>
-              <IconButton 
-                size="small"
-                onClick={(e) => handleItemClick(e, item.id)}
-                title="Set Total Stock"
+                  <IconButton 
+                    size="small"
+                    onClick={(e) => handleItemClick(e, item.id)}
+                    title="Set Total Stock"
                     sx={{
-                      p: '3px',
+                      p: '2px',
                       bgcolor: 'background.default',
                       '&:hover': {
                         bgcolor: 'action.hover'
                       }
                     }}
-              >
-                    <EditIcon sx={{ fontSize: '1.6vh' }} />
-              </IconButton>
-              <IconButton 
-                size="small"
-                onClick={() => setDeleteConfirmItem(item.name)}
+                  >
+                    <EditIcon sx={{ fontSize: '14px' }} />
+                  </IconButton>
+                  <IconButton 
+                    size="small"
+                    onClick={() => setDeleteConfirmItem(item.name)}
                     sx={{ 
-                      p: '3px',
+                      p: '2px',
                       bgcolor: 'background.default',
                       '&:hover': {
                         bgcolor: 'error.lighter'
                       }
                     }}
-              >
-                    <DeleteIcon sx={{ fontSize: '1.6vh', color: 'error.main' }} />
-              </IconButton>
+                  >
+                    <DeleteIcon sx={{ fontSize: '14px', color: 'error.main' }} />
+                  </IconButton>
                 </Box>
-            </Box>
-          );
-        })}
-      </Box>
+              </Box>
+            );
+          })}
+        </Box>
       </Collapse>
 
       <Menu
