@@ -62,17 +62,39 @@ function SalesForm({
   }, [employeeList, selectedEmployee]);
 
   return (
-    <Paper sx={{ ...sx, p: '1.5vh', display: 'flex', flexDirection: 'column', borderRadius: '8px', border: '1px solid #e5e7eb', minHeight: 0, overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+    <Paper sx={{ 
+      p: 0.5,
+      width: '100%',
+      maxWidth: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 0.5,
+      '& .MuiTextField-root': {
+        width: '100%'
+      },
+      mx: 'auto',
+      boxSizing: 'border-box',
+      overflow: 'hidden'
+    }}>
+      {/* Header Section */}
       <Box sx={{ 
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        mb: 2
+        px: 0.5,
+        mb: 0.5
       }}>
-        <Typography variant="h6" component="div">
+        <Typography 
+          variant="subtitle1" 
+          component="div"
+          sx={{
+            fontSize: '14px',
+            fontWeight: 'medium'
+          }}
+        >
           {currentFormDate}
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <Select
             value={selectedEmployee}
             onChange={(e) => {
@@ -85,16 +107,20 @@ function SalesForm({
             }}
             size="small"
             sx={{ 
-              minWidth: 120,
+              minWidth: 100,
               height: '32px',
               '.MuiSelect-select': { 
                 py: 0.5,
-                color: grey[600]
+                fontSize: '13px'
               }
             }}
           >
             {employeeList.map((name) => (
-              <MenuItem key={name} value={name}>
+              <MenuItem 
+                key={name} 
+                value={name}
+                sx={{ fontSize: '13px' }}
+              >
                 {name}
               </MenuItem>
             ))}
@@ -104,10 +130,10 @@ function SalesForm({
             onClick={onEmployeeSelect}
             size="small"
             sx={{
-              fontSize: '0.875rem',
-              py: 0.5,
-              px: 2,
-              minWidth: 'auto'
+              fontSize: '13px',
+              height: '32px',
+              minWidth: 'auto',
+              px: 2
             }}
           >
             Select
@@ -119,7 +145,8 @@ function SalesForm({
                 color: 'warning.main',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 0.5
+                gap: 0.5,
+                fontSize: '12px'
               }}
             >
               (Offline Mode)
@@ -127,52 +154,68 @@ function SalesForm({
           )}
         </Box>
       </Box>
+
+      {/* Input Fields Section */}
       <Box sx={{ 
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: '0.8vh',
-        mb: '0.8vh'
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5,
+        width: '100%',
+        px: 0.5
       }}>
-        {['Coin', 'Hopper', 'Soap', 'Vending'].map((label) => (
-          <TextField
-            key={label}
-            size="small"
-            placeholder={label}
-            value={inputValues[label]}
-            onClick={() => onFieldSelect(label)}
-            inputProps={{ 
-              style: { fontSize: '2vh' },
-              readOnly: true
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                height: '4.5vh',
-                borderRadius: '4px',
-                bgcolor: selectedField === label ? '#e8f0fe' : 'transparent',
-                '& fieldset': {
-                  borderColor: selectedField === label ? blue[500] : '#e5e7eb'
+        {/* Top row fields */}
+        <Box sx={{ 
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 0.5
+        }}>
+          {['Coin', 'Hopper', 'Soap', 'Vending'].map((label) => (
+            <TextField
+              key={label}
+              size="small"
+              placeholder={label}
+              value={inputValues[label]}
+              onClick={() => onFieldSelect(label)}
+              inputProps={{ 
+                style: { fontSize: '13px' },
+                readOnly: true
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  height: '32px',
+                  borderRadius: '4px',
+                  bgcolor: selectedField === label ? '#e8f0fe' : 'transparent',
+                  '& fieldset': {
+                    borderColor: selectedField === label ? '#1A8CFF' : '#e5e7eb'
+                  }
                 }
-              }
-            }}
-          />
-        ))}
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.8vh', gridColumn: 'span 2' }}>
+              }}
+            />
+          ))}
+        </Box>
+
+        {/* Drop-off fields */}
+        <Box sx={{ 
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 0.5
+        }}>
           <TextField
             size="small"
             placeholder="Drop Off Amount"
             value={inputValues['Drop Off Amount 1']}
             onClick={() => onFieldSelect('Drop Off Amount 1')}
             inputProps={{ 
-              style: { fontSize: '2vh' },
+              style: { fontSize: '13px' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '4.5vh',
+                height: '32px',
                 borderRadius: '4px',
                 bgcolor: selectedField === 'Drop Off Amount 1' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
-                  borderColor: selectedField === 'Drop Off Amount 1' ? blue[500] : '#e5e7eb'
+                  borderColor: selectedField === 'Drop Off Amount 1' ? '#1A8CFF' : '#e5e7eb'
                 }
               }
             }}
@@ -183,16 +226,16 @@ function SalesForm({
             value={inputValues['Drop Off Code']}
             onClick={() => onFieldSelect('Drop Off Code')}
             inputProps={{ 
-              style: { fontSize: '2vh' },
+              style: { fontSize: '13px' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '4.5vh',
+                height: '32px',
                 borderRadius: '4px',
                 bgcolor: selectedField === 'Drop Off Code' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
-                  borderColor: selectedField === 'Drop Off Code' ? blue[500] : '#e5e7eb'
+                  borderColor: selectedField === 'Drop Off Code' ? '#1A8CFF' : '#e5e7eb'
                 }
               }
             }}
@@ -203,38 +246,46 @@ function SalesForm({
             value={inputValues['Drop Off Amount 2']}
             onClick={() => onFieldSelect('Drop Off Amount 2')}
             inputProps={{ 
-              style: { fontSize: '2vh' },
+              style: { fontSize: '13px' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '4.5vh',
+                height: '32px',
                 borderRadius: '4px',
                 bgcolor: selectedField === 'Drop Off Amount 2' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
-                  borderColor: selectedField === 'Drop Off Amount 2' ? blue[500] : '#e5e7eb'
+                  borderColor: selectedField === 'Drop Off Amount 2' ? '#1A8CFF' : '#e5e7eb'
                 }
               }
             }}
           />
         </Box>
       </Box>
-      <Box sx={{ 
+
+      {/* Numpad Section */}
+      <Box sx={{
         display: 'grid',
         gridTemplateColumns: 'repeat(5, 1fr)',
-        gap: '1vh',
-        flex: 1,
+        gap: 0.5,
+        width: '100%',
+        px: 0.5,
         '& .MuiButton-root': {
-          fontSize: '3vh',
-          minHeight: '6vh',
-          borderRadius: '8px',
+          width: '100%',
+          height: '32px',
+          minWidth: 'unset',
+          p: 0,
+          borderRadius: '4px',
           fontWeight: 'bold',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+          fontSize: '14px',
+          minHeight: 'unset',
+          lineHeight: 1
+        },
+        '& .MuiButton-root.number': {
           bgcolor: '#FFFFFF',
           color: '#000000',
-          '&:hover': { 
-            bgcolor: '#F8F9FA'
-          }
+          '&:hover': { bgcolor: '#F8F9FA' }
         }
       }}>
         {/* First row */}
@@ -243,6 +294,7 @@ function SalesForm({
             key={num}
             variant="contained"
             onClick={() => onNumpadClick(num.toString())}
+            className="number"
           >
             {num}
           </Button>
@@ -253,6 +305,7 @@ function SalesForm({
           sx={{
             bgcolor: '#FF4D4D !important',
             color: 'white !important',
+            fontSize: '12px !important',
             '&:hover': { bgcolor: '#FF3333 !important' }
           }}
         >
@@ -264,6 +317,7 @@ function SalesForm({
           sx={{
             bgcolor: '#CCCCCC !important',
             color: 'white !important',
+            fontSize: '12px !important',
             '&:hover': { bgcolor: '#BFBFBF !important' }
           }}
         >
@@ -276,6 +330,7 @@ function SalesForm({
             key={num}
             variant="contained"
             onClick={() => onNumpadClick(num.toString())}
+            className="number"
           >
             {num}
           </Button>
@@ -297,6 +352,7 @@ function SalesForm({
           sx={{
             bgcolor: '#1A8CFF !important',
             color: 'white !important',
+            fontSize: '12px !important',
             '&:hover': { bgcolor: '#0066CC !important' }
           }}
         >
@@ -309,6 +365,7 @@ function SalesForm({
             key={num}
             variant="contained"
             onClick={() => onNumpadClick(num.toString())}
+            className="number"
           >
             {num}
           </Button>
@@ -316,6 +373,7 @@ function SalesForm({
         <Button
           variant="contained"
           onClick={() => onNumpadClick('0')}
+          className="number"
         >
           0
         </Button>
