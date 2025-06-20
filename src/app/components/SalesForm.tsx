@@ -141,12 +141,12 @@ function SalesForm({
             value={inputValues[label]}
             onClick={() => onFieldSelect(label)}
             inputProps={{ 
-              style: { fontSize: '1.6vh' },
+              style: { fontSize: '2vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '3.5vh',
+                height: '4.5vh',
                 borderRadius: '4px',
                 bgcolor: selectedField === label ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
@@ -163,12 +163,12 @@ function SalesForm({
             value={inputValues['Drop Off Amount 1']}
             onClick={() => onFieldSelect('Drop Off Amount 1')}
             inputProps={{ 
-              style: { fontSize: '1.6vh' },
+              style: { fontSize: '2vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '3.5vh',
+                height: '4.5vh',
                 borderRadius: '4px',
                 bgcolor: selectedField === 'Drop Off Amount 1' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
@@ -183,12 +183,12 @@ function SalesForm({
             value={inputValues['Drop Off Code']}
             onClick={() => onFieldSelect('Drop Off Code')}
             inputProps={{ 
-              style: { fontSize: '1.6vh' },
+              style: { fontSize: '2vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '3.5vh',
+                height: '4.5vh',
                 borderRadius: '4px',
                 bgcolor: selectedField === 'Drop Off Code' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
@@ -203,12 +203,12 @@ function SalesForm({
             value={inputValues['Drop Off Amount 2']}
             onClick={() => onFieldSelect('Drop Off Amount 2')}
             inputProps={{ 
-              style: { fontSize: '1.6vh' },
+              style: { fontSize: '2vh' },
               readOnly: true
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
-                height: '3.5vh',
+                height: '4.5vh',
                 borderRadius: '4px',
                 bgcolor: selectedField === 'Drop Off Amount 2' ? '#e8f0fe' : 'transparent',
                 '& fieldset': {
@@ -221,41 +221,86 @@ function SalesForm({
       </Box>
       <Box sx={{ 
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
-        gap: '0.8vh',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '1vh',
         flex: 1,
         '& .MuiButton-root': {
-          fontSize: '2.5vh',
-          minHeight: '5vh',
+          fontSize: '3vh',
+          minHeight: '6vh',
           borderRadius: '6px',
           fontWeight: 'bold'
         }
       }}>
-        {[7, 8, 9, 'Del', 'Clr', 4, 5, 6, '.', 'Save', 1, 2, 3, 0].map((num, index) => (
+        {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
           <Button
-            key={index}
+            key={num}
             variant="contained"
-            onClick={() => num === 'Save' ? onSave() : onNumpadClick(num.toString())}
+            onClick={() => onNumpadClick(num.toString())}
             sx={{
-              bgcolor: typeof num === 'number' ? grey[100] : 
-                num === 'Del' ? red[500] :
-                num === 'Clr' ? grey[500] :
-                num === '.' ? yellow[700] :
-                num === 'Save' ? blue[600] : grey[100],
-              color: typeof num === 'number' ? grey[900] :
-                num === 'Save' || num === '.' || num === 'Del' || num === 'Clr' ? 'white' : grey[900],
-              '&:hover': { 
-                bgcolor: typeof num === 'number' ? grey[200] :
-                  num === 'Del' ? red[600] :
-                  num === 'Clr' ? grey[600] :
-                  num === '.' ? yellow[800] :
-                  num === 'Save' ? blue[700] : grey[200]
-              }
+              bgcolor: grey[200],
+              color: 'black',
+              '&:hover': { bgcolor: grey[300] }
             }}
           >
-            {num === '.' ? '•' : num === 'Save' ? (editingIndex !== null ? 'Update' : 'Save') : num}
+            {num}
           </Button>
         ))}
+        <Button
+          variant="contained"
+          onClick={() => onNumpadClick('Del')}
+          sx={{
+            bgcolor: red[500],
+            color: 'white',
+            '&:hover': { bgcolor: red[600] }
+          }}
+        >
+          Del
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => onNumpadClick('0')}
+          sx={{
+            bgcolor: grey[200],
+            color: 'black',
+            '&:hover': { bgcolor: grey[300] }
+          }}
+        >
+          0
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => onNumpadClick('.')}
+          sx={{
+            bgcolor: yellow[500],
+            color: 'black',
+            '&:hover': { bgcolor: yellow[600] }
+          }}
+        >
+          •
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => onNumpadClick('Clr')}
+          sx={{
+            bgcolor: blue[500],
+            color: 'white',
+            '&:hover': { bgcolor: blue[600] }
+          }}
+        >
+          Clr
+        </Button>
+        <Button
+          variant="contained"
+          onClick={onSave}
+          sx={{
+            gridColumn: 'span 2',
+            bgcolor: green[500],
+            color: 'white',
+            '&:hover': { bgcolor: green[600] }
+          }}
+        >
+          {editingIndex !== null ? 'Update' : 'Save'}
+        </Button>
       </Box>
     </Paper>
   );

@@ -50,21 +50,6 @@ interface InventoryLog {
   isSaved: boolean;
 }
 
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
-}
-
-declare global {
-  interface WindowEventMap {
-    beforeinstallprompt: BeforeInstallPromptEvent;
-  }
-}
-
 interface HeaderProps {
   onShareClick: () => void;
   onOpenTimesheet: () => void;
@@ -102,12 +87,17 @@ export default function Header({
   const [clockOutTime, setClockOutTime] = useState('--')
   const [isClockingIn, setIsClockingIn] = useState(false)
   const [isClockingOut, setIsClockingOut] = useState(false)
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: AlertColor }>({ open: false, message: '', severity: 'info' })
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'info' | 'warning' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [itemUsages, setItemUsages] = useState<Record<string, string>>({})
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [isInstallable, setIsInstallable] = useState(false)
-  const [isInstalled, setIsInstalled] = useState(false)
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([])
   const [inventoryUpdates, setInventoryUpdates] = useState<InventoryUpdate[]>([])
 
@@ -160,49 +150,6 @@ export default function Header({
     const interval = setInterval(updateTime, 1000)
     return () => clearInterval(interval)
   }, [])
-
-  // Check if app is installed
-  useEffect(() => {
-    const checkInstalled = () => {
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log('App is installed and running in standalone mode');
-        setIsInstalled(true);
-      }
-    };
-
-    checkInstalled();
-    window.matchMedia('(display-mode: standalone)').addListener(checkInstalled);
-
-    return () => {
-      window.matchMedia('(display-mode: standalone)').removeListener(checkInstalled);
-    };
-  }, []);
-
-  // Handle beforeinstallprompt event
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
-      console.log('beforeinstallprompt event fired');
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
-      e.preventDefault();
-      // Stash the event so it can be triggered later
-      setDeferredPrompt(e);
-      setIsInstallable(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
-
-    // Handle successful installation
-    window.addEventListener('appinstalled', () => {
-      console.log('App was successfully installed');
-      setIsInstalled(true);
-      setDeferredPrompt(null);
-      setIsInstallable(false);
-    });
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
-    };
-  }, []);
 
   const saveEmployeeTimeLocally = async (action: 'in' | 'out') => {
     if (!activeEmployee) {
@@ -394,10 +341,6 @@ export default function Header({
     if (action === 'in') setIsClockingIn(false)
     else setIsClockingOut(false)
     }
-  }
-
-  const handleSnackbarClose = () => {
-    setSnackbar(prev => ({ ...prev, open: false }))
   }
 
   const handleClockOut = async () => {
@@ -635,70 +578,6 @@ export default function Header({
     }
   };
 
-  const handleInstall = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log('Install button clicked');
-    console.log('Deferred prompt available:', !!deferredPrompt);
-    
-    if (deferredPrompt) {
-      try {
-        // Show the prompt
-        await deferredPrompt.prompt();
-        console.log('Installation prompt shown');
-        
-        // Wait for the user to respond to the prompt
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log('Installation prompt outcome:', outcome);
-        
-        if (outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-          setIsInstalled(true);
-        } else {
-          console.log('User dismissed the install prompt');
-        }
-        
-        // Clear the deferredPrompt for the next time
-        setDeferredPrompt(null);
-      } catch (error) {
-        console.error('Error showing install prompt:', error);
-      }
-    } else {
-      // Show installation instructions based on platform
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      
-      if (isAndroid) {
-        setSnackbar({
-          open: true,
-          message: 'To install: tap the three dots menu (⋮) and select "Install app" or "Add to Home screen"',
-          severity: 'info'
-        });
-      } else if (isIOS) {
-        setSnackbar({
-          open: true,
-          message: 'To install: tap the share button and select "Add to Home Screen"',
-          severity: 'info'
-        });
-      } else {
-        setSnackbar({
-          open: true,
-          message: 'App can be installed from your browser\'s menu',
-          severity: 'info'
-        });
-      }
-    }
-  };
-
-  // Get the appropriate button text
-  const getInstallButtonText = () => {
-    if (isInstalled) {
-      return '✓ App Installed';
-    }
-    if (isInstallable) {
-      return '📱 Install App';
-    }
-    return '📱 Download App';
-  };
-
   const handleTimeEntry = (entry: TimeEntry) => {
     setTimeEntries(prev => [...prev, entry])
   }
@@ -752,29 +631,8 @@ export default function Header({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="h6" fontSize="2vh" fontWeight="bold">Laundry King</Typography>
             <Box sx={{ display: 'flex', gap: '1vh' }}>
-              <Button
-                onClick={handleInstall}
-                sx={{
-                  bgcolor: 'transparent',
-                  color: isInstalled ? 'primary.main' : isInstallable ? 'primary.main' : 'text.secondary',
-                  '&:hover': { 
-                    bgcolor: 'transparent', 
-                    textDecoration: 'underline',
-                    color: 'primary.main'
-                  },
-                  fontSize: '1.6vh',
-                  minWidth: 'auto',
-                  p: 0,
-                  mr: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5
-                }}
-              >
-                {getInstallButtonText()}
-              </Button>
               <IconButton
-                onClick={handleShare}
+                onClick={onShareClick}
                 sx={{
                   bgcolor: grey[100],
                   '&:hover': { bgcolor: grey[200] },
@@ -784,28 +642,6 @@ export default function Header({
               >
                 <ShareIcon sx={{ fontSize: '2.2vh', color: blue[600] }} />
               </IconButton>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Button
-                  variant="contained"
-                onClick={onOpenTimesheet}
-                sx={{
-                  bgcolor: blue[600],
-                    '&:hover': { bgcolor: blue[700] }
-                }}
-              >
-                Timesheet
-              </Button>
-                <Button
-                  variant="contained"
-                  onClick={onSaveToServer}
-                  sx={{
-                    bgcolor: green[600],
-                    '&:hover': { bgcolor: green[700] }
-                  }}
-                >
-                  Sync
-                </Button>
-              </Box>
             </Box>
           </Box>
           <Typography fontSize="1.6vh" color="textSecondary">
@@ -915,9 +751,13 @@ export default function Header({
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={handleSnackbarClose}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbar.severity}>
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
