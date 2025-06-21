@@ -2,9 +2,9 @@
 window.LaundryAdmin = {};
 
 // API URL constant - automatically detect environment
-const API_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api'  // Development
-  : 'https://laundry-pos-api.onrender.com/api';  // Production
+const API_URL = process.env.NODE_ENV === 'production'
+? 'https://laundry-pos-api.onrender.com/api'  // Production URL
+: 'https://laundry-pos-api.onrender.com/api';  // Always use Render API
 
 // Wait for all functions to be defined before initializing
 (function(app) {

@@ -37,7 +37,7 @@ import { Edit as EditIcon, Share as ShareIcon, Bluetooth as BluetoothIcon, Email
 import { LineChart, BarChart } from '@mui/x-charts'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
-import { GOOGLE_SHEETS_CONFIG, APP_CONFIG, API_URL } from './config'
+import { GOOGLE_SHEETS_CONFIG, APP_CONFIG } from './config'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -59,6 +59,9 @@ const Header = dynamic(() => import('./components/Header'), { ssr: false })
 
 // Initialize EmailJS
 emailjs.init('your_public_key') // Replace with your EmailJS public key
+
+// Update API URL to use Render endpoint
+const API_URL = 'https://laundry-pos-api.onrender.com';
 
 // Add type declarations for window.gapi and window.google at the top
 
@@ -83,12 +86,9 @@ interface TimesheetRecord {
 
 // Add interface for employee data
 interface Employee {
-  _id: string;
   name: string;
   status: string;
-  contactNumber?: string;
-  address?: string;
-  role?: string;
+  _id: string;
 }
 
 export default function Home() {
@@ -1399,36 +1399,34 @@ export default function Home() {
       const indexedDBData = await getFromIndexedDB() || {};
       const localEmployeeList = indexedDBData.employeeList || [];
       
-      // Fetch active employees from MongoDB
+      // Fetch ALL employees from MongoDB
       const response = await fetch(`${API_URL}/api/employees`);
       if (!response.ok) {
-        throw new Error('Failed to fetch employee data from server');
+        throw new Error(`Failed to fetch employee data from server: ${response.statusText}`);
       }
       
       const serverEmployees: Employee[] = await response.json();
-      console.log('📋 Server employees:', serverEmployees.map(emp => `${emp.name} (${emp.status})`));
+      console.log('📋 Server employees:', serverEmployees.map((emp: Employee) => emp.name));
       
-      // Filter active employees and get their names
-      const activeEmployees = serverEmployees
-        .filter(emp => emp.status === 'active')
-        .map(emp => emp.name);
+      // Get all employee names
+      const allEmployees = serverEmployees.map((emp: Employee) => emp.name);
       
-      console.log('👥 Active employees:', activeEmployees);
+      console.log('👥 All employees:', allEmployees);
       console.log('📝 Current local list:', localEmployeeList);
       
       // Update state and localStorage
-      setEmployeeList(activeEmployees);
-      localStorage.setItem('employeeList', JSON.stringify(activeEmployees));
+      setEmployeeList(allEmployees);
+      localStorage.setItem('employeeList', JSON.stringify(allEmployees));
       
       // Handle selected employee changes
-      if (selectedEmployee && !activeEmployees.includes(selectedEmployee)) {
-        console.log('⚠️ Currently selected employee not found in active list');
-        const newSelected = activeEmployees.length > 0 ? activeEmployees[0] : '';
+      if (selectedEmployee && !allEmployees.includes(selectedEmployee)) {
+        console.log('⚠️ Currently selected employee not found in list');
+        const newSelected = allEmployees.length > 0 ? allEmployees[0] : '';
         console.log(`- Changing selection from "${selectedEmployee}" to "${newSelected}"`);
         setSelectedEmployee(newSelected);
         localStorage.setItem('selectedEmployee', newSelected);
-      } else if (!selectedEmployee && activeEmployees.length > 0) {
-        const newSelected = activeEmployees[0];
+      } else if (!selectedEmployee && allEmployees.length > 0) {
+        const newSelected = allEmployees[0];
         console.log('👤 No employee selected, selecting first available:', newSelected);
         setSelectedEmployee(newSelected);
         localStorage.setItem('selectedEmployee', newSelected);
@@ -1437,7 +1435,7 @@ export default function Home() {
       // Update IndexedDB
       await saveToIndexedDB({
         ...indexedDBData,
-        employeeList: activeEmployees
+        employeeList: allEmployees
       });
       
       console.log('✅ Employee list sync complete');
@@ -1664,8 +1662,13 @@ export default function Home() {
             />
             
             {/* Daily Tracker */}
-            <DailyTracker
-              sx={{ gridArea: 'tracker', overflow: 'auto' }}
+            <DailyTracker 
+              sx={{ 
+                gridArea: 'tracker',
+                height: '280px',
+                maxHeight: '280px',
+                overflow: 'hidden'
+              }}
               savedData={savedData}
               editingIndex={editingIndex}
               onEdit={handleEdit}

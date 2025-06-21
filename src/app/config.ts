@@ -9,9 +9,9 @@ export const GOOGLE_SHEETS_CONFIG = {
 };
 
 // API Configuration
-export const API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://laundry-pos-api.onrender.com'  // Replace with your actual Render URL
-  : 'http://localhost:5000';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL 
+  ? process.env.NEXT_PUBLIC_API_URL 
+  : 'https://laundry-pos-api.onrender.com';
 
 // Other configurations
 export const APP_NAME = 'Laundry POS';
