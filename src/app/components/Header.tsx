@@ -754,7 +754,6 @@ export default function Header({
               <Button
                 onClick={handleInstall}
                 sx={{
-                  display: 'none',
                   bgcolor: 'transparent',
                   color: isInstalled ? 'primary.main' : isInstallable ? 'primary.main' : 'text.secondary',
                   '&:hover': { 
