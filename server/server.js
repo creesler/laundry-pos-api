@@ -45,9 +45,9 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin/index.html'));
 });
 
-// Basic test route
+// Serve Next.js frontend at root
 app.get('/', (req, res) => {
-  res.send('Laundry App Backend API is running!');
+  res.sendFile(path.join(__dirname, '../src/app/page.tsx'));
 });
 
 // Error handling middleware

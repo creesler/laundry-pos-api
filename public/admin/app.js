@@ -1,8 +1,8 @@
-// Create a global namespace for our app
+do// Create a global namespace for our app
 window.LaundryAdmin = {};
 
 // API URL constant - automatically detect environment
-const API_URL = 'https://laundry-pos-api.vercel.app/api';  // Vercel deployment
+const API_URL = 'http://localhost:5000/api';  // Local server
 
 // Wait for all functions to be defined before initializing
 (function(app) {
