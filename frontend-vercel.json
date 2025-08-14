@@ -1,14 +1,8 @@
 {
   "version": 2,
   "buildCommand": "next build",
-  "installCommand": "npm install",
+  "outputDirectory": "out",
   "framework": "nextjs",
-  "outputDirectory": ".next",
   "regions": ["sin1"],
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ]
+  "public": true
 }
