@@ -2,7 +2,7 @@
 window.LaundryAdmin = {};
 
 // API URL constant - automatically detect environment
-const API_URL = 'http://localhost:5000/api';  // Local server with online MongoDB
+const API_URL = 'https://laundry-pos-api.vercel.app/api';  // Vercel deployment
 
 // Wait for all functions to be defined before initializing
 (function(app) {
