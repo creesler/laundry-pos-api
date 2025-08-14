@@ -7,7 +7,7 @@
     "dev": "node server/server.js",
     "build": "next build",
     "start": "node server/server.js",
-    "vercel-build": "echo 'Build step completed'",
+    "vercel-build": "npm install && npm run build",
     "lint": "next lint"
   },
   "engines": {
