@@ -1,11 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
-  output: 'standalone',
-  distDir: '.next',
-  experimental: {
-    appDir: true,
+  output: 'export',
+  images: {
+    unoptimized: true,
   },
   typescript: {
     ignoreBuildErrors: true

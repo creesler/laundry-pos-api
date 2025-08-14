@@ -7,9 +7,9 @@
     "dev": "next dev",
     "server": "node server/server.js",
     "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
-    "build": "next build",
-    "start": "next start",
-    "vercel-build": "cp vercel.frontend.json vercel.json && next build",
+    "build": "next build && next export",
+    "start": "npx serve out",
+    "vercel-build": "next build",
     "lint": "next lint"
   },
   "engines": {

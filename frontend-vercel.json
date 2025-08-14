@@ -1,14 +1,18 @@
 {
   "version": 2,
   "buildCommand": "next build",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "outputDirectory": ".next",
-  "regions": ["sin1"],
+  "outputDirectory": "out",
+  "framework": null,
   "builds": [
     {
       "src": "package.json",
-      "use": "@vercel/next"
+      "use": "@vercel/static-build"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ],
   "env": {
