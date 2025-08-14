@@ -15,19 +15,22 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server/server.js"
+      "dest": "/server/server.js"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/admin",
-      "dest": "public/admin/index.html"
+      "dest": "/public/admin/index.html"
     },
     {
       "src": "/admin/(.*)",
-      "dest": "public/admin/$1"
+      "dest": "/public/admin/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "public/$1"
+      "dest": "/public/$1"
     }
   ],
   "env": {
