@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: laundry-pos-frontend
+    env: node
+    buildCommand: |
+      npm install
+      npm run build
+      cp public/sw.js .next/standalone/public/
+      cp -r public/icons .next/standalone/public/
+      cp public/manifest.json .next/standalone/public/
+    startCommand: node .next/standalone/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true
+ 

@@ -59,12 +59,30 @@ expressApp.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something broke!' });
 });
 
-app.prepare().then(() => {
-  createServer(async (req, res) => {
-    const parsedUrl = parse(req.url, true);
-    const { pathname } = parsedUrl;
+// Create HTTP server
+const server = createServer((req, res) => {
+  // Add CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    // Handle service worker and manifest specifically
+  // Handle OPTIONS requests for CORS
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
+  const parsedUrl = parse(req.url, true);
+  const { pathname } = parsedUrl;
+
+  // Handle API routes first
+  if (pathname.startsWith('/api/')) {
+    expressApp(req, res);
+    return;
+  }
+
+    // Handle service worker and manifest
     if (pathname === '/sw.js' || pathname === '/manifest.json') {
       const filePath = path.join(__dirname, pathname);
       console.log('Attempting to serve:', filePath);
@@ -93,8 +111,11 @@ app.prepare().then(() => {
       res.statusCode = 500;
       res.end('Internal server error');
     }
-  }).listen(process.env.PORT || 3000, (err) => {
+  // Start the server
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, (err) => {
     if (err) throw err;
-    console.log(`> Ready on http://localhost:${process.env.PORT || 3000}`);
+    console.log(`> Server ready on http://localhost:${PORT}`);
+    console.log('> API routes available at /api/*');
   });
 }); 

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laundry Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8">Laundry Admin Dashboard</h1>
+
+        <!-- Sales Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Sales Overview</h2>
+            
+            <!-- Chart Container -->
+            <div class="mb-8" style="height: 400px;">
+                <canvas id="salesChart"></canvas>
+            </div>
+
+            <!-- Sales Table -->
+            <div class="overflow-x-auto">
+                <table class="table-auto w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2">DATE/TIME</th>
+                            <th class="px-4 py-2">COIN</th>
+                            <th class="px-4 py-2">HOPPER</th>
+                            <th class="px-4 py-2">SOAP</th>
+                            <th class="px-4 py-2">VENDING</th>
+                            <th class="px-4 py-2">DROP OFF 1</th>
+                            <th class="px-4 py-2">DROP OFF 2</th>
+                            <th class="px-4 py-2">DROP OFF 3</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salesTableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Total -->
+            <div class="mt-4 text-right">
+                <span id="totalSales" class="font-semibold"></span>
+            </div>
+        </div>
+
+        <!-- Refresh Button -->
+        <div class="text-center mb-8">
+            <button id="refreshButton" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Refresh Data
+            </button>
+        </div>
+    </div>
+
+    <!-- Initialize Chart.js -->
+    <script>
+        Chart.register(ChartDataLabels);
+    </script>
+    
+    <!-- Admin JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html> 

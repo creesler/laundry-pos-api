@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: laundry-pos-frontend
+    env: node
+    buildCommand: cd src && npm install && npm run build
+    startCommand: cd src && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true

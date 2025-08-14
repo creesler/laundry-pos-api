@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laundry Admin - Employee Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .timesheet-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .tabs {
+            display: flex;
+            gap: 2px;
+            background-color: #f5f5f5;
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 6px;
+            color: #666;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background-color: white;
+            color: #2c3e50;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .tab:hover:not(.active) {
+            background-color: rgba(255,255,255,0.5);
+        }
+        .timesheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #eee;
+        }
+        .timesheet-content {
+            overflow-x: auto;
+        }
+        .timesheet-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .timesheet-table th {
+            background-color: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            white-space: nowrap;
+        }
+        .timesheet-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            color: #333;
+        }
+        .timesheet-table tr:hover td {
+            background-color: #f8f9fa;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-completed {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status-pending {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+        .date-filter {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .date-filter input[type="date"] {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .filter-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .filter-btn:hover {
+            background-color: #2980b9;
+        }
+        .total-hours {
+            font-size: 14px;
+            color: #666;
+            margin-top: 16px;
+            text-align: right;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .date-range {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        #salesChart {
+            width: 100%;
+            height: 300px;
+            max-height: 300px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        .action-btn {
+            padding: 5px 10px;
+            margin: 0 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .edit-btn {
+            background-color: #f1c40f;
+            color: white;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .remove-btn {
+            background-color: #95a5a6;
+            color: white;
+        }
+        #messageBox {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .error {
+            background-color: #e74c3c;
+            color: white;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Employee Management</h1>
+        
+        <div id="messageBox"></div>
+
+        <form id="employeeForm">
+            <input type="hidden" id="employeeId">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" required>
+            </div>
+            <div class="form-group">
+                <label for="contactNumber">Contact Number:</label>
+                <input type="text" id="contactNumber">
+            </div>
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <input type="text" id="address">
+            </div>
+            <div class="form-group">
+                <label for="role">Role:</label>
+                <select id="role">
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="status">Status:</label>
+                <select id="status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            <button type="submit" id="submitBtn">Add Employee</button>
+            <button type="button" id="clearBtn">Clear Form</button>
+        </form>
+
+        <table id="employeeTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-header">
+            <h2>Sales Overview</h2>
+            <div class="date-range">
+                <label for="startDate">From:</label>
+                <input type="date" id="startDate">
+                <label for="endDate">To:</label>
+                <input type="date" id="endDate">
+                <button onclick="updateChart()">Update Chart</button>
+            </div>
+        </div>
+        <canvas id="salesChart"></canvas>
+        <div id="totalDisplay"></div>
+    </div>
+
+    <div class="timesheet-container">
+        <div class="timesheet-header">
+            <h2>Timesheet</h2>
+            <div class="date-filter">
+                <label for="timesheetStartDate">From:</label>
+                <input type="date" id="timesheetStartDate">
+                <label for="timesheetEndDate">To:</label>
+                <input type="date" id="timesheetEndDate">
+                <button class="filter-btn">Filter</button>
+            </div>
+        </div>
+        <div class="tabs" id="employeeTabs">
+            <!-- Tabs will be dynamically populated -->
+        </div>
+        <div class="timesheet-content">
+            <table class="timesheet-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time In</th>
+                        <th>Time Out</th>
+                        <th>Hours</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div class="total-hours">Total Hours: <span id="totalHours">0</span></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let employees = [];
+        let selectedEmployee = null;
+
+        // DOM Elements
+        const form = document.getElementById('employeeForm');
+        const employeeTable = document.getElementById('employeeTable').getElementsByTagName('tbody')[0];
+        const messageBox = document.getElementById('messageBox');
+        const submitBtn = document.getElementById('submitBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const employeeTabs = document.getElementById('employeeTabs');
+
+        // Show message function
+        function showMessage(message, isError = false) {
+            messageBox.textContent = message;
+            messageBox.className = isError ? 'error' : 'success';
+            messageBox.style.display = 'block';
+            setTimeout(() => messageBox.style.display = 'none', 3000);
+        }
+
+        // Clear form function
+        function clearForm() {
+            form.reset();
+            document.getElementById('employeeId').value = '';
+            submitBtn.textContent = 'Add Employee';
+        }
+
+        // Add the removeEmployee function before the fetchEmployees function
+        async function removeEmployee(id) {
+            if (!confirm('Are you sure you want to remove this employee? This will set their status to inactive.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/employees/${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: 'inactive'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to remove employee');
+                }
+
+                showMessage('Employee removed successfully');
+                await fetchEmployees(); // Refresh the employee list
+            } catch (error) {
+                showMessage('Error removing employee', true);
+                console.error('Error:', error);
+            }
+        }
+
+        // Fetch all employees
+        async function fetchEmployees() {
+            try {
+                const response = await fetch(`${API_URL}/employees`);
+                const data = await response.json();
+                employees = data;
+                renderEmployees();
+                
+                // Initialize timesheet with first employee
+                if (employees.length > 0) {
+                    selectEmployee(employees[0].name);
+                }
+            } catch (error) {
+                showMessage('Error fetching employees', true);
+            }
+        }
+
+        // Render employees table
+        function renderEmployees() {
+            employeeTable.innerHTML = '';
+            employees.forEach(employee => {
+                const row = employeeTable.insertRow();
+                row.innerHTML = `
+                    <td>${employee.name}</td>
+                    <td>${employee.contactNumber || '-'}</td>
+                    <td>${employee.role}</td>
+                    <td>${employee.status}</td>
+                    <td>
+                        <button class="action-btn edit-btn" onclick="editEmployee('${employee._id}')">Edit</button>
+                        <button class="action-btn delete-btn" onclick="deleteEmployee('${employee._id}')">Delete</button>
+                        <button class="action-btn remove-btn" onclick="removeEmployee('${employee._id}')">Remove</button>
+                    </td>
+                `;
+            });
+        }
+
+        // Edit employee
+        function editEmployee(id) {
+            const employee = employees.find(emp => emp._id === id);
+            if (employee) {
+                document.getElementById('employeeId').value = employee._id;
+                document.getElementById('name').value = employee.name;
+                document.getElementById('contactNumber').value = employee.contactNumber || '';
+                document.getElementById('address').value = employee.address || '';
+                document.getElementById('role').value = employee.role;
+                document.getElementById('status').value = employee.status;
+                submitBtn.textContent = 'Update Employee';
+            }
+        }
+
+        // Delete employee
+        async function deleteEmployee(id) {
+            if (confirm('Are you sure you want to delete this employee?')) {
+                try {
+                    const response = await fetch(`${API_URL}/employees/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        showMessage('Employee deleted successfully');
+                        fetchEmployees();
+                    }
+                } catch (error) {
+                    showMessage('Error deleting employee', true);
+                }
+            }
+        }
+
+        // Form submit handler
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const employeeId = document.getElementById('employeeId').value;
+            const employeeData = {
+                name: document.getElementById('name').value,
+                contactNumber: document.getElementById('contactNumber').value,
+                address: document.getElementById('address').value,
+                role: document.getElementById('role').value,
+                status: document.getElementById('status').value
+            };
+
+            try {
+                const url = employeeId 
+                    ? `${API_URL}/employees/${employeeId}`
+                    : `${API_URL}/employees`;
+                const method = employeeId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(employeeData)
+                });
+
+                if (response.ok) {
+                    showMessage(`Employee ${employeeId ? 'updated' : 'added'} successfully`);
+                    clearForm();
+                    fetchEmployees();
+                }
+            } catch (error) {
+                showMessage('Error saving employee', true);
+            }
+        });
+
+        // Clear button handler
+        clearBtn.addEventListener('click', clearForm);
+
+        // Add chart functionality
+        let salesChart = null;
+
+        // Initialize date inputs with current month range
+        function initializeDateRange() {
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            
+            document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('endDate').value = lastDay.toISOString().split('T')[0];
+        }
+
+        // Fetch sales data from server
+        async function fetchSalesData() {
+            try {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                const response = await fetch(`${API_URL}/sales/summary?startDate=${startDate}&endDate=${endDate}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch sales data');
+                }
+                
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching sales data:', error);
+                showMessage('Error fetching sales data', true);
+                return null;
+            }
+        }
+
+        // Create or update chart
+        async function updateChart() {
+            const data = await fetchSalesData();
+            if (!data) return;
+
+            const chartData = {
+                labels: ['Coin', 'Hopper', 'Soap', 'Vending', 'Drop Off 1', 'Drop Off 2'],
+                datasets: [{
+                    label: 'Total Amount',
+                    data: [
+                        data.coinTotal || 0,
+                        data.hopperTotal || 0,
+                        data.soapTotal || 0,
+                        data.vendingTotal || 0,
+                        data.dropOffAmount1Total || 0,
+                        data.dropOffAmount2Total || 0
+                    ],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',   // Coin - Modern Blue
+                        'rgba(75, 192, 192, 0.8)',   // Hopper - Teal
+                        'rgba(255, 99, 132, 0.8)',   // Soap - Pink
+                        'rgba(255, 159, 64, 0.8)',   // Vending - Orange
+                        'rgba(153, 102, 255, 0.8)',  // Drop Off 1 - Purple
+                        'rgba(201, 203, 207, 0.8)'   // Drop Off 2 - Gray
+                    ],
+                    borderColor: [
+                        'rgb(54, 162, 235)',
+                        'rgb(75, 192, 192)',
+                        'rgb(255, 99, 132)',
+                        'rgb(255, 159, 64)',
+                        'rgb(153, 102, 255)',
+                        'rgb(201, 203, 207)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    hoverOffset: 4
+                }]
+            };
+
+            const config = {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value/1000).toLocaleString() + 'K';
+                                },
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                },
+                                padding: 8
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                },
+                                padding: 8
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    return `${context.label}: $${value.toLocaleString()}`;
+                                }
+                            },
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            titleColor: '#333',
+                            bodyColor: '#333',
+                            titleFont: {
+                                size: 13,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 12
+                            },
+                            padding: 12,
+                            borderColor: 'rgba(0, 0, 0, 0.1)',
+                            borderWidth: 1
+                        },
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Total Sales by Category',
+                            color: '#333',
+                            font: {
+                                size: 16,
+                                weight: '600',
+                                family: "'Inter', -apple-system, system-ui, sans-serif"
+                            },
+                            padding: {
+                                bottom: 24
+                            }
+                        }
+                    },
+                    barThickness: 32,
+                    maxBarThickness: 40,
+                    layout: {
+                        padding: {
+                            left: 16,
+                            right: 16,
+                            top: 16,
+                            bottom: 16
+                        }
+                    },
+                    animation: {
+                        duration: 750,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            };
+
+            if (salesChart) {
+                salesChart.destroy();
+            }
+
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            salesChart = new Chart(ctx, config);
+
+            // Add total display with modern styling
+            const total = chartData.datasets[0].data.reduce((sum, value) => sum + value, 0);
+            const chartContainer = document.querySelector('.chart-container');
+            const totalDisplay = document.getElementById('totalDisplay') || document.createElement('div');
+            totalDisplay.id = 'totalDisplay';
+            totalDisplay.style.textAlign = 'right';
+            totalDisplay.style.marginTop = '24px';
+            totalDisplay.style.padding = '16px';
+            totalDisplay.style.borderTop = '1px solid rgba(0, 0, 0, 0.1)';
+            totalDisplay.style.fontSize = '15px';
+            totalDisplay.style.fontWeight = '600';
+            totalDisplay.style.color = '#333';
+            totalDisplay.style.fontFamily = "'Inter', -apple-system, system-ui, sans-serif";
+            totalDisplay.innerHTML = `Total Sales: $${total.toLocaleString()}`;
+            
+            if (!document.getElementById('totalDisplay')) {
+                chartContainer.appendChild(totalDisplay);
+            }
+        }
+
+        // Timesheet functionality
+        let timesheetData = {};
+        const timesheetTable = document.querySelector('.timesheet-table tbody');
+        const timesheetStartDate = document.getElementById('timesheetStartDate');
+        const timesheetEndDate = document.getElementById('timesheetEndDate');
+        const totalHoursSpan = document.getElementById('totalHours');
+
+        // Initialize date inputs with current month
+        function initializeTimesheetDates() {
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            
+            timesheetStartDate.value = firstDay.toISOString().split('T')[0];
+            timesheetEndDate.value = lastDay.toISOString().split('T')[0];
+            
+            console.log('Initialized timesheet dates:', {
+                startDate: timesheetStartDate.value,
+                endDate: timesheetEndDate.value
+            });
+        }
+
+        // Format duration to hours and minutes
+        function formatDuration(minutes) {
+            if (!minutes) return '--';
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours}h ${mins}m`;
+        }
+
+        // Format date and time
+        function formatDateTime(dateString, format = 'date') {
+            if (!dateString) return '--';
+            const date = new Date(dateString);
+            if (format === 'date') {
+                return date.toLocaleDateString();
+            } else if (format === 'time') {
+                return date.toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
+            }
+            return '--';
+        }
+
+        // Fetch timesheet data from server
+        async function fetchTimesheetData() {
+            if (!selectedEmployee) return;
+
+            try {
+                // Get data from sync endpoint
+                const response = await fetch(`${API_URL}/sync`);
+                if (!response.ok) throw new Error('Failed to fetch timesheet data');
+                
+                const data = await response.json();
+                console.log('Received sync data:', data);
+
+                // Filter and format timesheet entries
+                const employeeEntries = (data.timesheet || [])
+                    .filter(entry => entry.employeeName === selectedEmployee)
+                    .sort((a, b) => new Date(a.date + ' ' + a.time).getTime() - new Date(b.date + ' ' + b.time).getTime());
+
+                // Group entries by date
+                const entriesByDate = {};
+                employeeEntries.forEach(entry => {
+                    if (!entriesByDate[entry.date]) {
+                        entriesByDate[entry.date] = [];
+                    }
+                    entriesByDate[entry.date].push(entry);
+                });
+
+                // Create timesheet records
+                const records = [];
+                Object.entries(entriesByDate).forEach(([date, entries]) => {
+                    // Sort entries by time for each date
+                    entries.sort((a, b) => new Date(a.date + ' ' + a.time).getTime() - new Date(b.date + ' ' + b.time).getTime());
+                    
+                    // Find pairs of in/out entries
+                    for (let i = 0; i < entries.length; i++) {
+                        if (entries[i].action === 'in') {
+                            const clockIn = entries[i];
+                            // Look for next 'out' entry
+                            const clockOut = entries.slice(i + 1).find(e => e.action === 'out');
+                            
+                            records.push({
+                                date: clockIn.date,
+                                clockIn: new Date(clockIn.date + ' ' + clockIn.time),
+                                clockOut: clockOut ? new Date(clockOut.date + ' ' + clockOut.time) : null,
+                                duration: clockOut ? calculateDuration(clockIn.time, clockOut.time) : 0,
+                                status: clockOut ? 'completed' : 'pending',
+                                employeeName: clockIn.employeeName
+                            });
+
+                            // Skip the out entry we just used
+                            if (clockOut) {
+                                i = entries.indexOf(clockOut);
+                            }
+                        }
+                    }
+                });
+
+                // Filter records by date range
+                const startDate = new Date(timesheetStartDate.value);
+                const endDate = new Date(timesheetEndDate.value);
+                endDate.setHours(23, 59, 59);
+
+                const filteredRecords = records.filter(record => {
+                    const recordDate = new Date(record.date);
+                    return recordDate >= startDate && recordDate <= endDate;
+                });
+
+                // Sort records by date and time
+                const sortedRecords = filteredRecords.sort((a, b) => b.clockIn - a.clockIn);
+
+                console.log('Processed timesheet records:', sortedRecords);
+                timesheetData = sortedRecords;
+                renderTimesheet();
+            } catch (error) {
+                console.error('Error fetching timesheet data:', error);
+                showMessage('Error loading timesheet data: ' + error.message, true);
+            }
+        }
+
+        // Update renderTimesheet to handle the new data format
+        function renderTimesheet() {
+            console.log('Rendering timesheet with data:', timesheetData);
+            timesheetTable.innerHTML = '';
+            let totalHours = 0;
+
+            if (!Array.isArray(timesheetData)) {
+                console.error('Invalid timesheet data format:', timesheetData);
+                return;
+            }
+
+            if (timesheetData.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="5" style="text-align: center;">No entries found for ${selectedEmployee} in the selected date range</td>
+                `;
+                timesheetTable.appendChild(row);
+                totalHoursSpan.textContent = '0.00';
+                return;
+            }
+
+            timesheetData.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDateTime(entry.date)}</td>
+                    <td>${formatDateTime(entry.clockIn, 'time')}</td>
+                    <td>${entry.clockOut ? formatDateTime(entry.clockOut, 'time') : '--'}</td>
+                    <td>${formatDuration(entry.duration)}</td>
+                    <td>
+                        <span class="status-badge ${entry.status === 'completed' ? 'status-completed' : 'status-pending'}">
+                            ${entry.status === 'completed' ? 'Completed' : 'Pending'}
+                        </span>
+                    </td>
+                `;
+                timesheetTable.appendChild(row);
+
+                if (entry.duration) {
+                    totalHours += entry.duration / 60; // Convert minutes to hours
+                }
+            });
+
+            // Update total hours display
+            totalHoursSpan.textContent = totalHours.toFixed(2);
+        }
+
+        // Event listeners for date filters
+        document.querySelector('.filter-btn').addEventListener('click', () => {
+            console.log('Filter button clicked. Current state:', {
+                selectedEmployee,
+                startDate: timesheetStartDate.value,
+                endDate: timesheetEndDate.value
+            });
+            fetchTimesheetData();
+        });
+
+        // Initialize timesheet
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTimesheetDates();
+            fetchTimesheetData();
+        });
+
+        // Render employee tabs
+        function renderEmployeeTabs() {
+            employeeTabs.innerHTML = '';
+            employees.forEach(employee => {
+                const tab = document.createElement('button');
+                tab.className = `tab ${employee.name === selectedEmployee ? 'active' : ''}`;
+                tab.textContent = employee.name;
+                tab.onclick = () => selectEmployee(employee.name);
+                employeeTabs.appendChild(tab);
+            });
+        }
+
+        // Select employee and update timesheet
+        function selectEmployee(employeeName) {
+            console.log('Selecting employee:', employeeName);
+            selectedEmployee = employeeName;
+            renderEmployeeTabs();
+            fetchTimesheetData();
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Initializing admin page...');
+            await fetchEmployees();
+            initializeTimesheetDates();
+            
+            // Initialize with first employee if available
+            if (employees.length > 0) {
+                console.log('Selecting first employee:', employees[0].name);
+                selectEmployee(employees[0].name);
+            } else {
+                console.log('No employees available');
+            }
+        });
+    </script>
+</body>
+</html> 

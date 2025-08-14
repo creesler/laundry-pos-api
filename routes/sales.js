@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Sale from '../models/Sale.js';
 import Employee from '../models/Employee.js';
 
@@ -51,48 +52,31 @@ const getDateRange = (period) => {
 // @access  Public (for now)
 router.get('/', async (req, res) => {
   try {
-    let { startDate, endDate, period } = req.query;
-    let dateRange;
+    console.log('🔍 Attempting to fetch all sales data...');
+    
+    // First check MongoDB connection
+    console.log('MongoDB connection state:', mongoose.connection.readyState);
+    
+    // Get total count of sales
+    const totalCount = await Sale.countDocuments();
+    console.log('📊 Total sales in database:', totalCount);
 
-    // Handle period-based filtering
-    if (period) {
-      if (period === 'all') {
-        // No date filtering needed
-        startDate = new Date(0); // Beginning of time
-        endDate = new Date(); // Current time
-      } else {
-        dateRange = getDateRange(period);
-        if (dateRange) {
-          startDate = dateRange.start.toISOString();
-          endDate = dateRange.end.toISOString();
-        }
-      }
-    }
-
-    let query = {};
-
-    if (startDate && endDate) {
-      query.Date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      };
-    }
-
-    console.log('MongoDB query:', JSON.stringify(query, null, 2));
-
-    // Add a count query first to check if we have any data
-    const count = await Sale.countDocuments(query);
-    console.log(`Found ${count} sales matching query`);
-
-    const sales = await Sale.find(query)
+    // Simple query to get all sales
+    const sales = await Sale.find()
       .sort({ Date: -1 }) // Sort by date descending
       .lean();
     
-    console.log(`Retrieved ${sales.length} sales records`);
-
-    // Log a sample record if available
+    console.log('✅ Successfully retrieved sales data');
+    console.log(`📝 Number of sales found: ${sales.length}`);
+    
+    // Log first few records for debugging
     if (sales.length > 0) {
-      console.log('Sample record:', JSON.stringify(sales[0], null, 2));
+      console.log('📋 First few records:');
+      sales.slice(0, 3).forEach((sale, index) => {
+        console.log(`Record ${index + 1}:`, JSON.stringify(sale, null, 2));
+      });
+    } else {
+      console.log('⚠️ No sales records found in database');
     }
 
     res.json(sales);

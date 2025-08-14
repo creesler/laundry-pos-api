@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laundry Admin - Employee Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .date-range {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        #salesChart {
+            width: 100%;
+            height: 300px;
+            max-height: 300px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        .action-btn {
+            padding: 5px 10px;
+            margin: 0 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .edit-btn {
+            background-color: #f1c40f;
+            color: white;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .remove-btn {
+            background-color: #95a5a6;
+            color: white;
+        }
+        #messageBox {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .error {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        /* Timesheet Styles */
+        .timesheet-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .timesheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .employee-tabs {
+            display: flex;
+            gap: 2px;
+            background: #f5f5f5;
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .employee-tab {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .employee-tab.active {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .timesheet-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+
+        .timesheet-day {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .day-header {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .time-entry {
+            font-size: 13px;
+            color: #666;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .time-entry:last-child {
+            border-bottom: none;
+        }
+
+        .total-hours {
+            margin-top: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 13px;
+        }
+
+        .timesheet-summary {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .summary-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px dashed #ddd;
+            margin: 20px 0;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Employee Management</h1>
+        
+        <div id="messageBox"></div>
+
+        <form id="employeeForm">
+            <input type="hidden" id="employeeId">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" required>
+            </div>
+            <div class="form-group">
+                <label for="contactNumber">Contact Number:</label>
+                <input type="text" id="contactNumber">
+            </div>
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <input type="text" id="address">
+            </div>
+            <div class="form-group">
+                <label for="role">Role:</label>
+                <select id="role">
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="status">Status:</label>
+                <select id="status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            <button type="submit" id="submitBtn">Add Employee</button>
+            <button type="button" id="clearBtn">Clear Form</button>
+        </form>
+
+        <table id="employeeTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-header">
+            <h2>Sales Overview</h2>
+            <div class="date-range">
+                <label for="startDate">From:</label>
+                <input type="date" id="startDate">
+                <label for="endDate">To:</label>
+                <input type="date" id="endDate">
+                <button onclick="updateChart()">Update Chart</button>
+            </div>
+        </div>
+        <canvas id="salesChart"></canvas>
+        <div id="totalDisplay"></div>
+    </div>
+
+    <div class="timesheet-container">
+        <div class="timesheet-header">
+            <h2>Employee Timesheets</h2>
+            <div class="date-range">
+                <label for="timesheetStartDate">From:</label>
+                <input type="date" id="timesheetStartDate">
+                <label for="timesheetEndDate">To:</label>
+                <input type="date" id="timesheetEndDate">
+                <button onclick="updateTimesheet()">Update Timesheet</button>
+            </div>
+        </div>
+        
+        <div class="employee-tabs" id="employeeTabs">
+            <!-- Tabs will be dynamically populated -->
+        </div>
+
+        <div class="timesheet-grid" id="timesheetGrid">
+            <!-- Timesheet data will be dynamically populated -->
+        </div>
+
+        <div class="timesheet-summary" id="timesheetSummary">
+            <!-- Summary will be dynamically populated -->
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let employees = [];
+
+        // DOM Elements
+        const form = document.getElementById('employeeForm');
+        const employeeTable = document.getElementById('employeeTable').getElementsByTagName('tbody')[0];
+        const messageBox = document.getElementById('messageBox');
+        const submitBtn = document.getElementById('submitBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        // Show message function
+        function showMessage(message, isError = false) {
+            messageBox.textContent = message;
+            messageBox.className = isError ? 'error' : 'success';
+            messageBox.style.display = 'block';
+            setTimeout(() => messageBox.style.display = 'none', 3000);
+        }
+
+        // Clear form function
+        function clearForm() {
+            form.reset();
+            document.getElementById('employeeId').value = '';
+            submitBtn.textContent = 'Add Employee';
+        }
+
+        // Add the removeEmployee function before the fetchEmployees function
+        async function removeEmployee(id) {
+            if (!confirm('Are you sure you want to remove this employee? This will set their status to inactive.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/employees/${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: 'inactive'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to remove employee');
+                }
+
+                showMessage('Employee removed successfully');
+                await fetchEmployees(); // Refresh the employee list
+            } catch (error) {
+                showMessage('Error removing employee', true);
+                console.error('Error:', error);
+            }
+        }
+
+        // Fetch all employees
+        async function fetchEmployees() {
+            try {
+                console.log('Fetching employees...');
+                const response = await fetch(`${API_URL}/employees`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch employees');
+                }
+                const data = await response.json();
+                employees = data;
+                console.log('Employees fetched:', employees);
+                renderEmployees();
+                updateEmployeeTabs();
+            } catch (error) {
+                console.error('Error fetching employees:', error);
+                showMessage('Error fetching employees', true);
+            }
+        }
+
+        // Render employees table
+        function renderEmployees() {
+            employeeTable.innerHTML = '';
+            employees.forEach(employee => {
+                const row = employeeTable.insertRow();
+                row.innerHTML = `
+                    <td>${employee.name}</td>
+                    <td>${employee.contactNumber || '-'}</td>
+                    <td>${employee.role}</td>
+                    <td>${employee.status}</td>
+                    <td>
+                        <button class="action-btn edit-btn" onclick="editEmployee('${employee._id}')">Edit</button>
+                        <button class="action-btn delete-btn" onclick="deleteEmployee('${employee._id}')">Delete</button>
+                        <button class="action-btn remove-btn" onclick="removeEmployee('${employee._id}')">Remove</button>
+                    </td>
+                `;
+            });
+        }
+
+        // Edit employee
+        function editEmployee(id) {
+            const employee = employees.find(emp => emp._id === id);
+            if (employee) {
+                document.getElementById('employeeId').value = employee._id;
+                document.getElementById('name').value = employee.name;
+                document.getElementById('contactNumber').value = employee.contactNumber || '';
+                document.getElementById('address').value = employee.address || '';
+                document.getElementById('role').value = employee.role;
+                document.getElementById('status').value = employee.status;
+                submitBtn.textContent = 'Update Employee';
+            }
+        }
+
+        // Delete employee
+        async function deleteEmployee(id) {
+            if (confirm('Are you sure you want to delete this employee?')) {
+                try {
+                    const response = await fetch(`${API_URL}/employees/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        showMessage('Employee deleted successfully');
+                        fetchEmployees();
+                    }
+                } catch (error) {
+                    showMessage('Error deleting employee', true);
+                }
+            }
+        }
+
+        // Form submit handler
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const employeeId = document.getElementById('employeeId').value;
+            const employeeData = {
+                name: document.getElementById('name').value,
+                contactNumber: document.getElementById('contactNumber').value,
+                address: document.getElementById('address').value,
+                role: document.getElementById('role').value,
+                status: document.getElementById('status').value
+            };
+
+            try {
+                const url = employeeId 
+                    ? `${API_URL}/employees/${employeeId}`
+                    : `${API_URL}/employees`;
+                const method = employeeId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(employeeData)
+                });
+
+                if (response.ok) {
+                    showMessage(`Employee ${employeeId ? 'updated' : 'added'} successfully`);
+                    clearForm();
+                    fetchEmployees();
+                }
+            } catch (error) {
+                showMessage('Error saving employee', true);
+            }
+        });
+
+        // Clear button handler
+        clearBtn.addEventListener('click', clearForm);
+
+        // Add chart functionality
+        let salesChart = null;
+
+        // Initialize date inputs with current month range
+        function initializeDateRange() {
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            
+            document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('endDate').value = lastDay.toISOString().split('T')[0];
+        }
+
+        // Fetch sales data from server
+        async function fetchSalesData() {
+            try {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                const response = await fetch(`${API_URL}/sales/summary?startDate=${startDate}&endDate=${endDate}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch sales data');
+                }
+                
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching sales data:', error);
+                showMessage('Error fetching sales data', true);
+                return null;
+            }
+        }
+
+        // Create or update chart
+        async function updateChart() {
+            const data = await fetchSalesData();
+            if (!data) return;
+
+            const chartData = {
+                labels: ['Coin', 'Hopper', 'Soap', 'Vending', 'Drop Off 1', 'Drop Off 2'],
+                datasets: [{
+                    label: 'Total Amount',
+                    data: [
+                        data.coinTotal || 0,
+                        data.hopperTotal || 0,
+                        data.soapTotal || 0,
+                        data.vendingTotal || 0,
+                        data.dropOffAmount1Total || 0,
+                        data.dropOffAmount2Total || 0
+                    ],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',   // Coin - Modern Blue
+                        'rgba(75, 192, 192, 0.8)',   // Hopper - Teal
+                        'rgba(255, 99, 132, 0.8)',   // Soap - Pink
+                        'rgba(255, 159, 64, 0.8)',   // Vending - Orange
+                        'rgba(153, 102, 255, 0.8)',  // Drop Off 1 - Purple
+                        'rgba(201, 203, 207, 0.8)'   // Drop Off 2 - Gray
+                    ],
+                    borderColor: [
+                        'rgb(54, 162, 235)',
+                        'rgb(75, 192, 192)',
+                        'rgb(255, 99, 132)',
+                        'rgb(255, 159, 64)',
+                        'rgb(153, 102, 255)',
+                        'rgb(201, 203, 207)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    hoverOffset: 4
+                }]
+            };
+
+            const config = {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value/1000).toLocaleString() + 'K';
+                                },
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                },
+                                padding: 8
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                },
+                                padding: 8
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    return `${context.label}: $${value.toLocaleString()}`;
+                                }
+                            },
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            titleColor: '#333',
+                            bodyColor: '#333',
+                            titleFont: {
+                                size: 13,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 12
+                            },
+                            padding: 12,
+                            borderColor: 'rgba(0, 0, 0, 0.1)',
+                            borderWidth: 1
+                        },
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Total Sales by Category',
+                            color: '#333',
+                            font: {
+                                size: 16,
+                                weight: '600',
+                                family: "'Inter', -apple-system, system-ui, sans-serif"
+                            },
+                            padding: {
+                                bottom: 24
+                            }
+                        }
+                    },
+                    barThickness: 32,
+                    maxBarThickness: 40,
+                    layout: {
+                        padding: {
+                            left: 16,
+                            right: 16,
+                            top: 16,
+                            bottom: 16
+                        }
+                    },
+                    animation: {
+                        duration: 750,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            };
+
+            if (salesChart) {
+                salesChart.destroy();
+            }
+
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            salesChart = new Chart(ctx, config);
+
+            // Add total display with modern styling
+            const total = chartData.datasets[0].data.reduce((sum, value) => sum + value, 0);
+            const chartContainer = document.querySelector('.chart-container');
+            const totalDisplay = document.getElementById('totalDisplay') || document.createElement('div');
+            totalDisplay.id = 'totalDisplay';
+            totalDisplay.style.textAlign = 'right';
+            totalDisplay.style.marginTop = '24px';
+            totalDisplay.style.padding = '16px';
+            totalDisplay.style.borderTop = '1px solid rgba(0, 0, 0, 0.1)';
+            totalDisplay.style.fontSize = '15px';
+            totalDisplay.style.fontWeight = '600';
+            totalDisplay.style.color = '#333';
+            totalDisplay.style.fontFamily = "'Inter', -apple-system, system-ui, sans-serif";
+            totalDisplay.innerHTML = `Total Sales: $${total.toLocaleString()}`;
+            
+            if (!document.getElementById('totalDisplay')) {
+                chartContainer.appendChild(totalDisplay);
+            }
+        }
+
+        // Timesheet functionality
+        let currentEmployeeName = null;
+        
+        function initializeTimesheet() {
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            
+            document.getElementById('timesheetStartDate').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('timesheetEndDate').value = lastDay.toISOString().split('T')[0];
+            
+            updateEmployeeTabs();
+        }
+
+        function updateEmployeeTabs() {
+            const tabsContainer = document.getElementById('employeeTabs');
+            tabsContainer.innerHTML = '';
+            
+            console.log('Updating employee tabs with:', employees);
+            employees.forEach(employee => {
+                const tab = document.createElement('button');
+                tab.className = 'employee-tab';
+                tab.textContent = employee.name;
+                tab.onclick = () => selectEmployee(employee.name);
+                
+                if (employee.name === currentEmployeeName) {
+                    tab.classList.add('active');
+                }
+                
+                tabsContainer.appendChild(tab);
+            });
+
+            // Select first employee by default if none selected
+            if (!currentEmployeeName && employees.length > 0) {
+                console.log('Selecting first employee:', employees[0]);
+                selectEmployee(employees[0].name);
+            }
+        }
+
+        function selectEmployee(employeeName) {
+            if (!employeeName) {
+                console.error('No employee name provided');
+                return;
+            }
+            
+            console.log('Selecting employee:', employeeName);
+            currentEmployeeName = employeeName;
+            
+            const tabs = document.querySelectorAll('.employee-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            const selectedTab = Array.from(tabs).find(tab => tab.textContent === employeeName);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            
+            updateTimesheet();
+        }
+
+        async function updateTimesheet() {
+            if (!currentEmployeeName) {
+                console.error('No employee selected');
+                return;
+            }
+
+            const startDate = document.getElementById('timesheetStartDate').value;
+            const endDate = document.getElementById('timesheetEndDate').value;
+
+            if (!startDate || !endDate) {
+                console.error('Start date and end date are required');
+                return;
+            }
+            
+            try {
+                console.log('Fetching timesheet for employee:', currentEmployeeName, 'from', startDate, 'to', endDate);
+                const encodedName = encodeURIComponent(currentEmployeeName);
+                const response = await fetch(`${API_URL}/timesheets/employee/${encodedName}?startDate=${startDate}&endDate=${endDate}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Timesheet data received:', data);
+                
+                if (!data.entries) {
+                    throw new Error('Invalid timesheet data format');
+                }
+                
+                if (data.entries.length === 0) {
+                    document.getElementById('timesheetGrid').innerHTML = '<div class="no-data">No timesheet entries found for this date range</div>';
+                } else {
+                    renderTimesheet(data.entries);
+                }
+                
+                renderTimesheetSummary(data.summary || {
+                    totalRegularHours: 0,
+                    totalOvertimeHours: 0,
+                    totalHours: 0,
+                    regularPay: 0,
+                    overtimePay: 0,
+                    totalPay: 0
+                });
+            } catch (error) {
+                console.error('Error fetching timesheet:', error);
+                showMessage('Error fetching timesheet data: ' + error.message, true);
+                
+                // Clear the displays on error
+                document.getElementById('timesheetGrid').innerHTML = '<div class="no-data">No timesheet data available</div>';
+                document.getElementById('timesheetSummary').innerHTML = '';
+            }
+        }
+
+        function renderTimesheet(entries) {
+            const grid = document.getElementById('timesheetGrid');
+            grid.innerHTML = '';
+            
+            // Group entries by day
+            const days = groupEntriesByDay(entries);
+            
+            // Create day cards
+            Object.entries(days).forEach(([date, dayEntries]) => {
+                const dayCard = document.createElement('div');
+                dayCard.className = 'timesheet-day';
+                
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.textContent = formatDate(date);
+                dayCard.appendChild(dayHeader);
+                
+                // Add time entries
+                dayEntries.forEach(entry => {
+                    const timeEntry = document.createElement('div');
+                    timeEntry.className = 'time-entry';
+                    timeEntry.innerHTML = `
+                        <div>${formatTime(entry.timeIn)} - ${formatTime(entry.timeOut)}</div>
+                        <div class="hours-breakdown">
+                            <span>Regular: ${entry.regularHours.toFixed(2)}h</span>
+                            ${entry.overtimeHours > 0 ? `<span>OT: ${entry.overtimeHours.toFixed(2)}h</span>` : ''}
+                        </div>
+                    `;
+                    dayCard.appendChild(timeEntry);
+                });
+                
+                // Add total hours
+                const totalHours = dayEntries.reduce((sum, entry) => sum + entry.totalHours, 0);
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'total-hours';
+                totalDiv.textContent = `Total: ${totalHours.toFixed(2)} hrs`;
+                dayCard.appendChild(totalDiv);
+                
+                grid.appendChild(dayCard);
+            });
+        }
+
+        function renderTimesheetSummary(summary) {
+            const summaryContainer = document.getElementById('timesheetSummary');
+            summaryContainer.innerHTML = '';
+            
+            const summaryData = [
+                { label: 'Regular Hours', value: `${summary.totalRegularHours.toFixed(2)} hrs` },
+                { label: 'Overtime Hours', value: `${summary.totalOvertimeHours.toFixed(2)} hrs` },
+                { label: 'Total Hours', value: `${summary.totalHours.toFixed(2)} hrs` },
+                { label: 'Regular Pay', value: `$${summary.regularPay.toFixed(2)}` },
+                { label: 'Overtime Pay', value: `$${summary.overtimePay.toFixed(2)}` },
+                { label: 'Total Pay', value: `$${summary.totalPay.toFixed(2)}` }
+            ];
+            
+            summaryData.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'summary-row';
+                row.innerHTML = `
+                    <span class="summary-label">${item.label}</span>
+                    <span class="summary-value">${item.value}</span>
+                `;
+                summaryContainer.appendChild(row);
+            });
+        }
+
+        // Update the groupEntriesByDay function to work with new data structure
+        function groupEntriesByDay(entries) {
+            return entries.reduce((acc, entry) => {
+                const date = entry.timeIn.split('T')[0];
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(entry);
+                return acc;
+            }, {});
+        }
+
+        // Utility functions
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function formatTime(timeStr) {
+            return new Date(timeStr).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Initialize timesheet when page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await fetchEmployees();
+                initializeTimesheet();
+                initializeDateRange();
+                updateChart();
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                showMessage('Error initializing page: ' + error.message, true);
+            }
+        });
+    </script>
+</body>
+</html> 
