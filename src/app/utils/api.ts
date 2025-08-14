@@ -7,8 +7,9 @@ const defaultHeaders = {
 
 const defaultOptions = {
   mode: 'cors' as RequestMode,
-  credentials: 'omit' as RequestCredentials,
-  headers: defaultHeaders
+  credentials: 'same-origin' as RequestCredentials,
+  headers: defaultHeaders,
+  cache: 'no-cache' as RequestCache
 };
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
