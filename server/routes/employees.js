@@ -8,18 +8,36 @@ const router = express.Router();
 // @access  Public (for now)
 router.get('/', async (req, res) => {
   try {
+    console.log('GET /api/employees request received', {
+      query: req.query,
+      headers: req.headers
+    });
+
     const { status } = req.query;
     const query = status ? { status } : { status: 'active' }; // Default to active employees
+    
+    console.log('Executing MongoDB query:', query);
     
     const employees = await Employee.find(query)
       .select('-__v')
       .sort({ name: 1 });
     
-    console.log(`📋 Fetched ${employees.length} employees with status: ${status || 'active'}`);
+    console.log(`📋 Fetched ${employees.length} employees with status: ${status || 'active'}`, {
+      employees: employees.map(e => ({ id: e._id, name: e.name }))
+    });
+
     res.json(employees);
   } catch (err) {
-    console.error('Error fetching employees:', err.message);
-    res.status(500).send('Server Error');
+    console.error('Error fetching employees:', {
+      error: err.message,
+      stack: err.stack,
+      query: req.query
+    });
+    
+    res.status(500).json({
+      message: 'Error fetching employees',
+      error: err.message
+    });
   }
 });
 

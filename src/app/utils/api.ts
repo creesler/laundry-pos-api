@@ -16,10 +16,12 @@ const defaultOptions = {
 };
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
-  const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   
   // Ensure endpoint starts with /api/
   const apiEndpoint = endpoint.startsWith('/api/') ? endpoint : `/api/${endpoint}`;
+  
+  console.log('Making API request to:', `${API_URL}${apiEndpoint}`);
   
   const response = await fetch(`${API_URL}${apiEndpoint}`, {
     ...defaultOptions,

@@ -64,9 +64,28 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../src/app/page.tsx'));
 });
 
+// Log all requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`, {
+    headers: req.headers,
+    query: req.query,
+    body: req.body
+  });
+  next();
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Error:', {
+    method: req.method,
+    path: req.path,
+    headers: req.headers,
+    query: req.query,
+    body: req.body,
+    error: err.message,
+    stack: err.stack
+  });
+  
   res.status(500).json({
     message: 'Internal Server Error',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
