@@ -5,11 +5,8 @@
   "description": "Laundry POS System",
   "scripts": {
     "dev": "next dev",
-    "server": "node server/server.js",
-    "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
-    "build": "next build && next export",
-    "start": "npx serve out",
-    "vercel-build": "next build",
+    "build": "next build",
+    "start": "next start",
     "lint": "next lint"
   },
   "engines": {

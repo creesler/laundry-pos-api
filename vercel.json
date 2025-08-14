@@ -1,24 +1,7 @@
 {
-  "version": 2,
-  "buildCommand": "npm install --platform=linux --arch=x64 && next build",
-  "outputDirectory": "out",
+  "buildCommand": "next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
   "framework": null,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "zeroConfig": true
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "https://laundry-pos-api.vercel.app/api"
-  }
+  "outputDirectory": "out"
 }
