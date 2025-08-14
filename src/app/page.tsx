@@ -1401,6 +1401,7 @@ export default function Home() {
       const localEmployeeList = indexedDBData.employeeList || [];
       
       // Fetch ALL employees from MongoDB using our API helper
+      console.log('Fetching employees from:', process.env.NEXT_PUBLIC_API_URL);
       const serverEmployees: Employee[] = await get('employees');
       console.log('📋 Server employees:', serverEmployees.map((emp: Employee) => emp.name));
       

@@ -18,12 +18,15 @@ const defaultOptions = {
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   
-  // Ensure endpoint starts with /api/
-  const apiEndpoint = endpoint.startsWith('/api/') ? endpoint : `/api/${endpoint}`;
+  // Remove any leading or trailing slashes from endpoint
+  const cleanEndpoint = endpoint.replace(/^\/+|\/+$/g, '');
   
-  console.log('Making API request to:', `${API_URL}${apiEndpoint}`);
+  // Build the full URL
+  const fullUrl = `${API_URL}/api/${cleanEndpoint}`;
   
-  const response = await fetch(`${API_URL}${apiEndpoint}`, {
+  console.log('Making API request to:', fullUrl);
+  
+  const response = await fetch(fullUrl, {
     ...defaultOptions,
     ...options,
     headers: {
@@ -33,17 +36,31 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
+    const responseText = await response.text();
     console.error('API Error:', {
       endpoint,
       status: response.status,
       statusText: response.statusText,
       headers: Object.fromEntries([...response.headers.entries()]),
-      url: response.url
+      url: response.url,
+      responseBody: responseText
     });
-    throw new Error(`API Error: ${response.statusText}`);
+    throw new Error(`API Error: ${response.statusText}\nResponse: ${responseText}`);
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (error) {
+    const responseText = await response.text();
+    console.error('JSON Parse Error:', {
+      endpoint,
+      error: error.message,
+      responseText,
+      headers: Object.fromEntries([...response.headers.entries()]),
+      url: response.url
+    });
+    throw new Error(`Failed to parse JSON response: ${error.message}\nResponse: ${responseText}`);
+  }
 }
 
 export async function get(endpoint: string) {
