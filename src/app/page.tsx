@@ -38,6 +38,7 @@ import { LineChart, BarChart } from '@mui/x-charts'
 import emailjs from '@emailjs/browser'
 import { saveToIndexedDB, getFromIndexedDB } from './utils/db'
 import { GOOGLE_SHEETS_CONFIG, APP_CONFIG } from './config'
+import { get, post, put, del } from './utils/api'
 import Script from 'next/script'
 import dynamic from 'next/dynamic'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -60,8 +61,8 @@ const Header = dynamic(() => import('./components/Header'), { ssr: false })
 // Initialize EmailJS
 emailjs.init('your_public_key') // Replace with your EmailJS public key
 
-// Get API URL from environment variable
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Get API URL from environment variable and ensure it doesn't end with /api
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
 
 // Add type declarations for window.gapi and window.google at the top
 
@@ -1399,13 +1400,8 @@ export default function Home() {
       const indexedDBData = await getFromIndexedDB() || {};
       const localEmployeeList = indexedDBData.employeeList || [];
       
-      // Fetch ALL employees from MongoDB
-      const response = await fetch(`${API_URL}/api/employees`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch employee data from server: ${response.statusText}`);
-      }
-      
-      const serverEmployees: Employee[] = await response.json();
+      // Fetch ALL employees from MongoDB using our API helper
+      const serverEmployees: Employee[] = await get('employees');
       console.log('📋 Server employees:', serverEmployees.map((emp: Employee) => emp.name));
       
       // Get all employee names

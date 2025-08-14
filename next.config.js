@@ -11,7 +11,7 @@ const nextConfig = {
     ignoreDuringBuilds: true
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://laundry-pos-api.vercel.app/api'
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://laundry-pos-api.vercel.app'
   }
 }
 
