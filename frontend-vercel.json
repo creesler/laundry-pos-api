@@ -1,8 +1,17 @@
 {
   "version": 2,
   "buildCommand": "next build",
-  "outputDirectory": "out",
+  "installCommand": "npm install",
   "framework": "nextjs",
+  "outputDirectory": ".next",
   "regions": ["sin1"],
-  "public": true
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://laundry-pos-api.vercel.app/api"
+  }
 }

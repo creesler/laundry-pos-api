@@ -60,8 +60,8 @@ const Header = dynamic(() => import('./components/Header'), { ssr: false })
 // Initialize EmailJS
 emailjs.init('your_public_key') // Replace with your EmailJS public key
 
-// Update API URL to use Render endpoint
-const API_URL = 'https://laundry-pos-api.onrender.com';
+// Get API URL from environment variable
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 // Add type declarations for window.gapi and window.google at the top
 
