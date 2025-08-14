@@ -7,8 +7,11 @@ const defaultHeaders = {
 
 const defaultOptions = {
   mode: 'cors' as RequestMode,
-  credentials: 'same-origin' as RequestCredentials,
-  headers: defaultHeaders,
+  credentials: 'omit' as RequestCredentials,
+  headers: {
+    ...defaultHeaders,
+    'Origin': 'https://laundry-pos-frontend.vercel.app'
+  },
   cache: 'no-cache' as RequestCache
 };
 

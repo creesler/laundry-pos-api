@@ -1,17 +1,27 @@
 {
-  "headers": [
+  "version": 2,
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "https://laundry-pos-frontend.vercel.app" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" },
-        { "key": "Access-Control-Max-Age", "value": "86400" }
-      ]
+      "src": "/api/(.*)",
+      "methods": ["OPTIONS"],
+      "headers": {
+        "Access-Control-Allow-Origin": "https://laundry-pos-frontend.vercel.app",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Max-Age": "86400"
+      },
+      "status": 204
+    },
+    {
+      "src": "/api/(.*)",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://laundry-pos-frontend.vercel.app",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Max-Age": "86400"
+      },
+      "dest": "/api/$1"
     }
-  ],
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
   "buildCommand": "next build",
   "devCommand": "next dev",
