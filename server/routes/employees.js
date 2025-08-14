@@ -1,13 +1,31 @@
 import express from 'express';
 import Employee from '../models/Employee.js';
+import cors from 'cors';
 
 const router = express.Router();
+
+// Enable CORS specifically for this route
+router.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Handle OPTIONS requests
+router.options('*', cors(), (req, res) => {
+  res.status(204).send();
+});
 
 // @route   GET /api/employees
 // @desc    Get all employees
 // @access  Public (for now)
 router.get('/', async (req, res) => {
   try {
+    // Set CORS headers explicitly
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
     const { status } = req.query;
     const query = status ? { status } : { status: 'active' }; // Default to active employees
     
