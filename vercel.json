@@ -1,18 +1,21 @@
 {
   "version": 2,
+  "buildCommand": "next build",
+  "outputDirectory": "out",
+  "framework": null,
   "builds": [
     {
-      "src": "server/server.js",
-      "use": "@vercel/node"
+      "src": "package.json",
+      "use": "@vercel/static-build"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "server/server.js"
+      "dest": "/$1"
     }
   ],
   "env": {
-    "MONGODB_URI": "${MONGODB_URI}"
+    "NEXT_PUBLIC_API_URL": "https://laundry-pos-api.vercel.app/api"
   }
 }
