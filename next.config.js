@@ -12,6 +12,12 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://laundry-pos-api.vercel.app'
+  },
+  // Disable server-side features
+  experimental: {
+    appDir: true,
+    serverActions: false,
+    serverComponents: false
   }
 }
 
