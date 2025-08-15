@@ -11,7 +11,7 @@ export const GOOGLE_SHEETS_CONFIG = {
 // API Configuration
 export const API_URL = process.env.NEXT_PUBLIC_API_URL 
   ? process.env.NEXT_PUBLIC_API_URL 
-  : 'https://laundry-pos-api.onrender.com';
+  : 'https://laundry-pos-api.vercel.app';
 
 // Other configurations
 export const APP_NAME = 'Laundry POS';

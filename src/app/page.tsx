@@ -1068,9 +1068,19 @@ export default function Home() {
     
     setIsLoadingTimesheet(true);
     try {
-      const response = await fetch(`${API_URL}/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetDateRange.startDate.toISOString().split('T')[0]}&endDate=${timesheetDateRange.endDate.toISOString().split('T')[0]}`);
+      console.log('🔄 Fetching timesheet data from:', API_URL);
+      const response = await fetch(`${API_URL}/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetDateRange.startDate.toISOString().split('T')[0]}&endDate=${timesheetDateRange.endDate.toISOString().split('T')[0]}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
 
+      console.log('📥 Timesheet response status:', response.status);
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Timesheet error response:', errorText);
         throw new Error('Failed to fetch timesheet data');
       }
 
