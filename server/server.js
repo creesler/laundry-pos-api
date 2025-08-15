@@ -44,24 +44,16 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Parse URL-encoded bodies
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, '../public')));
+// API routes - remove /api prefix since we're an API-only server
+app.use('/employees', employeeRoutes);
+app.use('/sales', salesRoutes);
+app.use('/timesheets', timesheetRoutes);
+app.use('/inventory', inventoryRoutes);
+app.use('/sync', syncRoutes);
 
-// API routes
-app.use('/api/employees', employeeRoutes);
-app.use('/api/sales', salesRoutes);
-app.use('/api/timesheets', timesheetRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/sync', syncRoutes);
-
-// Serve admin dashboard
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/admin/index.html'));
-});
-
-// Serve Next.js frontend at root
+// Root route for health check
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../src/app/page.tsx'));
+  res.json({ status: 'ok', message: 'API server is running' });
 });
 
 // Log all requests
@@ -92,6 +84,5 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`)); 
+// Export the Express app for Vercel
+export default app; 
