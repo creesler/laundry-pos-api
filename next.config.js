@@ -10,8 +10,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true
   },
-  // API URL is now handled dynamically in api.ts based on hostname
-  // Disable server-side features
+  // Ensure static export
+  trailingSlash: true,
+  distDir: 'out',
+  // Disable all server features
   experimental: {
     appDir: true,
     serverActions: false,

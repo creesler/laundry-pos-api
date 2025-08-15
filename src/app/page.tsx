@@ -61,13 +61,8 @@ const Header = dynamic(() => import('./components/Header'), { ssr: false })
 // Initialize EmailJS
 emailjs.init('your_public_key') // Replace with your EmailJS public key
 
-// API URL - automatically switches between local and production
-const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:5000'
-  : 'https://laundry-pos-api.vercel.app';
-
-// Log the current API URL for debugging
-console.log('🔗 Current API URL:', API_URL, 'from hostname:', window.location.hostname);
+// For static export, we'll use the production API URL
+const API_URL = 'https://laundry-pos-api.vercel.app';
 
 // Add type declarations for window.gapi and window.google at the top
 
