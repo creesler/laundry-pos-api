@@ -25,24 +25,21 @@ const app = express();
 // Connect to Database
 connectDB();
 
-// Enable CORS for all requests
+// Enable CORS
 app.use(cors({
   origin: 'https://laundry-pos-frontend.vercel.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  credentials: true,
-  optionsSuccessStatus: 204,
-  maxAge: 86400
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '50mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Parse URL-encoded bodies
 
-// API routes - remove /api prefix since we're an API-only server
-app.use('/employees', employeeRoutes);
-app.use('/sales', salesRoutes);
-app.use('/timesheets', timesheetRoutes);
-app.use('/inventory', inventoryRoutes);
-app.use('/sync', syncRoutes);
+// API routes
+app.use('/api/employees', employeeRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/timesheets', timesheetRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/sync', syncRoutes);
 
 // Root route for health check
 app.get('/', (req, res) => {

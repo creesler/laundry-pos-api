@@ -2,15 +2,13 @@
 
 const defaultHeaders = {
   'Accept': 'application/json',
-  'Content-Type': 'application/json',
-  'X-Requested-With': 'XMLHttpRequest'
+  'Content-Type': 'application/json'
 };
 
 const defaultOptions = {
   mode: 'cors' as RequestMode,
-  credentials: 'include' as RequestCredentials,
-  headers: defaultHeaders,
-  cache: 'no-cache' as RequestCache
+  credentials: 'omit' as RequestCredentials,
+  headers: defaultHeaders
 };
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
@@ -19,8 +17,8 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   // Remove any leading or trailing slashes from endpoint
   const cleanEndpoint = endpoint.replace(/^\/+|\/+$/g, '');
   
-  // Build the full URL - API endpoints no longer have /api prefix
-  const fullUrl = `${API_URL}/${cleanEndpoint}`;
+  // Build the full URL with /api prefix
+  const fullUrl = `${API_URL}/api/${cleanEndpoint}`;
   
   console.log('Making API request to:', fullUrl);
   
