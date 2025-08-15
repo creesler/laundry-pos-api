@@ -1002,53 +1002,77 @@ export default function Home() {
   const fetchTimesheetData = async () => {
     setIsLoadingTimesheet(true);
     try {
+      // Get today's date range
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endOfToday = new Date(today);
+      endOfToday.setHours(23, 59, 59, 999);
+
+      console.log('🔄 Fetching today\'s timesheet data from IndexedDB');
       const localData = await getFromIndexedDB();
-      if (localData?.employeeTimeData) {
-        const entries = localData.employeeTimeData
-          .filter((entry: any) => entry.employeeName === selectedEmployee)
-          .sort((a: any, b: any) => {
-            const dateA = new Date(a.date + ' ' + a.time);
-            const dateB = new Date(b.date + ' ' + b.time);
-            return dateA.getTime() - dateB.getTime();
-          });
-
-        const formattedEntries = [];
-        let currentClockIn = null;
-
-        for (const entry of entries) {
-          if (entry.action === 'in') {
-            currentClockIn = entry;
-          } else if (entry.action === 'out' && currentClockIn) {
-            formattedEntries.push({
-              date: currentClockIn.date,
-              timeIn: currentClockIn.time,
-              timeOut: entry.time,
-              duration: calculateDuration(currentClockIn.time, entry.time),
-              status: 'Completed',
-              employeeName: currentClockIn.employeeName,
-              isSaved: currentClockIn.isSaved && entry.isSaved
-            });
-            currentClockIn = null;
-          }
-        }
-
-        // Add pending clock-in if exists
-        if (currentClockIn) {
-          formattedEntries.push({
-            date: currentClockIn.date,
-            timeIn: currentClockIn.time,
-            timeOut: '--',
-            duration: '--',
-            status: 'Pending',
-            employeeName: currentClockIn.employeeName,
-            isSaved: currentClockIn.isSaved
-          });
-        }
-
-        setTimesheetData(formattedEntries);
+      
+      if (!localData?.employeeTimeData) {
+        console.log('❌ No timesheet data found in IndexedDB');
+        setTimesheetData([]);
+        return;
       }
+
+      // Filter entries for today only
+      const entries = localData.employeeTimeData
+        .filter((entry: any) => {
+          const entryDate = new Date(entry.date);
+          return (
+            entry.employeeName === selectedEmployee &&
+            entryDate >= today &&
+            entryDate <= endOfToday
+          );
+        })
+        .sort((a: any, b: any) => {
+          const dateA = new Date(a.date + ' ' + a.time);
+          const dateB = new Date(b.date + ' ' + b.time);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+      console.log('📋 Found today\'s entries:', entries.length);
+
+      // Process entries to create timesheet records
+      const formattedEntries = [];
+      let currentClockIn = null;
+
+      for (const entry of entries) {
+        if (entry.action === 'in') {
+          currentClockIn = entry;
+        } else if (entry.action === 'out' && currentClockIn) {
+          formattedEntries.push({
+            date: format(new Date(currentClockIn.date), 'yyyy-MM-dd'),
+            timeIn: currentClockIn.time,
+            timeOut: entry.time,
+            duration: calculateDuration(currentClockIn.time, entry.time),
+            status: 'Completed',
+            employeeName: currentClockIn.employeeName,
+            isSaved: currentClockIn.isSaved && entry.isSaved
+          });
+          currentClockIn = null;
+        }
+      }
+
+      // Add pending clock-in if exists
+      if (currentClockIn) {
+        formattedEntries.push({
+          date: format(new Date(currentClockIn.date), 'yyyy-MM-dd'),
+          timeIn: currentClockIn.time,
+          timeOut: '--',
+          duration: '--',
+          status: 'Pending',
+          employeeName: currentClockIn.employeeName,
+          isSaved: currentClockIn.isSaved
+        });
+      }
+
+      console.log('✅ Processed today\'s timesheet entries:', formattedEntries);
+      setTimesheetData(formattedEntries);
     } catch (error) {
-      console.error('Error loading local timesheet data:', error);
+      console.error('❌ Error loading local timesheet data:', error);
       setTimesheetData([]);
     } finally {
       setIsLoadingTimesheet(false);
@@ -1062,48 +1086,90 @@ export default function Home() {
     }
   }, [selectedEmployee, timesheetOpen]);
 
-  // Function to fetch online timesheet data (used by Request Data button)
+  // Function to fetch timesheet data from IndexedDB with date filtering
   const fetchOnlineTimesheetData = async () => {
-    if (!selectedEmployee || !isOnline) return;
+    if (!selectedEmployee) return [];
     
     setIsLoadingTimesheet(true);
     try {
-      console.log('🔄 Fetching timesheet data from:', API_URL);
-      const response = await fetch(`${API_URL}/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetDateRange.startDate.toISOString().split('T')[0]}&endDate=${timesheetDateRange.endDate.toISOString().split('T')[0]}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('📥 Timesheet response status:', response.status);
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Timesheet error response:', errorText);
-        throw new Error('Failed to fetch timesheet data');
+      console.log('🔄 Fetching timesheet data from IndexedDB');
+      const localData = await getFromIndexedDB();
+      
+      if (!localData?.employeeTimeData) {
+        console.log('❌ No timesheet data found in IndexedDB');
+        return [];
       }
 
-      const data = await response.json();
-      
-      // Format the data to match the expected structure
-      const formattedData = data.map((entry: any) => ({
-        date: format(new Date(entry.date), 'yyyy-MM-dd'),
-        timeIn: format(new Date(entry.clockIn), 'hh:mm a'),
-        timeOut: entry.clockOut ? format(new Date(entry.clockOut), 'hh:mm a') : '--',
-        duration: entry.duration ? `${Math.floor(entry.duration / 60)}h ${entry.duration % 60}m` : '--',
-        status: entry.status === 'completed' ? 'Completed' : 'Pending',
-        employeeName: entry.employeeName,
-        isSaved: true
-      }));
+      // Filter entries by employee and date range
+      const startDate = new Date(timesheetDateRange.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(timesheetDateRange.endDate);
+      endDate.setHours(23, 59, 59, 999);
 
-      // Return the formatted data instead of setting it directly
-      return formattedData;
+      console.log('📅 Filtering timesheet data:', {
+        employee: selectedEmployee,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
+
+      const entries = localData.employeeTimeData
+        .filter((entry: any) => {
+          const entryDate = new Date(entry.date);
+          return (
+            entry.employeeName === selectedEmployee &&
+            entryDate >= startDate &&
+            entryDate <= endDate
+          );
+        })
+        .sort((a: any, b: any) => {
+          const dateA = new Date(a.date + ' ' + a.time);
+          const dateB = new Date(b.date + ' ' + b.time);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+      console.log('📋 Found matching entries:', entries.length);
+
+      // Process entries to create timesheet records
+      const formattedEntries = [];
+      let currentClockIn = null;
+
+      for (const entry of entries) {
+        if (entry.action === 'in') {
+          currentClockIn = entry;
+        } else if (entry.action === 'out' && currentClockIn) {
+          formattedEntries.push({
+            date: format(new Date(currentClockIn.date), 'yyyy-MM-dd'),
+            timeIn: currentClockIn.time,
+            timeOut: entry.time,
+            duration: calculateDuration(currentClockIn.time, entry.time),
+            status: 'Completed',
+            employeeName: currentClockIn.employeeName,
+            isSaved: currentClockIn.isSaved && entry.isSaved
+          });
+          currentClockIn = null;
+        }
+      }
+
+      // Add pending clock-in if exists
+      if (currentClockIn) {
+        formattedEntries.push({
+          date: format(new Date(currentClockIn.date), 'yyyy-MM-dd'),
+          timeIn: currentClockIn.time,
+          timeOut: '--',
+          duration: '--',
+          status: 'Pending',
+          employeeName: currentClockIn.employeeName,
+          isSaved: currentClockIn.isSaved
+        });
+      }
+
+      console.log('✅ Processed timesheet entries:', formattedEntries);
+      return formattedEntries;
     } catch (error) {
-      console.error('Error fetching timesheet data:', error);
+      console.error('❌ Error processing timesheet data:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to fetch online timesheet data',
+        message: 'Error processing timesheet data',
         severity: 'error'
       });
       return [];
