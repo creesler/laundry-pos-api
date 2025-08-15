@@ -21,8 +21,8 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   // Remove any leading or trailing slashes from endpoint
   const cleanEndpoint = endpoint.replace(/^\/+|\/+$/g, '');
   
-  // Build the full URL
-  const fullUrl = `${API_URL}/api/${cleanEndpoint}`;
+  // Build the full URL - API endpoints no longer have /api prefix
+  const fullUrl = `${API_URL}/${cleanEndpoint}`;
   
   console.log('Making API request to:', fullUrl);
   
