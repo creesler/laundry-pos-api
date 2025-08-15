@@ -228,7 +228,7 @@ export default function Header({
       const now = new Date()
       
       // Check for pending timesheets first
-      const pendingResponse = await fetch(`${API_URL}/api/timesheets?employeeName=${activeEmployee}&status=pending`);
+      const pendingResponse = await fetch(`${API_URL}/timesheets?employeeName=${activeEmployee}&status=pending`);
       const pendingTimesheets = await pendingResponse.json();
       
       // If trying to clock in and there's a pending timesheet, clock out first
@@ -236,7 +236,7 @@ export default function Header({
         const pendingTimesheet = pendingTimesheets[0];
         
         // Clock out from the pending timesheet first
-        const clockOutResponse = await fetch(`${API_URL}/api/timesheets/clock-out/${pendingTimesheet._id}`, {
+        const clockOutResponse = await fetch(`${API_URL}/timesheets/clock-out/${pendingTimesheet._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -257,7 +257,7 @@ export default function Header({
 
       // Now proceed with the requested action
       if (action === 'in') {
-        const clockInResponse = await fetch(`${API_URL}/api/timesheets/clock-in`, {
+        const clockInResponse = await fetch(`${API_URL}/timesheets/clock-in`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -325,7 +325,7 @@ export default function Header({
           throw new Error('No matching clock-in entry found');
         }
 
-        const clockOutResponse = await fetch(`${API_URL}/api/timesheets/clock-out/${clockInEntry._id}`, {
+        const clockOutResponse = await fetch(`${API_URL}/timesheets/clock-out/${clockInEntry._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -596,7 +596,7 @@ export default function Header({
         }));
 
         // Send sales data to server
-        const salesResponse = await fetch(`${API_URL}/api/sales/bulk`, {
+        const salesResponse = await fetch(`${API_URL}/sales/bulk`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
