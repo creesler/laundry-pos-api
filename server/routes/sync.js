@@ -11,7 +11,24 @@ const router = express.Router();
 // @desc    Receive and save sales, timesheet, and inventory data from frontend
 // @access  Public (you might add auth later)
 router.post('/', async (req, res) => {
+  console.log('🔄 Received sync request');
   const { sales, timesheet, inventory, inventoryLogs } = req.body;
+
+  // Log received data counts
+  console.log('📦 Received data:', {
+    timesheet: timesheet?.length || 0,
+    sales: sales?.length || 0,
+    inventory: inventory?.length || 0,
+    inventoryLogs: inventoryLogs?.length || 0
+  });
+
+  // Log timesheet data if present
+  if (timesheet?.length > 0) {
+    console.log('🕒 Timesheet data received:', {
+      count: timesheet.length,
+      sample: timesheet[0]
+    });
+  }
 
   try {
     const savedSales = [];
@@ -35,7 +52,8 @@ router.post('/', async (req, res) => {
     // Save new timesheet records
     if (timesheet && timesheet.length > 0) {
       try {
-        console.log('Processing timesheet entries:', timesheet);
+        console.log('🕒 Starting timesheet processing');
+        console.log('📋 Raw timesheet entries:', JSON.stringify(timesheet, null, 2));
         
         // Process each timesheet entry
         for (const entry of timesheet) {

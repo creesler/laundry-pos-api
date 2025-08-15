@@ -1668,6 +1668,13 @@ export default function Home() {
 
       console.log('📋 Processed timesheet records:', processedTimesheets);
 
+      // Log timesheet data before sync
+      console.log('🕒 Timesheet data to sync:', {
+        unsavedEntries: unsavedTimesheetEntries.length,
+        processedRecords: processedTimesheets.length,
+        sampleRecord: processedTimesheets[0]
+      });
+
       // Upload all data in one sync request
       const syncData = {
         timesheet: processedTimesheets, // Send processed timesheet records
@@ -1675,7 +1682,23 @@ export default function Home() {
         inventory: unsavedInventoryItems,
         inventoryLogs: unsavedInventoryLogs
       };
-      console.log('Sync request payload:', JSON.stringify(syncData, null, 2));
+      
+      // Detailed logging of sync data
+      console.log('📤 Sync request payload:', {
+        timesheet: {
+          count: processedTimesheets.length,
+          data: processedTimesheets
+        },
+        sales: {
+          count: unsavedSalesEntries.length
+        },
+        inventory: {
+          count: unsavedInventoryItems.length
+        },
+        inventoryLogs: {
+          count: unsavedInventoryLogs.length
+        }
+      });
 
       console.log('Making sync request to:', `${API_URL}/sync`);
       const syncResponse = await fetch(`${API_URL}/sync`, {
