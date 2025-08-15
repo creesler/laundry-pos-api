@@ -5,8 +5,8 @@
   "description": "Laundry POS System",
   "scripts": {
     "dev": "next dev",
-    "build": "next build && next export",
-    "start": "next start",
+    "build": "next build",
+    "start": "npx serve out",
     "lint": "next lint"
   },
   "engines": {
