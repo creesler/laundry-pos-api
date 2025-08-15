@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./server/",
-  "buildCommand": "npm run build",
-  "outputDirectory": "out"
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "outputDirectory": ".next"
 }
