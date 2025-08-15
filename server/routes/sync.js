@@ -35,16 +35,60 @@ router.post('/', async (req, res) => {
     // Save new timesheet records
     if (timesheet && timesheet.length > 0) {
       try {
-        const timesheetsToSave = timesheet.map(entry => ({
-          employeeName: entry.employeeName,
-          date: entry.date,
-          time: entry.time,
-          action: entry.action
-        }));
-        const insertTimesheetsResult = await Timesheet.insertMany(timesheetsToSave, { ordered: false });
-        savedTimesheets.push(...insertTimesheetsResult);
+        console.log('Processing timesheet entries:', timesheet);
+        
+        // Process each timesheet entry
+        for (const entry of timesheet) {
+          try {
+            // Check if this timesheet already exists
+            const existingTimesheet = await Timesheet.findOne({
+              employeeName: entry.employeeName,
+              clockIn: new Date(entry.clockIn)
+            });
+
+            if (existingTimesheet) {
+              console.log('Updating existing timesheet:', existingTimesheet._id);
+              // Update existing timesheet
+              const updatedTimesheet = await Timesheet.findByIdAndUpdate(
+                existingTimesheet._id,
+                {
+                  $set: {
+                    clockOut: entry.clockOut ? new Date(entry.clockOut) : null,
+                    duration: entry.duration,
+                    status: entry.status,
+                    updatedAt: new Date()
+                  }
+                },
+                { new: true }
+              );
+              savedTimesheets.push(updatedTimesheet);
+            } else {
+              console.log('Creating new timesheet entry for:', entry.employeeName);
+              // Create new timesheet
+              const newTimesheet = new Timesheet({
+                employeeName: entry.employeeName,
+                date: new Date(entry.date),
+                clockIn: new Date(entry.clockIn),
+                clockOut: entry.clockOut ? new Date(entry.clockOut) : null,
+                duration: entry.duration,
+                status: entry.status,
+                createdAt: new Date(entry.createdAt),
+                updatedAt: new Date(entry.updatedAt)
+              });
+              const savedTimesheet = await newTimesheet.save();
+              savedTimesheets.push(savedTimesheet);
+            }
+          } catch (entryError) {
+            console.error('Error processing timesheet entry:', entryError);
+            errors.push({ 
+              type: 'timesheet', 
+              error: `Failed to save timesheet for ${entry.employeeName}: ${entryError.message}` 
+            });
+          }
+        }
+        console.log('Successfully processed timesheets:', savedTimesheets.length);
       } catch (error) {
-        console.error('Error saving timesheets:', error);
+        console.error('Error in timesheet batch processing:', error);
         errors.push({ type: 'timesheet', error: error.message });
       }
     }
