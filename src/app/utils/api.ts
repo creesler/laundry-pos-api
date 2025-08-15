@@ -2,16 +2,14 @@
 
 const defaultHeaders = {
   'Accept': 'application/json',
-  'Content-Type': 'application/json'
+  'Content-Type': 'application/json',
+  'Origin': 'https://laundry-pos-frontend.vercel.app'
 };
 
 const defaultOptions = {
   mode: 'cors' as RequestMode,
-  credentials: 'omit' as RequestCredentials,
-  headers: {
-    ...defaultHeaders,
-    'Origin': 'https://laundry-pos-frontend.vercel.app'
-  },
+  credentials: 'include' as RequestCredentials,
+  headers: defaultHeaders,
   cache: 'no-cache' as RequestCache
 };
 

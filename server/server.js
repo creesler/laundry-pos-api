@@ -25,22 +25,15 @@ const app = express();
 // Connect to Database
 connectDB();
 
-// Middleware
-// Handle OPTIONS requests first
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://laundry-pos-frontend.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400');
-
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
-  }
-
-  next();
-});
+// Enable CORS for all requests
+app.use(cors({
+  origin: 'https://laundry-pos-frontend.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: true,
+  optionsSuccessStatus: 204,
+  maxAge: 86400
+}));
 app.use(express.json({ limit: '50mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Parse URL-encoded bodies
 
