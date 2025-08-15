@@ -1,15 +1,6 @@
 {
   "version": 2,
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ]
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./server/",
+  "buildCommand": "npm run build",
+  "outputDirectory": "out"
 }
