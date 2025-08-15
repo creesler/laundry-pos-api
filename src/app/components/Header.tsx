@@ -104,6 +104,13 @@ export default function Header({
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: AlertColor }>({ open: false, message: '', severity: 'info' })
   const [usageDialogOpen, setUsageDialogOpen] = useState(false)
   const [itemUsages, setItemUsages] = useState<Record<string, string>>({})
+  
+  // Reset itemUsages when dialog closes
+  useEffect(() => {
+    if (!usageDialogOpen) {
+      setItemUsages({});
+    }
+  }, [usageDialogOpen]);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isInstallable, setIsInstallable] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
@@ -406,7 +413,7 @@ export default function Header({
   const handleUsageSubmit = async () => {
     try {
       // Get all items that need to be updated
-      const itemsToUpdate = Object.entries(itemUsages)
+      const itemsToUpdate = Object.entries(itemUsages || {})
         .filter(([_, usage]) => usage && Number(usage) > 0)
         .map(([itemId, usage]) => ({
           itemId,

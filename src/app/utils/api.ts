@@ -8,19 +8,22 @@ const defaultHeaders = {
 const defaultOptions = {
   mode: 'cors' as RequestMode,
   credentials: 'omit' as RequestCredentials,
-  headers: defaultHeaders
+  cache: 'no-cache' as RequestCache
 };
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  // For local development, always use localhost:5000
+  const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000'
+    : 'https://laundry-pos-api.vercel.app';
   
   // Remove any leading or trailing slashes from endpoint
   const cleanEndpoint = endpoint.replace(/^\/+|\/+$/g, '');
   
-  // Build the full URL with /api prefix
-  const fullUrl = `${API_URL}/api/${cleanEndpoint}`;
+  // Build the full URL - API endpoints no longer have /api prefix
+  const fullUrl = `${API_URL}/${cleanEndpoint}`;
   
-  console.log('Making API request to:', fullUrl);
+  console.log('Making API request to:', fullUrl, 'from:', window.location.origin);
   
   const response = await fetch(fullUrl, {
     ...defaultOptions,

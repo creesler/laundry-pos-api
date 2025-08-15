@@ -61,8 +61,13 @@ const Header = dynamic(() => import('./components/Header'), { ssr: false })
 // Initialize EmailJS
 emailjs.init('your_public_key') // Replace with your EmailJS public key
 
-// Get API URL from environment variable and ensure it doesn't end with /api
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+// API URL - automatically switches between local and production
+const API_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000'
+  : 'https://laundry-pos-api.vercel.app';
+
+// Log the current API URL for debugging
+console.log('🔗 Current API URL:', API_URL, 'from hostname:', window.location.hostname);
 
 // Add type declarations for window.gapi and window.google at the top
 
@@ -97,7 +102,7 @@ export default function Home() {
   const [employees, setEmployees] = useState<Array<{name: string; contactNumber?: string; address?: string}>>([])
   const [timeIn, setTimeIn] = useState<string>('--')
   const [timeOut, setTimeOut] = useState<string>('--')
-  const [isOnline, setIsOnline] = useState<boolean>(true)
+  const [isOnline, setIsOnline] = useState<boolean>(false)
   const [employeeList, setEmployeeList] = useState<string[]>([])
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
   const [inventoryLogs, setInventoryLogs] = useState<InventoryUpdateLog[]>([])
@@ -972,27 +977,7 @@ export default function Home() {
     return () => clearInterval(timer)
   }, [])
 
-  // Add online/offline detection
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-    }
-    
-    const handleOffline = () => {
-      setIsOnline(false);
-    }
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Initial check
-    setIsOnline(navigator.onLine);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    }
-  }, []);
+  // Online status is only set when syncing
 
   // Save selected employee to localStorage when it changes
   useEffect(() => {
@@ -1086,7 +1071,7 @@ export default function Home() {
     
     setIsLoadingTimesheet(true);
     try {
-      const response = await fetch(`${API_URL}/api/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetDateRange.startDate.toISOString().split('T')[0]}&endDate=${timesheetDateRange.endDate.toISOString().split('T')[0]}`);
+      const response = await fetch(`${API_URL}/timesheets?employeeName=${encodeURIComponent(selectedEmployee)}&startDate=${timesheetDateRange.startDate.toISOString().split('T')[0]}&endDate=${timesheetDateRange.endDate.toISOString().split('T')[0]}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch timesheet data');
@@ -1389,52 +1374,54 @@ export default function Home() {
   // Remove the automatic sync useEffect and modify syncEmployeeList to be more explicit
   const syncEmployeeList = async () => {
     try {
-      if (!isOnline) {
-        console.log('❌ Cannot sync while offline');
-        return false;
-      }
-
-      console.log('🔄 Syncing employee list with MongoDB...');
+      console.log('🔄 Starting employee list sync...');
       
       // First get current data from IndexedDB
       const indexedDBData = await getFromIndexedDB() || {};
       const localEmployeeList = indexedDBData.employeeList || [];
+      console.log('📱 Current local employee list:', localEmployeeList);
+
+      // Direct fetch to MongoDB using the working endpoint
+      const response = await fetch(`${API_URL}/employees`);
+      console.log('📥 Response status:', response.status);
       
-      // Fetch ALL employees from MongoDB using our API helper
-      console.log('Fetching employees from:', process.env.NEXT_PUBLIC_API_URL);
-      const serverEmployees: Employee[] = await get('employees');
-      console.log('📋 Server employees:', serverEmployees.map((emp: Employee) => emp.name));
-      
-      // Get all employee names
-      const allEmployees = serverEmployees.map((emp: Employee) => emp.name);
-      
-      console.log('👥 All employees:', allEmployees);
-      console.log('📝 Current local list:', localEmployeeList);
-      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch employees: ${response.status}`);
+      }
+
+      const serverEmployees: Employee[] = await response.json();
+      console.log('📋 Received employees from server:', serverEmployees);
+
+      // Extract just the names and filter active employees
+      const activeEmployees = serverEmployees
+        .filter(emp => emp.status === 'active')
+        .map(emp => emp.name);
+
+      console.log('👥 Active employees:', activeEmployees);
+
       // Update state and localStorage
-      setEmployeeList(allEmployees);
-      localStorage.setItem('employeeList', JSON.stringify(allEmployees));
-      
-      // Handle selected employee changes
-      if (selectedEmployee && !allEmployees.includes(selectedEmployee)) {
-        console.log('⚠️ Currently selected employee not found in list');
-        const newSelected = allEmployees.length > 0 ? allEmployees[0] : '';
-        console.log(`- Changing selection from "${selectedEmployee}" to "${newSelected}"`);
+      setEmployeeList(activeEmployees);
+      localStorage.setItem('employeeList', JSON.stringify(activeEmployees));
+
+      // Update IndexedDB
+      await saveToIndexedDB({
+        ...indexedDBData,
+        employeeList: activeEmployees
+      });
+
+      // Update selected employee if needed
+      if (selectedEmployee && !activeEmployees.includes(selectedEmployee)) {
+        const newSelected = activeEmployees.length > 0 ? activeEmployees[0] : '';
+        console.log(`⚠️ Currently selected employee "${selectedEmployee}" not found, switching to "${newSelected}"`);
         setSelectedEmployee(newSelected);
         localStorage.setItem('selectedEmployee', newSelected);
-      } else if (!selectedEmployee && allEmployees.length > 0) {
-        const newSelected = allEmployees[0];
+      } else if (!selectedEmployee && activeEmployees.length > 0) {
+        const newSelected = activeEmployees[0];
         console.log('👤 No employee selected, selecting first available:', newSelected);
         setSelectedEmployee(newSelected);
         localStorage.setItem('selectedEmployee', newSelected);
       }
-      
-      // Update IndexedDB
-      await saveToIndexedDB({
-        ...indexedDBData,
-        employeeList: allEmployees
-      });
-      
+
       console.log('✅ Employee list sync complete');
       return true;
     } catch (error) {
@@ -1447,28 +1434,42 @@ export default function Home() {
   const saveToServer = async () => {
     try {
       console.log('🔄 Starting server sync...');
-      console.log('Current inventory state:', inventoryItems);
       
-      if (!isOnline) {
-        setSnackbar({
-          open: true,
-          message: 'Cannot save to server while offline',
-          severity: 'warning'
-        });
-        return;
+      // First, let's fetch and log employees
+      console.log('👥 Fetching employee list...');
+      const employeeResponse = await fetch(`${API_URL}/employees`);
+      console.log('📥 Employee response status:', employeeResponse.status);
+      
+      if (employeeResponse.ok) {
+        const employees = await employeeResponse.json();
+        console.log('✅ Received employees:', employees);
+        
+        // Update dropdown with active employees
+        const activeEmployees = employees
+          .filter(emp => emp.status === 'active')
+          .map(emp => emp.name);
+        console.log('👥 Active employees for dropdown:', activeEmployees);
+        
+        setEmployeeList(activeEmployees);
+      } else {
+        console.error('❌ Failed to fetch employees:', employeeResponse.statusText);
       }
 
-      // First sync employee list
-      const employeeSync = await syncEmployeeList();
-      if (!employeeSync) {
-        throw new Error('Failed to sync employee list');
-      }
+      console.log('📤 Checking for offline data to sync...');
 
       // Get unsaved entries
       const unsavedTimesheetEntries = employeeTimeData.filter(entry => !entry.isSaved);
       const unsavedSalesEntries = savedData.filter(entry => !entry.isSaved);
       const unsavedInventoryItems = inventoryItems.filter(item => !item.isSaved || item.isDeleted);
       const unsavedInventoryLogs = inventoryLogs?.filter(log => !log.isSaved) || [];
+
+      // Log what we're going to sync
+      console.log('Found unsaved data:', {
+        timesheets: unsavedTimesheetEntries.length,
+        sales: unsavedSalesEntries.length,
+        inventory: unsavedInventoryItems.length,
+        logs: unsavedInventoryLogs.length
+      });
 
       console.log('Inventory sync details:', {
         totalItems: inventoryItems.length,
@@ -1506,20 +1507,30 @@ export default function Home() {
       };
       console.log('Sync request payload:', JSON.stringify(syncData, null, 2));
 
-      const syncResponse = await fetch(`${API_URL}/api/sync`, {
+      console.log('Making sync request to:', `${API_URL}/sync`);
+      const syncResponse = await fetch(`${API_URL}/sync`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify(syncData),
       });
 
+      console.log('Sync response status:', syncResponse.status);
       if (!syncResponse.ok) {
-        const errorData = await syncResponse.json();
-        throw new Error(`Failed to sync data: ${errorData.message || syncResponse.statusText}`);
+        const errorText = await syncResponse.text();
+        console.error('Sync error response:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(`Failed to sync data: ${errorData.message || syncResponse.statusText}`);
+        } catch (e) {
+          throw new Error(`Failed to sync data: ${errorText || syncResponse.statusText}`);
+        }
       }
 
       const syncResult = await syncResponse.json();
+      console.log('Sync result:', syncResult);
       console.log('✅ Sync response:', syncResult);
 
       // Mark all entries as saved in state and IndexedDB
@@ -1558,15 +1569,65 @@ export default function Home() {
         lastSynced: new Date().toISOString()
       });
 
-      console.log('✅ All data synced successfully');
+      // First try to send all unsaved data
+      if (unsavedTimesheetEntries.length > 0 || 
+          unsavedSalesEntries.length > 0 || 
+          unsavedInventoryItems.length > 0 || 
+          unsavedInventoryLogs.length > 0) {
+        
+        console.log('📤 Sending unsaved data to server...');
+        const syncData = {
+          timesheet: unsavedTimesheetEntries,
+          sales: unsavedSalesEntries,
+          inventory: unsavedInventoryItems,
+          inventoryLogs: unsavedInventoryLogs
+        };
+
+        const syncResponse = await fetch(`${API_URL}/sync`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(syncData),
+        });
+
+        if (!syncResponse.ok) {
+          const errorText = await syncResponse.text();
+          console.error('Sync error response:', errorText);
+          throw new Error(`Failed to sync data: ${errorText}`);
+        }
+
+        const syncResult = await syncResponse.json();
+        console.log('✅ Offline data synced successfully:', syncResult);
+      } else {
+        console.log('ℹ️ No offline data to sync');
+      }
+
+      // Now fetch and update the employee list
+      console.log('📥 Starting employee list update...');
+      const employeeSync = await syncEmployeeList();
+      if (!employeeSync) {
+        throw new Error('Failed to fetch employee list');
+      }
+
+      console.log('✅ Sync sequence completed:', {
+        offlineDataSynced: unsavedTimesheetEntries.length > 0 || 
+                          unsavedSalesEntries.length > 0 || 
+                          unsavedInventoryItems.length > 0 || 
+                          unsavedInventoryLogs.length > 0,
+        employeeListUpdated: true,
+        currentEmployeeList: employeeList
+      });
       setSnackbar({
         open: true,
-        message: 'All data synced with server successfully!',
+        message: 'All data synced and employee list updated!',
         severity: 'success'
       });
 
     } catch (error: unknown) {
       console.error('❌ Error during sync:', error);
+      setIsOnline(false);
       setSnackbar({
         open: true,
         message: 'Error syncing with server: ' + (error instanceof Error ? error.message : 'Unknown error'),

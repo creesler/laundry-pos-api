@@ -1,17 +1,28 @@
 import express from 'express';
 import Employee from '../models/Employee.js';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
-// @route   GET /api/employees
+// @route   GET /employees
 // @desc    Get all employees
 // @access  Public (for now)
 router.get('/', async (req, res) => {
   try {
-    console.log('GET /api/employees request received', {
+    console.log('🔍 GET /employees request received:', {
       query: req.query,
-      headers: req.headers
+      headers: req.headers,
+      url: req.url,
+      method: req.method,
+      path: req.path
     });
+
+    // Check MongoDB connection
+    if (!mongoose.connection.readyState) {
+      console.error('❌ MongoDB not connected!');
+      return res.status(500).json({ message: 'Database connection error' });
+    }
+    console.log('✅ MongoDB connected and ready');
 
     const { status } = req.query;
     const query = status ? { status } : { status: 'active' }; // Default to active employees

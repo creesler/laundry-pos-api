@@ -362,29 +362,43 @@
             window.location.href = '/admin/login.html';
         }
 
-        // Add active class to current section and show/hide sections
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                // Remove active class from all links and add to clicked link
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Hide all sections and show the selected one
-                const targetSection = this.getAttribute('data-section');
-                document.querySelectorAll('.section').forEach(section => {
-                    section.classList.remove('active');
-                    if (section.id === targetSection) {
-                        section.classList.add('active');
-                        // Initialize specific section functionality
-                        if (targetSection === 'employees') {
-                            window.LaundryAdmin.fetchEmployees();
-                        } else if (targetSection === 'timesheets') {
-                            window.LaundryAdmin.initializeTimesheets();
+        // Wait for DOM content and app.js to load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure LaundryAdmin is initialized
+            if (!window.LaundryAdmin) {
+                console.error('LaundryAdmin not initialized');
+                return;
+            }
+
+            // Add active class to current section and show/hide sections
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Remove active class from all links and add to clicked link
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Hide all sections and show the selected one
+                    const targetSection = this.getAttribute('data-section');
+                    document.querySelectorAll('.section').forEach(section => {
+                        section.classList.remove('active');
+                        if (section.id === targetSection) {
+                            section.classList.add('active');
+                            // Initialize specific section functionality
+                            if (targetSection === 'employees' && window.LaundryAdmin.fetchEmployees) {
+                                window.LaundryAdmin.fetchEmployees();
+                            } else if (targetSection === 'timesheets' && window.LaundryAdmin.initializeTimesheets) {
+                                window.LaundryAdmin.initializeTimesheets();
+                            }
                         }
-                    }
+                    });
                 });
             });
+
+            // Initialize the dashboard
+            if (window.LaundryAdmin.initialize) {
+                window.LaundryAdmin.initialize();
+            }
         });
     </script>
 </body>

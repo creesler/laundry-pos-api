@@ -25,25 +25,38 @@ const app = express();
 // Connect to Database
 connectDB();
 
-// Enable CORS
+// Middleware
+// Simple CORS fix - allow all origins
 app.use(cors({
-  origin: 'https://laundry-pos-frontend.vercel.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: '*',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 app.use(express.json({ limit: '50mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Parse URL-encoded bodies
 
-// API routes
-app.use('/api/employees', employeeRoutes);
-app.use('/api/sales', salesRoutes);
-app.use('/api/timesheets', timesheetRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/sync', syncRoutes);
+// API routes - remove /api prefix since we're an API-only server
+app.use('/employees', employeeRoutes);
+app.use('/sales', salesRoutes);
+app.use('/timesheets', timesheetRoutes);
+app.use('/inventory', inventoryRoutes);
+app.use('/sync', syncRoutes);
 
-// Root route for health check
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Serve admin dashboard files
+app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+
+// Redirect root to admin dashboard
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'API server is running' });
+  res.redirect('/admin');
+});
+
+// Serve admin dashboard
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/admin/index.html'));
 });
 
 // Log all requests
@@ -73,6 +86,14 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
+
+// Start the server if not being imported (for Vercel)
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
 // Export the Express app for Vercel
 export default app; 

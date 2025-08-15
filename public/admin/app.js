@@ -1,8 +1,88 @@
-do// Create a global namespace for our app
-window.LaundryAdmin = {};
+// Create a global namespace for our app
+window.LaundryAdmin = window.LaundryAdmin || {};
 
 // API URL constant - automatically detect environment
-const API_URL = 'http://localhost:5000/api';  // Local server
+const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+
+// Debug log to check initialization
+console.log('🚀 Initializing LaundryAdmin with API_URL:', API_URL);
+
+// Test function to check all endpoints
+async function testAllEndpoints() {
+    console.log('🔍 Testing all endpoints...');
+
+    // Test employees endpoint
+    try {
+        console.log('👥 Testing /employees endpoint...');
+        const employeesResponse = await fetch(`${API_URL}/employees`);
+        console.log('Response status:', employeesResponse.status);
+        if (!employeesResponse.ok) {
+            const errorText = await employeesResponse.text();
+            console.error('Error response:', errorText);
+        } else {
+            const employees = await employeesResponse.json();
+            console.log('Employees data:', employees);
+        }
+    } catch (error) {
+        console.error('Error fetching employees:', error);
+    }
+
+    // Test sales endpoint
+    try {
+        console.log('💰 Testing /sales endpoint...');
+        const salesResponse = await fetch(`${API_URL}/sales`);
+        console.log('Response status:', salesResponse.status);
+        if (!salesResponse.ok) {
+            const errorText = await salesResponse.text();
+            console.error('Error response:', errorText);
+        } else {
+            const sales = await salesResponse.json();
+            console.log('Sales data:', sales);
+        }
+    } catch (error) {
+        console.error('Error fetching sales:', error);
+    }
+
+    // Test timesheets endpoint
+    try {
+        console.log('⏰ Testing /timesheets endpoint...');
+        const timesheetsResponse = await fetch(`${API_URL}/timesheets`);
+        console.log('Response status:', timesheetsResponse.status);
+        if (!timesheetsResponse.ok) {
+            const errorText = await timesheetsResponse.text();
+            console.error('Error response:', errorText);
+        } else {
+            const timesheets = await timesheetsResponse.json();
+            console.log('Timesheets data:', timesheets);
+        }
+    } catch (error) {
+        console.error('Error fetching timesheets:', error);
+    }
+
+    // Test inventory endpoint
+    try {
+        console.log('📦 Testing /inventory endpoint...');
+        const inventoryResponse = await fetch(`${API_URL}/inventory`);
+        console.log('Response status:', inventoryResponse.status);
+        if (!inventoryResponse.ok) {
+            const errorText = await inventoryResponse.text();
+            console.error('Error response:', errorText);
+        } else {
+            const inventory = await inventoryResponse.json();
+            console.log('Inventory data:', inventory);
+        }
+    } catch (error) {
+        console.error('Error fetching inventory:', error);
+    }
+
+    console.log('✅ Endpoint testing complete');
+}
+
+// Run the test when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🌟 Running endpoint tests...');
+    testAllEndpoints();
+});
 
 // Wait for all functions to be defined before initializing
 (function(app) {
@@ -214,7 +294,7 @@ const API_URL = 'http://localhost:5000/api';  // Local server
 
     // Filter data based on date range
     function filterData(data, startDate, endDate) {
-        if (!data) return null;
+        if (!data) return [];
         
         const start = startDate ? new Date(startDate) : new Date(0);
         const end = endDate ? new Date(endDate) : new Date();
@@ -229,23 +309,13 @@ const API_URL = 'http://localhost:5000/api';  // Local server
             totalRecords: data.length
         });
 
+        // Sort data by date first
+        data.sort((a, b) => new Date(b.Date) - new Date(a.Date));
+
         const filtered = data.filter(sale => {
             const saleDate = new Date(sale.Date);
             saleDate.setHours(0, 0, 0, 0); // Normalize sale date to start of day
-            
-            const isInRange = saleDate >= start && saleDate <= end;
-            if (isInRange) {
-                console.log('Including sale:', {
-                    date: saleDate.toISOString(),
-                    coin: sale.Coin,
-                    hopper: sale.Hopper,
-                    soap: sale.Soap,
-                    vending: sale.Vending,
-                    dropOff1: sale['Drop Off Amount 1'],
-                    dropOff2: sale['Drop Off Amount 2']
-                });
-            }
-            return isInRange;
+            return saleDate >= start && saleDate <= end;
         });
 
         console.log('Filtered results:', {
@@ -483,7 +553,10 @@ const API_URL = 'http://localhost:5000/api';  // Local server
         const tableBody = document.getElementById('salesTableBody');
         tableBody.innerHTML = '';
 
-        data.forEach(row => {
+        // Sort data by date (newest first)
+        const sortedData = [...data].sort((a, b) => new Date(b.Date) - new Date(a.Date));
+
+        sortedData.forEach(row => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${new Date(row.Date).toLocaleString()}</td>
@@ -542,24 +615,34 @@ const API_URL = 'http://localhost:5000/api';  // Local server
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
         
-        let startDate, endDate;
-        
-        if (periodFilter.value === 'custom' && startDateInput.value && endDateInput.value) {
-            startDate = new Date(startDateInput.value);
-            endDate = new Date(endDateInput.value);
-            endDate.setHours(23, 59, 59, 999);
-        } else {
-            const dateRange = getDateRange(periodFilter.value, currentPeriodDate);
-            if (!dateRange) return;
-            startDate = dateRange.start;
-            endDate = dateRange.end;
-        }
-
         try {
-            // Fetch data for the selected period
-            const response = await fetch(`${API_URL}/sales?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+            // First fetch all data
+            console.log('Fetching all sales data...');
+            const response = await fetch(`${API_URL}/sales`);
             if (!response.ok) throw new Error('Failed to fetch data');
-            const data = await response.json();
+            const allData = await response.json();
+            console.log('Total sales records:', allData.length);
+
+            // Then filter based on selected period
+            let data = allData;
+            if (periodFilter.value !== 'all') {
+                let startDate, endDate;
+                
+                if (periodFilter.value === 'custom' && startDateInput.value && endDateInput.value) {
+                    startDate = new Date(startDateInput.value);
+                    endDate = new Date(endDateInput.value);
+                    endDate.setHours(23, 59, 59, 999);
+                } else {
+                    const dateRange = getDateRange(periodFilter.value, currentPeriodDate);
+                    if (dateRange) {
+                        startDate = dateRange.start;
+                        endDate = dateRange.end;
+                        data = filterData(allData, startDate, endDate);
+                    }
+                }
+            }
+
+            console.log('Filtered sales records:', data.length);
             
             // Update the UI with the fetched data or show empty state
             if (data && data.length > 0) {
@@ -805,10 +888,17 @@ const API_URL = 'http://localhost:5000/api';  // Local server
 
     // Modified fetchEmployees function to add test data
     async function fetchEmployees() {
-        console.log('👥 ADMIN: Fetching employees...');
+        console.log('👥 ADMIN: Fetching employees...', API_URL);
         try {
             const response = await fetch(`${API_URL}/employees`);
-            if (!response.ok) throw new Error('Failed to fetch employees');
+            console.log('📥 Response status:', response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('📛 Response error:', errorText);
+                throw new Error(`Failed to fetch employees: ${response.status} ${errorText}`);
+            }
+            
             const data = await response.json();
             console.log('📋 ADMIN: Received employee data:', data);
             employees = data;
@@ -820,7 +910,7 @@ const API_URL = 'http://localhost:5000/api';  // Local server
             }
         } catch (error) {
             console.error('❌ ADMIN: Error fetching employees:', error);
-            showMessage('Error fetching employees', true);
+            showMessage(`Error fetching employees: ${error.message}`, true);
         }
     }
 
@@ -899,9 +989,9 @@ const API_URL = 'http://localhost:5000/api';  // Local server
         };
 
         try {
-            const url = employeeId 
-                ? `/api/employees/${employeeId}`
-                : '/api/employees';
+                            const url = employeeId 
+                ? `${API_URL}/employees/${employeeId}`
+                : `${API_URL}/employees`;
             const method = employeeId ? 'PUT' : 'POST';
             
             const response = await fetch(url, {
@@ -972,11 +1062,17 @@ const API_URL = 'http://localhost:5000/api';  // Local server
     app.deleteEmployee = deleteEmployee;  // Expose employee management functions
     app.editEmployee = editEmployee;
     app.removeEmployee = removeEmployee;
+    app.fetchEmployees = fetchEmployees;
+    app.initializeTimesheets = initializeTimesheets;
 
     // Start initialization when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize);
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🌟 DOM Content Loaded - Starting initialization');
+            initialize();
+        });
     } else {
+        console.log('🌟 DOM Already Ready - Starting initialization');
         initialize();
     }
 
@@ -1347,9 +1443,7 @@ const API_URL = 'http://localhost:5000/api';  // Local server
         Chart.register(ChartDataLabels);
     }
 
-    // Expose necessary functions to global namespace
-    app.fetchEmployees = fetchEmployees;
-    app.initialize = initialize;
+    // These functions are already exposed above
 
     // Function to initialize timesheet section
     async function initializeTimesheets() {
@@ -1370,10 +1464,7 @@ const API_URL = 'http://localhost:5000/api';  // Local server
         }
     }
 
-    // Expose necessary functions to global namespace
-    app.fetchEmployees = fetchEmployees;
-    app.initialize = initialize;
-    app.initializeTimesheets = initializeTimesheets;
+    // These functions are already exposed above
 
     // Initialize the application
     document.addEventListener('DOMContentLoaded', () => {

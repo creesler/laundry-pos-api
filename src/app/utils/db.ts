@@ -19,54 +19,56 @@ export const openDB = (): Promise<IDBDatabase> => {
 
     request.onupgradeneeded = (event) => {
       const db = request.result
-      // Delete existing store if it exists
-      if (db.objectStoreNames.contains(STORE_NAME)) {
-        db.deleteObjectStore(STORE_NAME)
+      let store;
+      
+      // Create store if it doesn't exist
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        store = db.createObjectStore(STORE_NAME, { keyPath: 'id' })
+        
+        // Add indexes for faster queries
+        store.createIndex('timestamp', 'timestamp', { unique: false })
+        store.createIndex('type', 'type', { unique: false })
+        
+        // Initialize with separate records for different data types
+        const timestamp = new Date().toISOString()
+        const defaultRecords = [
+          {
+            id: 'employeeTimeData',
+            type: 'employeeTime',
+            data: [],
+            timestamp
+          },
+          {
+            id: 'salesData',
+            type: 'sales',
+            data: [],
+            timestamp
+          },
+          {
+            id: 'employeeList',
+            type: 'employees',
+            data: [],
+            timestamp
+          },
+          {
+            id: 'inventory',
+            type: 'inventory',
+            data: [],
+            timestamp
+          },
+          {
+            id: 'inventoryLogs',
+            type: 'inventoryLogs',
+            data: [],
+            timestamp
+          }
+        ];
+        
+        // Add each record
+        defaultRecords.forEach(record => {
+          store.put(record);
+        });
       }
-      // Create new store with indexes
-      const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' })
-      
-      // Add indexes for faster queries
-      store.createIndex('timestamp', 'timestamp', { unique: false })
-      store.createIndex('type', 'type', { unique: false })
-      
-      // Initialize with separate records for different data types
-      const timestamp = new Date().toISOString()
-      
-      store.put({
-        id: 'employeeTimeData',
-        type: 'employeeTime',
-        data: [],
-        timestamp
-      })
-      
-      store.put({
-        id: 'salesData',
-        type: 'sales',
-        data: [],
-        timestamp
-      })
-      
-      store.put({
-        id: 'employeeList',
-        type: 'employees',
-        data: [],
-        timestamp
-      })
-      
-      store.put({
-        id: 'inventory',
-        type: 'inventory',
-        data: [],
-        timestamp
-      })
-      
-      store.put({
-        id: 'inventoryLogs',
-        type: 'inventoryLogs',
-        data: [],
-        timestamp
-      })
     }
   })
 }
@@ -123,10 +125,10 @@ export const getFromIndexedDB = async (dataTypes: string[] = ['all']): Promise<a
     
     return {
       employeeTimeData: results[0],
-      data: (results[1] as any[]).map((item: any) => ({
+      data: Array.isArray(results[1]) ? (results[1] as any[]).map((item: any) => ({
         ...item,
         isSaved: item.isSaved === true || item.isSaved === 'true'
-      })),
+      })) : [],
       employeeList: results[2],
       inventory: results[3],
       inventoryLogs: results[4]
