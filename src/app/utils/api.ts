@@ -3,7 +3,7 @@
 const defaultHeaders = {
   'Accept': 'application/json',
   'Content-Type': 'application/json',
-  'Origin': 'https://laundry-pos-frontend.vercel.app'
+  'X-Requested-With': 'XMLHttpRequest'
 };
 
 const defaultOptions = {
