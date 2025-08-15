@@ -1634,18 +1634,28 @@ export default function Home() {
               e.date === entry.date
             );
 
-            // Create timesheet record
+            // Create timesheet record matching MongoDB format
+            const clockInTime = new Date(entry.date + ' ' + entry.time);
+            const clockOutTime = clockOut ? new Date(clockOut.date + ' ' + clockOut.time) : null;
+            
+            // Calculate duration in minutes
+            let durationMinutes = 0;
+            if (clockOut) {
+              const timeIn = new Date(clockInTime);
+              const timeOut = new Date(clockOutTime);
+              durationMinutes = Math.floor((timeOut.getTime() - timeIn.getTime()) / (1000 * 60));
+            }
+
             processedTimesheets.push({
               employeeName: entry.employeeName,
-              date: entry.date,
-              clockIn: new Date(entry.date + ' ' + entry.time).toISOString(),
-              clockOut: clockOut 
-                ? new Date(clockOut.date + ' ' + clockOut.time).toISOString()
-                : null,
-              duration: clockOut 
-                ? calculateDuration(entry.time, clockOut.time)
-                : null,
-              status: clockOut ? 'completed' : 'pending'
+              date: clockInTime.toISOString(),
+              clockIn: clockInTime.toISOString(),
+              clockOut: clockOutTime ? clockOutTime.toISOString() : null,
+              duration: durationMinutes,
+              status: clockOut ? "completed" : "pending",
+              createdAt: clockInTime.toISOString(),
+              updatedAt: clockOutTime ? clockOutTime.toISOString() : clockInTime.toISOString(),
+              __v: 0
             });
 
             // Skip the clock-out entry since we've processed it
