@@ -1017,12 +1017,25 @@ export default function Home() {
         return;
       }
 
-      // Filter entries for today only
+      // Filter entries for today only by exact employee name match
       const entries = localData.employeeTimeData
         .filter((entry: any) => {
           const entryDate = new Date(entry.date);
+          // Strict string comparison for employee name
+          const isEmployeeMatch = entry.employeeName && 
+            typeof entry.employeeName === 'string' && 
+            entry.employeeName.trim() === selectedEmployee.trim();
+
+          console.log('🔍 Checking today\'s entry:', {
+            entryEmployeeName: entry.employeeName,
+            selectedEmployee,
+            isMatch: isEmployeeMatch,
+            date: entryDate,
+            isInDateRange: entryDate >= today && entryDate <= endOfToday
+          });
+
           return (
-            entry.employeeName === selectedEmployee &&
+            isEmployeeMatch &&
             entryDate >= today &&
             entryDate <= endOfToday
           );
@@ -1100,23 +1113,37 @@ export default function Home() {
         return [];
       }
 
-      // Filter entries by employee and date range
+      // Filter entries by employee name and date range
       const startDate = new Date(timesheetDateRange.startDate);
       startDate.setHours(0, 0, 0, 0);
       const endDate = new Date(timesheetDateRange.endDate);
       endDate.setHours(23, 59, 59, 999);
 
       console.log('📅 Filtering timesheet data:', {
-        employee: selectedEmployee,
+        employeeName: selectedEmployee,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString()
       });
 
+      // Ensure we're using exact string match for employee name
       const entries = localData.employeeTimeData
         .filter((entry: any) => {
           const entryDate = new Date(entry.date);
+          // Strict string comparison for employee name
+          const isEmployeeMatch = entry.employeeName && 
+            typeof entry.employeeName === 'string' && 
+            entry.employeeName.trim() === selectedEmployee.trim();
+            
+          console.log('🔍 Checking entry:', {
+            entryEmployeeName: entry.employeeName,
+            selectedEmployee,
+            isMatch: isEmployeeMatch,
+            date: entryDate,
+            isInDateRange: entryDate >= startDate && entryDate <= endDate
+          });
+
           return (
-            entry.employeeName === selectedEmployee &&
+            isEmployeeMatch &&
             entryDate >= startDate &&
             entryDate <= endDate
           );
@@ -1578,9 +1605,62 @@ export default function Home() {
       console.log('- Inventory items:', unsavedInventoryItems.length);
       console.log('- Inventory logs:', unsavedInventoryLogs.length);
 
+      // Group timesheet entries by employee name
+      const timesheetsByEmployee = new Map<string, any[]>();
+      unsavedTimesheetEntries.forEach(entry => {
+        if (!timesheetsByEmployee.has(entry.employeeName)) {
+          timesheetsByEmployee.set(entry.employeeName, []);
+        }
+        timesheetsByEmployee.get(entry.employeeName).push(entry);
+      });
+
+      // Process timesheet entries by employee
+      const processedTimesheets = [];
+      for (const [employeeName, entries] of timesheetsByEmployee.entries()) {
+        // Sort entries by date and time
+        entries.sort((a, b) => {
+          const dateA = new Date(a.date + ' ' + a.time);
+          const dateB = new Date(b.date + ' ' + b.time);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+        // Group entries into clock-in/out pairs
+        for (let i = 0; i < entries.length; i++) {
+          const entry = entries[i];
+          if (entry.action === 'in') {
+            // Find matching clock-out
+            const clockOut = entries.slice(i + 1).find(e => 
+              e.action === 'out' && 
+              e.date === entry.date
+            );
+
+            // Create timesheet record
+            processedTimesheets.push({
+              employeeName: entry.employeeName,
+              date: entry.date,
+              clockIn: new Date(entry.date + ' ' + entry.time).toISOString(),
+              clockOut: clockOut 
+                ? new Date(clockOut.date + ' ' + clockOut.time).toISOString()
+                : null,
+              duration: clockOut 
+                ? calculateDuration(entry.time, clockOut.time)
+                : null,
+              status: clockOut ? 'completed' : 'pending'
+            });
+
+            // Skip the clock-out entry since we've processed it
+            if (clockOut) {
+              i = entries.indexOf(clockOut);
+            }
+          }
+        }
+      }
+
+      console.log('📋 Processed timesheet records:', processedTimesheets);
+
       // Upload all data in one sync request
       const syncData = {
-        timesheet: unsavedTimesheetEntries,
+        timesheet: processedTimesheets, // Send processed timesheet records
         sales: unsavedSalesEntries,
         inventory: unsavedInventoryItems,
         inventoryLogs: unsavedInventoryLogs
