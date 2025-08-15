@@ -65,7 +65,7 @@
     <script>
         const API_URL = window.location.hostname === 'localhost'
             ? 'http://localhost:5000/api'  // Development
-            : 'https://laundry-pos-api.onrender.com/api';  // Production
+            : 'https://laundry-pos-api.vercel.app';  // Production
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
