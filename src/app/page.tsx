@@ -61,8 +61,10 @@ const Header = dynamic(() => import('./components/Header'), { ssr: false })
 // Initialize EmailJS
 emailjs.init('your_public_key') // Replace with your EmailJS public key
 
-// For static export, we'll use the production API URL
-const API_URL = 'https://laundry-pos-api.vercel.app';
+// API URL - switches between local and Vercel
+const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? 'http://localhost:5000'
+  : 'https://laundry-pos-api.vercel.app';
 
 // Add type declarations for window.gapi and window.google at the top
 
@@ -1377,7 +1379,14 @@ export default function Home() {
       console.log('📱 Current local employee list:', localEmployeeList);
 
       // Direct fetch to MongoDB using the working endpoint
-      const response = await fetch(`${API_URL}/employees`);
+      const response = await fetch(`${API_URL}/employees`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Origin': typeof window !== 'undefined' ? window.location.origin : '',
+        },
+        mode: 'cors'
+      });
       console.log('📥 Response status:', response.status);
       
       if (!response.ok) {
@@ -1507,8 +1516,10 @@ export default function Home() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Origin': typeof window !== 'undefined' ? window.location.origin : ''
         },
+        mode: 'cors',
         body: JSON.stringify(syncData),
       });
 
