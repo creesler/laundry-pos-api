@@ -35,31 +35,39 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
     }
   });
 
-  if (!response.ok) {
-    const responseText = await response.text();
-    console.error('API Error:', {
-      endpoint,
-      status: response.status,
-      statusText: response.statusText,
-      headers: Object.fromEntries([...response.headers.entries()]),
-      url: response.url,
-      responseBody: responseText
-    });
-    throw new Error(`API Error: ${response.statusText}\nResponse: ${responseText}`);
-  }
+  // Clone the response so we can read it multiple times if needed
+  const responseClone = response.clone();
 
   try {
-    return await response.json();
+    if (!response.ok) {
+      const responseText = await responseClone.text();
+      console.error('API Error:', {
+        endpoint,
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries([...response.headers.entries()]),
+        url: response.url,
+        responseBody: responseText
+      });
+      throw new Error(`API Error: ${response.statusText}\nResponse: ${responseText}`);
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error) {
-    const responseText = await response.text();
-    console.error('JSON Parse Error:', {
-      endpoint,
-      error: error.message,
-      responseText,
-      headers: Object.fromEntries([...response.headers.entries()]),
-      url: response.url
-    });
-    throw new Error(`Failed to parse JSON response: ${error.message}\nResponse: ${responseText}`);
+    if (error instanceof SyntaxError) {
+      // JSON parse error
+      const responseText = await responseClone.text();
+      console.error('JSON Parse Error:', {
+        endpoint,
+        error: error.message,
+        responseText,
+        headers: Object.fromEntries([...response.headers.entries()]),
+        url: response.url
+      });
+      throw new Error(`Failed to parse JSON response: ${error.message}\nResponse: ${responseText}`);
+    }
+    throw error;
   }
 }
 
