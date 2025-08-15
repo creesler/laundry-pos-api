@@ -227,71 +227,40 @@ export default function Header({
 
       const now = new Date()
       
-      // Check for pending timesheets first
-      const pendingResponse = await fetch(`${API_URL}/timesheets?employeeName=${activeEmployee}&status=pending`);
-      const pendingTimesheets = await pendingResponse.json();
-      
-      // If trying to clock in and there's a pending timesheet, clock out first
-      if (action === 'in' && pendingTimesheets.length > 0) {
-        const pendingTimesheet = pendingTimesheets[0];
-        
-        // Clock out from the pending timesheet first
-        const clockOutResponse = await fetch(`${API_URL}/timesheets/clock-out/${pendingTimesheet._id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            clockOut: now.toISOString()
-          })
-        });
+      // Get existing data from IndexedDB
+      const existingData = await getFromIndexedDB() || {}
+      const currentTimeData = existingData.employeeTimeData || []
 
-        if (!clockOutResponse.ok) {
-          const error = await clockOutResponse.json();
-          throw new Error(error.message || 'Failed to resolve pending clock-in');
-        }
+      // Check for pending clock-in locally
+      const pendingClockIn = [...currentTimeData]
+        .reverse()
+        .find(entry => 
+          entry.employeeName === activeEmployee && 
+          entry.action === 'in' && 
+          !entry.clockOutTime
+        );
 
-        // Add a small delay to ensure the clock-out is processed
-        await new Promise(resolve => setTimeout(resolve, 500));
+      // If trying to clock in and there's a pending timesheet, show error
+      if (action === 'in' && pendingClockIn) {
+        throw new Error('You have a pending clock-in. Please clock out first.');
       }
 
       // Now proceed with the requested action
       if (action === 'in') {
-        const clockInResponse = await fetch(`${API_URL}/timesheets/clock-in`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            employeeName: activeEmployee,
-            date: now.toISOString()
-          })
-        });
-
-        if (!clockInResponse.ok) {
-          const error = await clockInResponse.json();
-          throw new Error(error.message || 'Failed to clock in');
-        }
-
-        const clockInData = await clockInResponse.json();
-        
-        // Save locally after successful server save
+        // Create new clock-in entry
         const newEntry: TimeEntry = {
           date: now.toLocaleDateString(),
           time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
           action: 'in',
           employeeName: activeEmployee,
-          isSaved: true,
-          _id: clockInData._id,
+          isSaved: false, // Mark as not synced with server
+          _id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate temporary local ID
           clockInTime: now.toISOString(),
           clockOutTime: undefined
         }
 
-        // Get existing data from IndexedDB
-        const existingData = await getFromIndexedDB() || {}
-        
         // Create updated time data array
-        const updatedTimeData = [...(employeeTimeData || []), newEntry]
+        const updatedTimeData = [...currentTimeData, newEntry]
         
         // Save to IndexedDB while preserving other data
         await saveToIndexedDB({
@@ -311,54 +280,35 @@ export default function Header({
           severity: 'success'
         })
       } else {
-        // For clock out, find the matching clock-in entry
-        const clockInEntry = [...employeeTimeData]
+        // For clock out, find the matching clock-in entry locally
+        const clockInEntry = [...currentTimeData]
           .reverse()
           .find(entry => 
             entry.employeeName === activeEmployee && 
             entry.action === 'in' && 
-            entry._id && 
             !entry.clockOutTime
           );
 
-        if (!clockInEntry?._id) {
+        if (!clockInEntry) {
           throw new Error('No matching clock-in entry found');
         }
 
-        const clockOutResponse = await fetch(`${API_URL}/timesheets/clock-out/${clockInEntry._id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            clockOut: now.toISOString()
-          })
-        });
-
-        if (!clockOutResponse.ok) {
-          const error = await clockOutResponse.json();
-          throw new Error(error.message || 'Failed to clock out');
-        }
-
-        // Save locally after successful server save
+        // Create new clock-out entry
         const newEntry = {
           date: now.toLocaleDateString(),
           time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
           action: 'out' as const,
           employeeName: activeEmployee,
-          isSaved: true,
+          isSaved: false, // Mark as not synced with server
           _id: clockInEntry._id,
           clockInTime: clockInEntry.clockInTime,
           clockOutTime: now.toISOString()
         }
 
-        // Get existing data from IndexedDB
-        const existingData = await getFromIndexedDB() || {}
-        
         // Update the clock-in entry with clock-out time
-        const updatedTimeData = employeeTimeData.map(entry => 
+        const updatedTimeData = currentTimeData.map(entry => 
           entry._id === clockInEntry._id 
-            ? { ...entry, clockOutTime: now.toISOString() }
+            ? { ...entry, clockOutTime: now.toISOString(), isSaved: false }
             : entry
         );
         updatedTimeData.push(newEntry);
