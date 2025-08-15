@@ -1564,8 +1564,23 @@ export default function Home() {
 
       console.log('📤 Checking for offline data to sync...');
 
-      // Get unsaved entries
-      const unsavedTimesheetEntries = employeeTimeData.filter(entry => !entry.isSaved);
+      // Get entries since last sync
+      const existingData = await getFromIndexedDB() || {};
+      const lastSyncTime = existingData.lastSyncTime ? new Date(existingData.lastSyncTime) : new Date(0);
+      
+      console.log('Last sync time:', lastSyncTime);
+      
+      const timesheetEntriesToSync = employeeTimeData.filter(entry => {
+        const entryTime = new Date(entry.date + ' ' + entry.time);
+        console.log('Checking timesheet entry:', {
+          entry,
+          entryTime,
+          isAfterLastSync: entryTime > lastSyncTime
+        });
+        return entryTime > lastSyncTime;
+      });
+      console.log('Found timesheet entries to sync:', timesheetEntriesToSync);
+
       const unsavedSalesEntries = savedData.filter(entry => !entry.isSaved);
       const unsavedInventoryItems = inventoryItems.filter(item => !item.isSaved || item.isDeleted);
       const unsavedInventoryLogs = inventoryLogs?.filter(log => !log.isSaved) || [];
@@ -1607,7 +1622,7 @@ export default function Home() {
 
       // Group timesheet entries by employee name
       const timesheetsByEmployee = new Map<string, any[]>();
-      unsavedTimesheetEntries.forEach(entry => {
+      timesheetEntriesToSync.forEach(entry => {
         if (!timesheetsByEmployee.has(entry.employeeName)) {
           timesheetsByEmployee.set(entry.employeeName, []);
         }
@@ -1753,15 +1768,18 @@ export default function Home() {
       setInventoryItems(updatedInventoryItems);
       setInventoryLogs(updatedInventoryLogs);
 
-      // Update IndexedDB
+      // Update IndexedDB with new sync time
+      const syncTime = new Date().toISOString();
+      console.log('Setting new sync time:', syncTime);
+      
       const existingData = await getFromIndexedDB() || {};
       await saveToIndexedDB({
         ...existingData,
         data: updatedSalesData,
-        employeeTimeData: updatedTimeData,
+        employeeTimeData: employeeTimeData, // Keep all timesheet entries
         inventory: updatedInventoryItems,
         inventoryLogs: updatedInventoryLogs,
-        lastSynced: new Date().toISOString()
+        lastSyncTime: syncTime // Use lastSyncTime instead of lastSynced
       });
 
       // First try to send all unsaved data
