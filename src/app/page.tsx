@@ -1564,9 +1564,9 @@ export default function Home() {
 
       console.log('📤 Checking for offline data to sync...');
 
-      // Get entries since last sync
-      const existingData = await getFromIndexedDB() || {};
-      const lastSyncTime = existingData.lastSyncTime ? new Date(existingData.lastSyncTime) : new Date(0);
+      // Get current data from IndexedDB
+      const dbData = await getFromIndexedDB() || {};
+      const lastSyncTime = dbData.lastSyncTime ? new Date(dbData.lastSyncTime) : new Date(0);
       
       console.log('Last sync time:', lastSyncTime);
       
@@ -1772,9 +1772,8 @@ export default function Home() {
       const syncTime = new Date().toISOString();
       console.log('Setting new sync time:', syncTime);
       
-      const existingData = await getFromIndexedDB() || {};
       await saveToIndexedDB({
-        ...existingData,
+        ...dbData,
         data: updatedSalesData,
         employeeTimeData: employeeTimeData, // Keep all timesheet entries
         inventory: updatedInventoryItems,
