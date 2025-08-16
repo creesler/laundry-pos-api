@@ -13,14 +13,14 @@ const defaultOptions = {
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   // For local development, always use localhost:5000
-  const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5000'
-    : 'https://laundry-pos-api.vercel.app';
-  
+    const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000/api'
+    : 'https://laundry-pos-api.vercel.app/api';
+
   // Remove any leading or trailing slashes from endpoint
   const cleanEndpoint = endpoint.replace(/^\/+|\/+$/g, '');
-  
-  // Build the full URL - API endpoints no longer have /api prefix
+
+  // Build the full URL with /api prefix already in API_URL
   const fullUrl = `${API_URL}/${cleanEndpoint}`;
   
   console.log('Making API request to:', fullUrl, 'from:', window.location.origin);
