@@ -59,17 +59,42 @@ console.log('Current directory:', __dirname);
 console.log('Public path:', path.join(__dirname, '../public'));
 console.log('Admin path:', path.join(__dirname, '../public/admin'));
 
-// Check if admin files exist
+// Check if admin files exist in either location
 import fs from 'fs';
-const adminPath = path.join(__dirname, '../public/admin');
-const adminFiles = fs.readdirSync(adminPath);
-console.log('Admin files:', adminFiles);
+const serverAdminPath = path.join(__dirname, '../public/admin');
+const rootAdminPath = path.join(__dirname, '../../public/admin');
 
-// Serve static files from the public directory
+console.log('Checking admin files in:', {
+  serverPath: serverAdminPath,
+  rootPath: rootAdminPath
+});
+
+let adminFiles = [];
+try {
+  if (fs.existsSync(serverAdminPath)) {
+    adminFiles = [...adminFiles, ...fs.readdirSync(serverAdminPath)];
+  }
+} catch (error) {
+  console.log('No admin files in server path');
+}
+
+try {
+  if (fs.existsSync(rootAdminPath)) {
+    adminFiles = [...adminFiles, ...fs.readdirSync(rootAdminPath)];
+  }
+} catch (error) {
+  console.log('No admin files in root path');
+}
+
+console.log('Found admin files:', adminFiles);
+
+// Serve static files from both public directories
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../../public')));
 
-// Serve admin dashboard files
+// Serve admin dashboard files from both locations (for compatibility)
 app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+app.use('/admin', express.static(path.join(__dirname, '../../public/admin')));
 
 // Redirect root to admin login
 app.get('/', (req, res) => {
@@ -77,9 +102,14 @@ app.get('/', (req, res) => {
   res.redirect('/admin/login.html');
 });
 
-// Log all requests
+// Log all requests with detailed path info
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`, {
+  console.log('Incoming request:', {
+    method: req.method,
+    path: req.path,
+    url: req.url,
+    baseUrl: req.baseUrl,
+    originalUrl: req.originalUrl,
     headers: req.headers,
     query: req.query,
     body: req.body
