@@ -49,17 +49,6 @@ app.get('/', (req, res) => {
   res.redirect('/admin/login.html');
 });
 
-// Handle all admin routes
-app.get('/admin/*', (req, res, next) => {
-  const filePath = path.join(__dirname, '../public/admin', req.params[0] || 'index.html');
-  res.sendFile(filePath, err => {
-    if (err) {
-      console.error('Error serving admin file:', err);
-      next();
-    }
-  });
-});
-
 // Log all requests
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`, {
