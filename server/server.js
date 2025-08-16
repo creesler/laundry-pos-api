@@ -105,6 +105,11 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/admin/index.html'));
 });
 
+// Serve admin login page
+app.get('/admin/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/admin/login.html'));
+});
+
 // Test routes that return plain HTML
 app.get(['/test.html', '/test'], (req, res) => {
   console.log('Test route hit:', {
