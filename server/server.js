@@ -26,32 +26,106 @@ const app = express();
 connectDB();
 
 // Middleware
-// Enable CORS for all routes
-app.use(cors());
+// Enable CORS with both middleware and custom headers
+app.use(cors({
+  origin: '*',  // Allow all origins for now
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400
+}));
+
+// Add custom headers as backup
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  next();
+});
+
 app.use(express.json({ limit: '50mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Parse URL-encoded bodies
 
-// API routes with /api prefix
-app.use('/api/employees', employeeRoutes);
-app.use('/api/sales', salesRoutes);
-app.use('/api/timesheets', timesheetRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/sync', syncRoutes);
+// API routes - remove /api prefix since we're an API-only server
+app.use('/employees', employeeRoutes);
+app.use('/sales', salesRoutes);
+app.use('/timesheets', timesheetRoutes);
+app.use('/inventory', inventoryRoutes);
+app.use('/sync', syncRoutes);
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, '../public')));
+// Debug logging
+console.log('Server starting...');
+console.log('Current directory:', __dirname);
+console.log('Public path:', path.join(__dirname, '../public'));
+console.log('Admin path:', path.join(__dirname, '../public/admin'));
 
-// Serve admin dashboard files
-app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+// Check if admin files exist
+import fs from 'fs';
+const adminPath = path.join(__dirname, '../public/admin');
+const adminFiles = fs.readdirSync(adminPath);
+console.log('Admin files:', adminFiles);
 
-// Redirect root to admin dashboard
-app.get('/', (req, res) => {
-  res.redirect('/admin');
+// Explicit routes for admin files
+app.get('/admin/login.html', (req, res) => {
+  console.log('Serving login.html');
+  const filePath = path.join(__dirname, '../public/admin/login.html');
+  console.log('File path:', filePath);
+  // Check if file exists
+  if (fs.existsSync(filePath)) {
+    console.log('File exists, sending...');
+    res.sendFile(filePath);
+  } else {
+    console.log('File not found!');
+    res.status(404).send('Login page not found');
+  }
 });
 
-// Serve admin dashboard
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/admin/index.html'));
+app.get('/admin/index.html', (req, res) => {
+  console.log('Serving index.html');
+  const filePath = path.join(__dirname, '../public/admin/index.html');
+  console.log('File path:', filePath);
+  // Check if file exists
+  if (fs.existsSync(filePath)) {
+    console.log('File exists, sending...');
+    res.sendFile(filePath);
+  } else {
+    console.log('File not found!');
+    res.status(404).send('Dashboard not found');
+  }
+});
+
+app.get('/admin/app.js', (req, res) => {
+  console.log('Serving app.js');
+  const filePath = path.join(__dirname, '../public/admin/app.js');
+  console.log('File path:', filePath);
+  // Check if file exists
+  if (fs.existsSync(filePath)) {
+    console.log('File exists, sending...');
+    res.sendFile(filePath);
+  } else {
+    console.log('File not found!');
+    res.status(404).send('App.js not found');
+  }
+});
+
+app.get('/admin/styles.css', (req, res) => {
+  console.log('Serving styles.css');
+  const filePath = path.join(__dirname, '../public/admin/styles.css');
+  console.log('File path:', filePath);
+  // Check if file exists
+  if (fs.existsSync(filePath)) {
+    console.log('File exists, sending...');
+    res.sendFile(filePath);
+  } else {
+    console.log('File not found!');
+    res.status(404).send('Styles not found');
+  }
+});
+
+// Redirect root and /admin to login
+app.get(['/', '/admin'], (req, res) => {
+  console.log('Redirecting to login page');
+  res.redirect('/admin/login.html');
 });
 
 // Log all requests
