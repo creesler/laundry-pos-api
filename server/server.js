@@ -89,17 +89,36 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin/index.html'));
 });
 
-// Test route for debugging static file serving
-app.get('/test.html', (req, res) => {
-  const testPath = path.join(__dirname, '../public/test.html');
-  console.log('Attempting to serve test.html from:', testPath);
-  if (fs.existsSync(testPath)) {
-    console.log('test.html exists at path');
-    res.sendFile(testPath);
-  } else {
-    console.log('test.html not found at path');
-    res.status(404).send('Test file not found');
-  }
+// Test routes that return plain HTML
+app.get(['/test.html', '/test'], (req, res) => {
+  console.log('Test route hit:', {
+    dirname: __dirname,
+    cwd: process.cwd(),
+    env: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV
+  });
+  
+  // Send a simple HTML response directly
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Direct Response Test</title>
+    </head>
+    <body>
+        <h1>Direct Response Test</h1>
+        <p>This page is being served directly from the route handler, not from a static file.</p>
+        <p>Server Info:</p>
+        <pre>
+        __dirname: ${__dirname}
+        cwd: ${process.cwd()}
+        NODE_ENV: ${process.env.NODE_ENV}
+        VERCEL_ENV: ${process.env.VERCEL_ENV}
+        Time: ${new Date().toLocaleString()}
+        </pre>
+    </body>
+    </html>
+  `);
 });
 
 // Log all requests with detailed path info and static file checks
