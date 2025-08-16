@@ -1685,7 +1685,7 @@ export default function Home() {
 
       // Log timesheet data before sync
       console.log('🕒 Timesheet data to sync:', {
-        unsavedEntries: unsavedTimesheetEntries.length,
+        unsavedEntries: timesheetEntriesToSync.length,
         processedRecords: processedTimesheets.length,
         sampleRecord: processedTimesheets[0]
       });
@@ -1824,7 +1824,7 @@ export default function Home() {
       }
 
       console.log('✅ Sync sequence completed:', {
-        offlineDataSynced: unsavedTimesheetEntries.length > 0 || 
+        offlineDataSynced: timesheetEntriesToSync.length > 0 || 
                           unsavedSalesEntries.length > 0 || 
                           unsavedInventoryItems.length > 0 || 
                           unsavedInventoryLogs.length > 0,
