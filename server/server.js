@@ -38,45 +38,20 @@ app.use('/api/timesheets', timesheetRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/sync', syncRoutes);
 
-// Log the current directory and files for debugging
-console.log('Current directory:', __dirname);
-console.log('Public directory:', path.join(__dirname, '../public'));
-console.log('Admin directory:', path.join(__dirname, '../public/admin'));
-
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Serve admin dashboard files
 app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
 
-// Specific route for admin login
-app.get(['/admin', '/admin/login', '/admin/login.html'], (req, res) => {
-  const loginPath = path.join(__dirname, '../public/admin/login.html');
-  console.log('Attempting to serve:', loginPath);
-  res.sendFile(loginPath, (err) => {
-    if (err) {
-      console.error('Error serving login.html:', err);
-      res.status(404).send('Login page not found');
-    }
-  });
-});
-
-// Specific route for admin dashboard
-app.get('/admin/index.html', (req, res) => {
-  const indexPath = path.join(__dirname, '../public/admin/index.html');
-  console.log('Attempting to serve:', indexPath);
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error('Error serving index.html:', err);
-      res.status(404).send('Dashboard not found');
-    }
-  });
-});
-
-// Redirect root to admin login
+// Redirect root to admin dashboard
 app.get('/', (req, res) => {
-  console.log('Redirecting root to login.html');
-  res.redirect('/admin/login.html');
+  res.redirect('/admin');
+});
+
+// Serve admin dashboard
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/admin/index.html'));
 });
 
 // Log all requests
