@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h2>API Test Results:</h2>
+    <pre id="results"></pre>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        // Test both endpoints
+        async function testEndpoints() {
+            try {
+                // Test current endpoint
+                results.innerHTML += 'Testing current endpoint (/employees):\n';
+                const resp1 = await fetch('https://laundry-pos-api.vercel.app/employees', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                results.innerHTML += `Status: ${resp1.status}\n`;
+                if (resp1.ok) {
+                    const data1 = await resp1.json();
+                    results.innerHTML += JSON.stringify(data1, null, 2) + '\n\n';
+                } else {
+                    results.innerHTML += await resp1.text() + '\n\n';
+                }
+
+                // Test new endpoint
+                results.innerHTML += 'Testing new endpoint (/api/employees):\n';
+                const resp2 = await fetch('https://laundry-pos-api.vercel.app/api/employees', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                results.innerHTML += `Status: ${resp2.status}\n`;
+                if (resp2.ok) {
+                    const data2 = await resp2.json();
+                    results.innerHTML += JSON.stringify(data2, null, 2) + '\n';
+                } else {
+                    results.innerHTML += await resp2.text() + '\n';
+                }
+            } catch (error) {
+                results.innerHTML += `Error: ${error.message}\n`;
+            }
+        }
+
+        // Run the tests
+        testEndpoints();
+    </script>
+</body>
+</html>

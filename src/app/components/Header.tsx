@@ -258,6 +258,7 @@ export default function Header({
           clockInTime: now.toISOString(),
           clockOutTime: undefined
         }
+        console.log('Created new clock-in entry:', newEntry);
 
         // Create updated time data array
         const updatedTimeData = [...currentTimeData, newEntry]
@@ -472,113 +473,125 @@ export default function Header({
         return;
       }
 
-      // Group entries by employee
-      const entriesByEmployee = new Map();
-      for (const entry of unsavedEntries) {
-        if (!entriesByEmployee.has(entry.employeeName)) {
-          entriesByEmployee.set(entry.employeeName, []);
+      // Group entries by employee name
+      const timesheetsByEmployee = new Map<string, any[]>();
+      unsavedEntries.forEach(entry => {
+        if (!timesheetsByEmployee.has(entry.employeeName)) {
+          timesheetsByEmployee.set(entry.employeeName, []);
         }
-        entriesByEmployee.get(entry.employeeName).push(entry);
-      }
+        timesheetsByEmployee.get(entry.employeeName)?.push(entry);
+      });
 
-      // Process each employee's entries
-      const employeeEntries = Array.from(entriesByEmployee.entries());
-      for (const [employeeName, entries] of employeeEntries) {
-        // Process entries in pairs (in/out)
+      // Process timesheet entries by employee
+      const processedTimesheets = [];
+      for (const [employeeName, entries] of timesheetsByEmployee.entries()) {
+        // Sort entries by date and time
+        entries.sort((a, b) => {
+          const dateA = new Date(a.date + ' ' + a.time);
+          const dateB = new Date(b.date + ' ' + b.time);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+        // Group entries into clock-in/out pairs
         for (let i = 0; i < entries.length; i++) {
           const entry = entries[i];
           if (entry.action === 'in') {
-            // Create clock-in entry first
-            const clockInResponse = await fetch(`${API_URL}/api/timesheets/clock-in`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                employeeName: employeeName, // Use name instead of ID
-                date: new Date(entry.date + ' ' + entry.time).toISOString()
-              })
-            });
-
-            if (!clockInResponse.ok) {
-              throw new Error(`Failed to save clock-in for ${employeeName}`);
-            }
-
-            const clockInData = await clockInResponse.json();
-            entry.isSaved = true;
-
-            // Find matching clock out
-            const clockOut = entries.slice(i + 1).find((e: TimeEntry) => 
+            // Find matching clock-out
+            const clockOut = entries.slice(i + 1).find(e => 
               e.action === 'out' && 
               e.date === entry.date
             );
 
+            // Create timesheet record matching MongoDB format
+            const clockInTime = new Date(entry.date + ' ' + entry.time);
+            const clockOutTime = clockOut ? new Date(clockOut.date + ' ' + clockOut.time) : null;
+            
+            // Calculate duration in minutes
+            let durationMinutes = 0;
             if (clockOut) {
-              // Update the timesheet with clock-out time
-              const clockOutResponse = await fetch(`${API_URL}/api/timesheets/clock-out/${clockInData._id}`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  clockOut: new Date(clockOut.date + ' ' + clockOut.time).toISOString()
-                })
-              });
+              const timeIn = new Date(clockInTime);
+              const timeOut = new Date(clockOutTime);
+              durationMinutes = Math.floor((timeOut.getTime() - timeIn.getTime()) / (1000 * 60));
+            }
 
-              if (!clockOutResponse.ok) {
-                throw new Error(`Failed to save clock-out for ${employeeName}`);
-              }
+            processedTimesheets.push({
+              employeeName: entry.employeeName,
+              date: clockInTime.toISOString(),
+              clockIn: clockInTime.toISOString(),
+              clockOut: clockOutTime ? clockOutTime.toISOString() : null,
+              duration: durationMinutes,
+              status: clockOut ? "completed" : "pending",
+              createdAt: clockInTime.toISOString(),
+              updatedAt: clockOutTime ? clockOutTime.toISOString() : clockInTime.toISOString(),
+              __v: 0
+            });
 
-              clockOut.isSaved = true;
-              i = entries.indexOf(clockOut); // Skip the out entry we just processed
+            // Skip the clock-out entry since we've processed it
+            if (clockOut) {
+              i = entries.indexOf(clockOut);
             }
           }
         }
       }
 
-      // Now sync sales data
-      const unsavedSales = savedData.filter((entry: SalesRecord) => entry.isSaved === false || !entry.isSaved);
-      if (unsavedSales.length > 0) {
-        // Format entries for server
-        const formattedEntries = unsavedSales.map((entry: SalesRecord) => ({
-          ...entry,
-          isSaved: false // Convert string to boolean
-        }));
+      // Send all data to sync endpoint
+      const syncData = {
+        timesheet: processedTimesheets,
+        sales: unsavedSales,
+        inventory: [],
+        inventoryLogs: []
+      };
 
-        // Send sales data to server
-        const salesResponse = await fetch(`${API_URL}/sales/bulk`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ entries: formattedEntries })
-        });
+      console.log('Making sync request with data:', syncData);
+      
+      const syncResponse = await fetch(`${API_URL}/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(syncData)
+      });
 
-        if (!salesResponse.ok) {
-          throw new Error('Failed to sync sales data');
-        }
-
-        // Update local state to mark sales as saved
-        const updatedSavedData = savedData.map((entry: SalesRecord) => 
-          unsavedSales.some(unsaved => unsaved.Date === entry.Date) 
-            ? { ...entry, isSaved: true }
-            : entry
-        );
-
-        // Save updated state to IndexedDB
-        const existingData = await getFromIndexedDB() || {};
-        await saveToIndexedDB({
-          ...existingData,
-          data: updatedSavedData
-        });
-
-        setSavedData(updatedSavedData);
+      if (!syncResponse.ok) {
+        const errorText = await syncResponse.text();
+        console.error('Sync error response:', errorText);
+        throw new Error(`Failed to sync data: ${errorText}`);
       }
+
+      const syncResult = await syncResponse.json();
+      console.log('Sync result:', syncResult);
+
+      // Mark all entries as saved
+      const updatedTimeData = employeeTimeData.map(entry => 
+        unsavedEntries.some(unsaved => unsaved._id === entry._id)
+          ? { ...entry, isSaved: true }
+          : entry
+      );
+
+      const updatedSavedData = savedData.map((entry: SalesRecord) => 
+        unsavedSales.some(unsaved => unsaved.Date === entry.Date) 
+          ? { ...entry, isSaved: true }
+          : entry
+      );
+
+      // Save updated state to IndexedDB
+      const existingData = await getFromIndexedDB() || {};
+      await saveToIndexedDB({
+        ...existingData,
+        data: updatedSavedData,
+        employeeTimeData: updatedTimeData,
+        lastSyncTime: new Date().toISOString()
+      });
+
+      // Update state
+      setEmployeeTimeData(updatedTimeData);
+      setSavedData(updatedSavedData);
 
       setSnackbar({
         open: true,
         message: 'Successfully synced with server',
-        severity: 'info'
+        severity: 'success'
       });
 
     } catch (error) {
