@@ -65,66 +65,15 @@ const adminPath = path.join(__dirname, '../public/admin');
 const adminFiles = fs.readdirSync(adminPath);
 console.log('Admin files:', adminFiles);
 
-// Explicit routes for admin files
-app.get('/admin/login.html', (req, res) => {
-  console.log('Serving login.html');
-  const filePath = path.join(__dirname, '../public/admin/login.html');
-  console.log('File path:', filePath);
-  // Check if file exists
-  if (fs.existsSync(filePath)) {
-    console.log('File exists, sending...');
-    res.sendFile(filePath);
-  } else {
-    console.log('File not found!');
-    res.status(404).send('Login page not found');
-  }
-});
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, '../public')));
 
-app.get('/admin/index.html', (req, res) => {
-  console.log('Serving index.html');
-  const filePath = path.join(__dirname, '../public/admin/index.html');
-  console.log('File path:', filePath);
-  // Check if file exists
-  if (fs.existsSync(filePath)) {
-    console.log('File exists, sending...');
-    res.sendFile(filePath);
-  } else {
-    console.log('File not found!');
-    res.status(404).send('Dashboard not found');
-  }
-});
+// Serve admin dashboard files
+app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
 
-app.get('/admin/app.js', (req, res) => {
-  console.log('Serving app.js');
-  const filePath = path.join(__dirname, '../public/admin/app.js');
-  console.log('File path:', filePath);
-  // Check if file exists
-  if (fs.existsSync(filePath)) {
-    console.log('File exists, sending...');
-    res.sendFile(filePath);
-  } else {
-    console.log('File not found!');
-    res.status(404).send('App.js not found');
-  }
-});
-
-app.get('/admin/styles.css', (req, res) => {
-  console.log('Serving styles.css');
-  const filePath = path.join(__dirname, '../public/admin/styles.css');
-  console.log('File path:', filePath);
-  // Check if file exists
-  if (fs.existsSync(filePath)) {
-    console.log('File exists, sending...');
-    res.sendFile(filePath);
-  } else {
-    console.log('File not found!');
-    res.status(404).send('Styles not found');
-  }
-});
-
-// Redirect root and /admin to login
-app.get(['/', '/admin'], (req, res) => {
-  console.log('Redirecting to login page');
+// Redirect root to admin login
+app.get('/', (req, res) => {
+  console.log('Root request, redirecting to /admin/login.html');
   res.redirect('/admin/login.html');
 });
 
