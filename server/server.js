@@ -105,8 +105,8 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/admin/index.html'));
 });
 
-// Serve admin login page
-app.get('/admin/login.html', (req, res) => {
+// Serve admin login page (with and without .html extension)
+app.get(['/admin/login', '/admin/login.html'], (req, res) => {
   res.sendFile(path.join(__dirname, 'public/admin/login.html'));
 });
 
