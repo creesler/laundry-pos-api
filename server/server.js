@@ -89,11 +89,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files from public directory
-app.use(express.static(path.join(__dirname, '../public')));
+// Serve static files from server's public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve admin files
-app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+app.use('/admin', express.static(path.join(__dirname, 'public/admin')));
 
 // Redirect root to admin dashboard
 app.get('/', (req, res) => {
@@ -102,7 +102,7 @@ app.get('/', (req, res) => {
 
 // Serve admin dashboard
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/admin/index.html'));
+  res.sendFile(path.join(__dirname, 'public/admin/index.html'));
 });
 
 // Test routes that return plain HTML
@@ -141,8 +141,8 @@ app.get(['/test.html', '/test'], (req, res) => {
 app.use((req, res, next) => {
   const paths = [
     path.join(__dirname, req.path),
-    path.join(__dirname, '../public', req.path),
-    path.join(__dirname, '../public/admin', req.path)
+    path.join(__dirname, 'public', req.path),
+    path.join(__dirname, 'public/admin', req.path)
   ];
 
   console.log('Incoming request:', {
@@ -161,8 +161,8 @@ app.use((req, res, next) => {
 
 // Catch-all route handler
 app.use('*', (req, res) => {
-  const publicPath = path.join(__dirname, '../public');
-  const adminPath = path.join(__dirname, '../public/admin');
+  const publicPath = path.join(__dirname, 'public');
+  const adminPath = path.join(__dirname, 'public/admin');
   
   // Check if files exist in various locations
   const fileChecks = {
