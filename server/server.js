@@ -74,10 +74,26 @@ try {
   console.error('Error listing files:', error);
 }
 
-// Serve static files from multiple directories
-app.use(express.static(__dirname)); // Serve files from server root directory
-app.use(express.static(path.join(__dirname, '../public'))); // Serve files from public directory
-app.use('/admin', express.static(path.join(__dirname, '../public/admin'))); // Serve admin files
+// Debug middleware to log every request
+app.use((req, res, next) => {
+  console.log('\n🔍 Request Debug:', {
+    url: req.url,
+    method: req.method,
+    path: req.path,
+    headers: req.headers,
+    vercelEnv: process.env.VERCEL_ENV,
+    nodeEnv: process.env.NODE_ENV,
+    pwd: process.cwd(),
+    dirname: __dirname
+  });
+  next();
+});
+
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Serve admin files
+app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
 
 // Redirect root to admin dashboard
 app.get('/', (req, res) => {
@@ -143,17 +159,58 @@ app.use((req, res, next) => {
   next();
 });
 
-// 404 handler
-app.use((req, res, next) => {
-  console.log('404 Not Found:', {
-    method: req.method,
-    path: req.path,
-    url: req.url,
-    baseUrl: req.baseUrl,
+// Catch-all route handler
+app.use('*', (req, res) => {
+  const publicPath = path.join(__dirname, '../public');
+  const adminPath = path.join(__dirname, '../public/admin');
+  
+  // Check if files exist in various locations
+  const fileChecks = {
+    [`${publicPath}${req.originalUrl}`]: fs.existsSync(`${publicPath}${req.originalUrl}`),
+    [`${adminPath}${req.originalUrl}`]: fs.existsSync(`${adminPath}${req.originalUrl}`),
+    [`${publicPath}/admin${req.originalUrl}`]: fs.existsSync(`${publicPath}/admin${req.originalUrl}`)
+  };
+
+  console.log('\n❌ 404 Debug Info:', {
     originalUrl: req.originalUrl,
-    headers: req.headers
+    baseUrl: req.baseUrl,
+    path: req.path,
+    publicPath,
+    adminPath,
+    fileChecks,
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      PWD: process.cwd(),
+      dirname: __dirname
+    }
   });
-  res.status(404).send('Not Found');
+
+  // Send detailed 404 response
+  res.status(404).send(`
+    <html>
+      <head><title>404 Debug Info</title></head>
+      <body>
+        <h1>404 Not Found</h1>
+        <h2>Request Details:</h2>
+        <pre>
+          URL: ${req.originalUrl}
+          Method: ${req.method}
+          Path: ${req.path}
+          Base: ${req.baseUrl}
+        </pre>
+        <h2>Server Environment:</h2>
+        <pre>
+          NODE_ENV: ${process.env.NODE_ENV}
+          VERCEL_ENV: ${process.env.VERCEL_ENV}
+          PWD: ${process.cwd()}
+          __dirname: ${__dirname}
+        </pre>
+        <h2>File Checks:</h2>
+        <pre>${JSON.stringify(fileChecks, null, 2)}</pre>
+      </body>
+    </html>
+  `);
 });
 
 // Error handling middleware
