@@ -44,19 +44,20 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Serve admin dashboard files
 app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
 
-// Redirect root to admin dashboard
+// Redirect root to admin login
 app.get('/', (req, res) => {
   res.redirect('/admin/login.html');
 });
 
-// Serve admin login page
-app.get('/admin/login.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/admin/login.html'));
-});
-
-// Serve admin dashboard
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/admin/index.html'));
+// Handle all admin routes
+app.get('/admin/*', (req, res, next) => {
+  const filePath = path.join(__dirname, '../public/admin', req.params[0] || 'index.html');
+  res.sendFile(filePath, err => {
+    if (err) {
+      console.error('Error serving admin file:', err);
+      next();
+    }
+  });
 });
 
 // Log all requests

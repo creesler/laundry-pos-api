@@ -4,42 +4,9 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      },
-      "dest": "/server.js"
-    },
-    {
-      "src": "/admin/login.html",
-      "dest": "/public/admin/login.html"
-    },
-    {
-      "src": "/admin/index.html",
-      "dest": "/public/admin/index.html"
-    },
-    {
-      "src": "/admin/app.js",
-      "dest": "/public/admin/app.js"
-    },
-    {
-      "src": "/admin/styles.css",
-      "dest": "/public/admin/styles.css"
-    },
-    {
-      "src": "/admin",
-      "dest": "/public/admin/index.html"
-    },
     {
       "src": "/(.*)",
       "dest": "/server.js"
