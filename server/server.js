@@ -74,11 +74,10 @@ try {
   console.error('Error listing files:', error);
 }
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, '../public')));
-
-// Serve admin dashboard files
-app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+// Serve static files from multiple directories
+app.use(express.static(__dirname)); // Serve files from server root directory
+app.use(express.static(path.join(__dirname, '../public'))); // Serve files from public directory
+app.use('/admin', express.static(path.join(__dirname, '../public/admin'))); // Serve admin files
 
 // Redirect root to admin dashboard
 app.get('/', (req, res) => {
@@ -103,8 +102,14 @@ app.get('/test.html', (req, res) => {
   }
 });
 
-// Log all requests with detailed path info
+// Log all requests with detailed path info and static file checks
 app.use((req, res, next) => {
+  const paths = [
+    path.join(__dirname, req.path),
+    path.join(__dirname, '../public', req.path),
+    path.join(__dirname, '../public/admin', req.path)
+  ];
+
   console.log('Incoming request:', {
     method: req.method,
     path: req.path,
@@ -113,7 +118,8 @@ app.use((req, res, next) => {
     originalUrl: req.originalUrl,
     headers: req.headers,
     query: req.query,
-    body: req.body
+    body: req.body,
+    staticPaths: paths.map(p => ({ path: p, exists: fs.existsSync(p) }))
   });
   next();
 });
