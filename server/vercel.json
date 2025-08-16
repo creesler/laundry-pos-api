@@ -7,20 +7,32 @@
     },
     {
       "src": "public/**",
-      "use": "@vercel/static"
+      "use": "@vercel/static",
+      "config": {
+        "zeroConfig": true
+      }
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
       "headers": {
-        "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
       },
       "dest": "/server.js"
     },
     {
+      "src": "/admin",
+      "dest": "/public/admin/index.html"
+    },
+    {
       "src": "/admin/(.*)",
       "dest": "/public/admin/$1"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
