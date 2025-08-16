@@ -1586,8 +1586,8 @@ export default function Home() {
       const unsavedInventoryLogs = inventoryLogs?.filter(log => !log.isSaved) || [];
 
       // Log what we're going to sync
-      console.log('Found unsaved data:', {
-        timesheets: unsavedTimesheetEntries.length,
+      console.log('Found data to sync:', {
+        timesheets: timesheetEntriesToSync.length,
         sales: unsavedSalesEntries.length,
         inventory: unsavedInventoryItems.length,
         logs: unsavedInventoryLogs.length
@@ -1602,7 +1602,7 @@ export default function Home() {
         unsavedLogDetails: unsavedInventoryLogs
       });
 
-      if (unsavedTimesheetEntries.length === 0 && 
+      if (timesheetEntriesToSync.length === 0 && 
           unsavedSalesEntries.length === 0 && 
           unsavedInventoryItems.length === 0 && 
           unsavedInventoryLogs.length === 0) {
@@ -1614,8 +1614,8 @@ export default function Home() {
         return;
       }
 
-      console.log('📤 Uploading unsaved data to server...');
-      console.log('- Timesheet entries:', unsavedTimesheetEntries.length);
+      console.log('📤 Uploading data to server...');
+      console.log('- Timesheet entries:', timesheetEntriesToSync.length);
       console.log('- Sales entries:', unsavedSalesEntries.length);
       console.log('- Inventory items:', unsavedInventoryItems.length);
       console.log('- Inventory logs:', unsavedInventoryLogs.length);
@@ -1781,15 +1781,15 @@ export default function Home() {
         lastSyncTime: syncTime // Use lastSyncTime instead of lastSynced
       });
 
-      // First try to send all unsaved data
-      if (unsavedTimesheetEntries.length > 0 || 
+      // First try to send all data to sync
+      if (timesheetEntriesToSync.length > 0 || 
           unsavedSalesEntries.length > 0 || 
           unsavedInventoryItems.length > 0 || 
           unsavedInventoryLogs.length > 0) {
         
-        console.log('📤 Sending unsaved data to server...');
+        console.log('📤 Sending data to server...');
         const syncData = {
-          timesheet: unsavedTimesheetEntries,
+          timesheet: timesheetEntriesToSync,
           sales: unsavedSalesEntries,
           inventory: unsavedInventoryItems,
           inventoryLogs: unsavedInventoryLogs
