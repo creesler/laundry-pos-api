@@ -54,52 +54,39 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/sync', syncRoutes);
 
 // Debug logging
-console.log('Server starting...');
-console.log('Current directory:', __dirname);
-console.log('Public path:', path.join(__dirname, '../public'));
-console.log('Admin path:', path.join(__dirname, '../public/admin'));
-
-// Check if admin files exist in either location
-import fs from 'fs';
-const serverAdminPath = path.join(__dirname, '../public/admin');
-const rootAdminPath = path.join(__dirname, '../../public/admin');
-
-console.log('Checking admin files in:', {
-  serverPath: serverAdminPath,
-  rootPath: rootAdminPath
+console.log('Server environment:', {
+  NODE_ENV: process.env.NODE_ENV,
+  VERCEL_ENV: process.env.VERCEL_ENV,
+  PWD: process.env.PWD,
+  cwd: process.cwd(),
+  __dirname,
+  publicPath: path.join(__dirname, '../public'),
+  adminPath: path.join(__dirname, '../public/admin')
 });
 
-let adminFiles = [];
+// List directory contents
 try {
-  if (fs.existsSync(serverAdminPath)) {
-    adminFiles = [...adminFiles, ...fs.readdirSync(serverAdminPath)];
-  }
+  console.log('Files in current directory:', fs.readdirSync(__dirname));
+  console.log('Files in public directory:', fs.readdirSync(path.join(__dirname, '../public')));
+  console.log('Files in admin directory:', fs.readdirSync(path.join(__dirname, '../public/admin')));
 } catch (error) {
-  console.log('No admin files in server path');
+  console.error('Error listing files:', error);
 }
 
-try {
-  if (fs.existsSync(rootAdminPath)) {
-    adminFiles = [...adminFiles, ...fs.readdirSync(rootAdminPath)];
-  }
-} catch (error) {
-  console.log('No admin files in root path');
-}
-
-console.log('Found admin files:', adminFiles);
-
-// Serve static files from both public directories
+// Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
-app.use(express.static(path.join(__dirname, '../../public')));
 
-// Serve admin dashboard files from both locations (for compatibility)
+// Serve admin dashboard files
 app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
-app.use('/admin', express.static(path.join(__dirname, '../../public/admin')));
 
-// Redirect root to admin login
+// Redirect root to admin dashboard
 app.get('/', (req, res) => {
-  console.log('Root request, redirecting to /admin/login.html');
-  res.redirect('/admin/login.html');
+  res.redirect('/admin');
+});
+
+// Serve admin dashboard
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/admin/index.html'));
 });
 
 // Log all requests with detailed path info
@@ -115,6 +102,19 @@ app.use((req, res, next) => {
     body: req.body
   });
   next();
+});
+
+// 404 handler
+app.use((req, res, next) => {
+  console.log('404 Not Found:', {
+    method: req.method,
+    path: req.path,
+    url: req.url,
+    baseUrl: req.baseUrl,
+    originalUrl: req.originalUrl,
+    headers: req.headers
+  });
+  res.status(404).send('Not Found');
 });
 
 // Error handling middleware
