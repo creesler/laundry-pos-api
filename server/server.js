@@ -26,27 +26,18 @@ const app = express();
 connectDB();
 
 // Middleware
-// Add CORS headers to every response
-app.use((req, res, next) => {
-  // Website you wish to allow to connect
-  res.setHeader('Access-Control-Allow-Origin', 'https://laundry-pos-frontend.vercel.app');
+// Configure CORS
+app.use(cors({
+  origin: ['https://laundry-pos-frontend.vercel.app', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
+}));
 
-  // Request methods you wish to allow
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-
-  // Request headers you wish to allow
-  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,authorization');
-
-  // Set to true if you need the website to include cookies in the requests sent
-  // to the API (e.g. in case you use sessions)
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  next();
+// Additional CORS headers for preflight
+app.options('*', (req, res) => {
+  res.status(200).end();
 });
 app.use(express.json({ limit: '50mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Parse URL-encoded bodies
