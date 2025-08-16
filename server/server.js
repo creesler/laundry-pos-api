@@ -4,6 +4,7 @@ import { dirname } from 'path';
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
 import { connectDB } from './config/db.js';
 
 // Get __dirname equivalent in ES modules
@@ -87,6 +88,19 @@ app.get('/', (req, res) => {
 // Serve admin dashboard
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin/index.html'));
+});
+
+// Test route for debugging static file serving
+app.get('/test.html', (req, res) => {
+  const testPath = path.join(__dirname, '../public/test.html');
+  console.log('Attempting to serve test.html from:', testPath);
+  if (fs.existsSync(testPath)) {
+    console.log('test.html exists at path');
+    res.sendFile(testPath);
+  } else {
+    console.log('test.html not found at path');
+    res.status(404).send('Test file not found');
+  }
 });
 
 // Log all requests with detailed path info
