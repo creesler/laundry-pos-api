@@ -46,17 +46,17 @@ app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
 
 // Redirect root to admin dashboard
 app.get('/', (req, res) => {
-  res.redirect('/admin');
-});
-
-// Serve admin dashboard
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/admin/index.html'));
+  res.redirect('/admin/login.html');
 });
 
 // Serve admin login page
 app.get('/admin/login.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin/login.html'));
+});
+
+// Serve admin dashboard
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/admin/index.html'));
 });
 
 // Log all requests
