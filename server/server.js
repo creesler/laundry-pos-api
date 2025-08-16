@@ -26,19 +26,8 @@ const app = express();
 connectDB();
 
 // Middleware
-// Configure CORS
-app.use(cors({
-  origin: ['https://laundry-pos-frontend.vercel.app', 'http://localhost:3000'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-  credentials: true,
-  maxAge: 86400 // 24 hours
-}));
-
-// Additional CORS headers for preflight
-app.options('*', (req, res) => {
-  res.status(200).end();
-});
+// Enable CORS for all routes
+app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Parse URL-encoded bodies
 
