@@ -63,8 +63,8 @@ emailjs.init('your_public_key') // Replace with your EmailJS public key
 
 // API URL - switches between local and Vercel
 const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
-  ? 'http://localhost:5000'
-  : 'https://laundry-pos-api.vercel.app';
+  ? 'http://localhost:5000/api'
+  : 'https://laundry-pos-api.vercel.app/api';
 
 // Add type declarations for window.gapi and window.google at the top
 
@@ -1781,40 +1781,8 @@ export default function Home() {
         lastSyncTime: syncTime // Use lastSyncTime instead of lastSynced
       });
 
-      // First try to send all data to sync
-      if (timesheetEntriesToSync.length > 0 || 
-          unsavedSalesEntries.length > 0 || 
-          unsavedInventoryItems.length > 0 || 
-          unsavedInventoryLogs.length > 0) {
-        
-        console.log('📤 Sending data to server...');
-        const syncData = {
-          timesheet: timesheetEntriesToSync,
-          sales: unsavedSalesEntries,
-          inventory: unsavedInventoryItems,
-          inventoryLogs: unsavedInventoryLogs
-        };
-
-        const syncResponse = await fetch(`${API_URL}/sync`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(syncData),
-        });
-
-        if (!syncResponse.ok) {
-          const errorText = await syncResponse.text();
-          console.error('Sync error response:', errorText);
-          throw new Error(`Failed to sync data: ${errorText}`);
-        }
-
-        const syncResult = await syncResponse.json();
-        console.log('✅ Offline data synced successfully:', syncResult);
-      } else {
-        console.log('ℹ️ No offline data to sync');
-      }
+      // Data has already been synced above, no need to sync again
+      console.log('✅ Data sync completed successfully');
 
       // Now fetch and update the employee list
       console.log('📥 Starting employee list update...');

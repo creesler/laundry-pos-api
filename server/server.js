@@ -46,12 +46,12 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' })); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Parse URL-encoded bodies
 
-// API routes - remove /api prefix since we're an API-only server
-app.use('/employees', employeeRoutes);
-app.use('/sales', salesRoutes);
-app.use('/timesheets', timesheetRoutes);
-app.use('/inventory', inventoryRoutes);
-app.use('/sync', syncRoutes);
+// API routes with /api prefix
+app.use('/api/employees', employeeRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/timesheets', timesheetRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/sync', syncRoutes);
 
 // Debug logging
 console.log('Server starting...');
