@@ -4,13 +4,6 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static",
-      "config": {
-        "zeroConfig": true
-      }
     }
   ],
   "routes": [
@@ -24,15 +17,16 @@
       "dest": "/server.js"
     },
     {
+      "src": "/admin/login.html",
+      "dest": "/server.js"
+    },
+    {
       "src": "/admin",
-      "dest": "/public/admin/index.html"
+      "dest": "/server.js"
     },
     {
       "src": "/admin/(.*)",
-      "dest": "/public/admin/$1"
-    },
-    {
-      "handle": "filesystem"
+      "dest": "/server.js"
     },
     {
       "src": "/(.*)",
