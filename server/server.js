@@ -100,8 +100,8 @@ app.get('/', (req, res) => {
   res.redirect('/admin');
 });
 
-// Serve admin dashboard
-app.get('/admin', (req, res) => {
+// Serve admin dashboard (with and without .html extension)
+app.get(['/admin', '/admin/index', '/admin/index.html'], (req, res) => {
   res.sendFile(path.join(__dirname, 'public/admin/index.html'));
 });
 
