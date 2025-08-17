@@ -89,24 +89,41 @@ app.use((req, res, next) => {
   next();
 });
 
-// Define admin file paths
-const adminFiles = {
-  index: path.join(__dirname, 'public/admin/index.html'),
-  login: path.join(__dirname, 'public/admin/login.html'),
-  test: path.join(__dirname, 'public/admin/test-redirect.html')
+// Get the public directory path based on environment
+const getPublicPath = () => {
+  if (process.env.VERCEL_ENV) {
+    return path.join(process.cwd(), 'public');
+  }
+  return path.join(__dirname, 'public');
 };
 
-// Debug middleware to log file existence
+// Define admin file paths
+const publicPath = getPublicPath();
+const adminFiles = {
+  index: path.join(publicPath, 'admin/index.html'),
+  login: path.join(publicPath, 'admin/login.html'),
+  test: path.join(publicPath, 'admin/test-redirect.html')
+};
+
+// Debug middleware to log file existence and paths
 app.use((req, res, next) => {
-  const filePath = path.join(__dirname, 'public', req.path);
+  const filePath = path.join(publicPath, req.path);
   const htmlPath = filePath.endsWith('.html') ? filePath : `${filePath}.html`;
   
-  console.log('File check:', {
+  console.log('Request debug:', {
     url: req.url,
+    path: req.path,
     filePath,
     htmlPath,
+    publicPath,
     fileExists: fs.existsSync(filePath),
-    htmlExists: fs.existsSync(htmlPath)
+    htmlExists: fs.existsSync(htmlPath),
+    env: {
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      NODE_ENV: process.env.NODE_ENV,
+      cwd: process.cwd(),
+      dirname: __dirname
+    }
   });
   next();
 });
@@ -119,26 +136,38 @@ app.get('/', (req, res) => {
 // Admin dashboard route
 app.get('/admin', (req, res) => {
   console.log('Serving admin dashboard from:', adminFiles.index);
-  res.sendFile(adminFiles.index);
+  if (fs.existsSync(adminFiles.index)) {
+    res.sendFile(adminFiles.index);
+  } else {
+    res.status(404).send('Admin dashboard not found. Path: ' + adminFiles.index);
+  }
 });
 
 // Admin login route
 app.get('/admin/login', (req, res) => {
   console.log('Serving admin login from:', adminFiles.login);
-  res.sendFile(adminFiles.login);
+  if (fs.existsSync(adminFiles.login)) {
+    res.sendFile(adminFiles.login);
+  } else {
+    res.status(404).send('Admin login not found. Path: ' + adminFiles.login);
+  }
 });
 
 // Test page route
 app.get('/admin/test-redirect', (req, res) => {
   console.log('Serving test page from:', adminFiles.test);
-  res.sendFile(adminFiles.test);
+  if (fs.existsSync(adminFiles.test)) {
+    res.sendFile(adminFiles.test);
+  } else {
+    res.status(404).send('Test page not found. Path: ' + adminFiles.test);
+  }
 });
 
-// Serve static files from server's public directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files from public directory
+app.use(express.static(publicPath));
 
 // Serve admin static files
-app.use('/admin', express.static(path.join(__dirname, 'public/admin')));
+app.use('/admin', express.static(path.join(publicPath, 'admin')));
 
 // Test routes that return plain HTML
 app.get(['/test.html', '/test'], (req, res) => {

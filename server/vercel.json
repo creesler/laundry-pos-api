@@ -6,30 +6,34 @@
       "use": "@vercel/node"
     },
     {
-      "src": "public/**",
+      "src": "public/**/*",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server.js"
+      "dest": "/server.js"
     },
     {
       "src": "/admin/login",
-      "dest": "server.js"
+      "dest": "/public/admin/login.html"
     },
     {
       "src": "/admin",
-      "dest": "server.js"
+      "dest": "/public/admin/index.html"
+    },
+    {
+      "src": "/admin/test-redirect",
+      "dest": "/public/admin/test-redirect.html"
     },
     {
       "src": "/admin/(.*)",
-      "dest": "server.js"
+      "dest": "/public/admin/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "server.js"
+      "dest": "/public/$1"
     }
   ]
 }
