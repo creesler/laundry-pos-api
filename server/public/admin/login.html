@@ -81,7 +81,7 @@
                     localStorage.setItem('adminAuthenticated', 'true');
                     
                     // Redirect to admin dashboard
-                    window.location.href = '/admin';
+                    window.location.href = '/admin';  // Redirect to dashboard without .html
                 } else {
                     throw new Error('Invalid credentials');
                 }
