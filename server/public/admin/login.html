@@ -81,7 +81,7 @@
                     // Store authentication state
                     localStorage.setItem('adminAuthenticated', 'true');
                     
-                    // Redirect to admin dashboard
+                    // Redirect to admin dashboard (without .html extension)
                     window.location.replace('/admin');
                 } else {
                     throw new Error('Invalid credentials');
