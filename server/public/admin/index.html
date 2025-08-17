@@ -60,7 +60,7 @@
     <script>
         // Check authentication before loading the page
         if (!localStorage.getItem('adminAuthenticated')) {
-            window.location.href = '/admin/login';  // Redirect to login without .html
+            window.location.replace('/admin/login');
         }
     </script>
 
@@ -359,7 +359,7 @@
         // Add logout functionality
         function logout() {
             localStorage.removeItem('adminAuthenticated');
-            window.location.href = '/admin/login';  // Redirect to login without .html
+            window.location.replace('/admin/login');
         }
 
         // Wait for DOM content and app.js to load

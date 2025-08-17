@@ -96,43 +96,42 @@ const adminFiles = {
   test: path.join(__dirname, 'public/admin/test-redirect.html')
 };
 
+// Debug middleware to log file existence
+app.use((req, res, next) => {
+  const filePath = path.join(__dirname, 'public', req.path);
+  const htmlPath = filePath.endsWith('.html') ? filePath : `${filePath}.html`;
+  
+  console.log('File check:', {
+    url: req.url,
+    filePath,
+    htmlPath,
+    fileExists: fs.existsSync(filePath),
+    htmlExists: fs.existsSync(htmlPath)
+  });
+  next();
+});
+
 // Handle admin routes first (before static middleware)
 app.get('/', (req, res) => {
   res.redirect('/admin');
 });
 
-// Admin dashboard routes
+// Admin dashboard route
 app.get('/admin', (req, res) => {
   console.log('Serving admin dashboard from:', adminFiles.index);
   res.sendFile(adminFiles.index);
 });
 
-app.get('/admin/index', (req, res) => {
-  res.redirect('/admin');
-});
-
-app.get('/admin/index.html', (req, res) => {
-  res.redirect('/admin');
-});
-
-// Admin login routes
+// Admin login route
 app.get('/admin/login', (req, res) => {
   console.log('Serving admin login from:', adminFiles.login);
   res.sendFile(adminFiles.login);
 });
 
-app.get('/admin/login.html', (req, res) => {
-  res.redirect('/admin/login');
-});
-
-// Test page routes
+// Test page route
 app.get('/admin/test-redirect', (req, res) => {
   console.log('Serving test page from:', adminFiles.test);
   res.sendFile(adminFiles.test);
-});
-
-app.get('/admin/test-redirect.html', (req, res) => {
-  res.redirect('/admin/test-redirect');
 });
 
 // Serve static files from server's public directory

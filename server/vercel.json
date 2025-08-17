@@ -8,27 +8,6 @@
   ],
   "routes": [
     {
-      "src": "/admin/login\\.html",
-      "status": 308,
-      "headers": {
-        "Location": "/admin/login"
-      }
-    },
-    {
-      "src": "/admin/index\\.html",
-      "status": 308,
-      "headers": {
-        "Location": "/admin"
-      }
-    },
-    {
-      "src": "/admin/test-redirect\\.html",
-      "status": 308,
-      "headers": {
-        "Location": "/admin/test-redirect"
-      }
-    },
-    {
       "src": "/admin/login",
       "dest": "server.js"
     },
