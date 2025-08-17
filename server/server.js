@@ -96,31 +96,47 @@ const adminFiles = {
   test: path.join(__dirname, 'public/admin/test-redirect.html')
 };
 
-// Serve static files from server's public directory
-app.use(express.static(path.join(__dirname, 'public')));
-
 // Handle admin routes first (before static middleware)
 app.get('/', (req, res) => {
   res.redirect('/admin');
 });
 
 // Admin dashboard routes
-app.get(['/admin', '/admin/index', '/admin/index.html'], (req, res) => {
+app.get('/admin', (req, res) => {
   console.log('Serving admin dashboard from:', adminFiles.index);
   res.sendFile(adminFiles.index);
 });
 
+app.get('/admin/index', (req, res) => {
+  res.redirect('/admin');
+});
+
+app.get('/admin/index.html', (req, res) => {
+  res.redirect('/admin');
+});
+
 // Admin login routes
-app.get(['/admin/login', '/admin/login.html'], (req, res) => {
+app.get('/admin/login', (req, res) => {
   console.log('Serving admin login from:', adminFiles.login);
   res.sendFile(adminFiles.login);
 });
 
+app.get('/admin/login.html', (req, res) => {
+  res.redirect('/admin/login');
+});
+
 // Test page routes
-app.get(['/admin/test', '/admin/test.html', '/admin/test-redirect', '/admin/test-redirect.html'], (req, res) => {
+app.get('/admin/test-redirect', (req, res) => {
   console.log('Serving test page from:', adminFiles.test);
   res.sendFile(adminFiles.test);
 });
+
+app.get('/admin/test-redirect.html', (req, res) => {
+  res.redirect('/admin/test-redirect');
+});
+
+// Serve static files from server's public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve admin static files
 app.use('/admin', express.static(path.join(__dirname, 'public/admin')));

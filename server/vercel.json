@@ -8,19 +8,36 @@
   ],
   "routes": [
     {
-      "src": "/admin/login[.html]*",
-      "dest": "server.js"
+      "src": "/admin/login\\.html",
+      "status": 308,
+      "headers": {
+        "Location": "/admin/login"
+      }
     },
     {
-      "src": "/admin/index[.html]*",
-      "dest": "server.js"
+      "src": "/admin/index\\.html",
+      "status": 308,
+      "headers": {
+        "Location": "/admin"
+      }
     },
     {
-      "src": "/admin/test[-.html]*",
+      "src": "/admin/test-redirect\\.html",
+      "status": 308,
+      "headers": {
+        "Location": "/admin/test-redirect"
+      }
+    },
+    {
+      "src": "/admin/login",
       "dest": "server.js"
     },
     {
       "src": "/admin",
+      "dest": "server.js"
+    },
+    {
+      "src": "/admin/test-redirect",
       "dest": "server.js"
     },
     {
