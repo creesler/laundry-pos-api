@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cp -r public .",
+  "buildCommand": "mkdir -p server/public && cp -r public/* server/public/",
   "builds": [
     {
       "src": "server.js",

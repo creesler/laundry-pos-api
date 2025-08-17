@@ -91,8 +91,8 @@ app.use((req, res, next) => {
 
 // Get the public directory path based on environment
 const getPublicPath = () => {
-  // In Vercel, files are relative to the root directory
-  const rootDir = process.env.VERCEL_ENV ? process.cwd() : __dirname;
+  // Always use __dirname for consistency
+  const rootDir = __dirname;
   console.log('Root directory:', {
     VERCEL_ENV: process.env.VERCEL_ENV,
     cwd: process.cwd(),
