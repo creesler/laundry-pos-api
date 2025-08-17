@@ -91,19 +91,38 @@ app.use((req, res, next) => {
 
 // Get the public directory path based on environment
 const getPublicPath = () => {
-  if (process.env.VERCEL_ENV) {
-    return path.join(process.cwd(), 'public');
-  }
-  return path.join(__dirname, 'public');
+  // In Vercel, files are relative to the root directory
+  const rootDir = process.env.VERCEL_ENV ? process.cwd() : __dirname;
+  console.log('Root directory:', {
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    cwd: process.cwd(),
+    dirname: __dirname,
+    rootDir
+  });
+  return path.join(rootDir, 'public');
 };
 
 // Define admin file paths
 const publicPath = getPublicPath();
+console.log('Public path:', publicPath);
+
 const adminFiles = {
   index: path.join(publicPath, 'admin/index.html'),
   login: path.join(publicPath, 'admin/login.html'),
   test: path.join(publicPath, 'admin/test-redirect.html')
 };
+
+// Log admin file paths
+console.log('Admin files:', {
+  index: adminFiles.index,
+  login: adminFiles.login,
+  test: adminFiles.test,
+  exists: {
+    index: fs.existsSync(adminFiles.index),
+    login: fs.existsSync(adminFiles.login),
+    test: fs.existsSync(adminFiles.test)
+  }
+});
 
 // Debug middleware to log file existence and paths
 app.use((req, res, next) => {

@@ -4,10 +4,6 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "public/**/*",
-      "use": "@vercel/static"
     }
   ],
   "headers": [
@@ -27,28 +23,8 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/admin/login",
-      "dest": "/public/admin/login.html"
-    },
-    {
-      "src": "/admin",
-      "dest": "/public/admin/index.html"
-    },
-    {
-      "src": "/admin/test-redirect",
-      "dest": "/public/admin/test-redirect.html"
-    },
-    {
-      "src": "/admin/(.*)",
-      "dest": "/public/admin/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/public/$1"
+      "dest": "/server.js"
     }
   ]
 }
