@@ -11,7 +11,7 @@ export const GOOGLE_SHEETS_CONFIG = {
 // API Configuration
 export const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
   ? 'http://localhost:5000'
-  : 'https://laundry-pos-api.vercel.app';
+  : 'https://laundry-pos-backend.vercel.app';
 
 // Other configurations
 export const APP_NAME = 'Laundry POS';

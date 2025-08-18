@@ -64,7 +64,7 @@ emailjs.init('your_public_key') // Replace with your EmailJS public key
 // API URL - switches between local and Vercel
 const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api'
-  : 'https://laundry-pos-api.vercel.app/api';
+  : 'https://laundry-pos-backend.vercel.app/api';
 
 // Add type declarations for window.gapi and window.google at the top
 

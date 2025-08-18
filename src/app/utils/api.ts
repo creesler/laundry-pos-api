@@ -15,7 +15,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   // For local development, always use localhost:5000
     const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000/api'
-    : 'https://laundry-pos-api.vercel.app/api';
+    : 'https://laundry-pos-backend.vercel.app/api';
 
   // Remove any leading or trailing slashes from endpoint
   const cleanEndpoint = endpoint.replace(/^\/+|\/+$/g, '');
