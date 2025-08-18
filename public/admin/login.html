@@ -65,7 +65,7 @@
     <script>
         const API_URL = window.location.hostname === 'localhost'
             ? 'http://localhost:5000/api'  // Development
-            : 'https://laundry-pos-api.vercel.app/api';  // Production
+            : 'https://laundry-pos-backend.vercel.app/api';  // Production
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -81,7 +81,7 @@
                     localStorage.setItem('adminAuthenticated', 'true');
                     
                     // Redirect to admin dashboard
-                    window.location.href = '/admin/index.html';
+                    window.location.replace('/admin');
                 } else {
                     throw new Error('Invalid credentials');
                 }
@@ -92,4 +92,4 @@
         });
     </script>
 </body>
-</html> 
+</html>
